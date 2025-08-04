@@ -27,7 +27,6 @@ public class GestionDemandaUseCaseAdapter implements GestionDemandaUseCasePort {
 		this.gestionDemandaPersistencePort = gestionDemandaPersistencePort;
 	}
 
-	
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
 			Exception.class, SQLException.class })
@@ -40,42 +39,6 @@ public class GestionDemandaUseCaseAdapter implements GestionDemandaUseCasePort {
 		}
 		return lista;
 	}
-	
-	
-//	@Override
-//    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
-//            Exception.class, SQLException.class })
-//	
-//    public void actualizarDemanda(String cuo, Demanda demanda) throws Exception {
-//		Map<String, Object> filters = new HashMap<>();
-//	    filters.put(Demanda.P_ID, demanda.getId());
-//	    
-//	    List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
-//        
-//	    if(demandas.isEmpty()) {
-//	        throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
-//	                String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), Proceso.DEMANDA_ACTUALIZAR.getNombre()));
-//	    }
-//        
-//	    Demanda demandaExistente = demandas.get(0);
-//	    
-//	    if(!"B".equals(demandaExistente.getIdEstadoDemanda())) {
-//	        throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getCodigo(),
-//	                String.format(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getNombre(), demandaExistente.getEstadoDemanda()));
-//	    }
-//	    
-//	 // Verificar que el usuario es el creador de la demanda
-//	    if(!demandaExistente.getUsuario().equals(demanda.getUsuario())) {
-//	        throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_AUTORIZADA.getCodigo(),
-//	                "Solo el usuario creador puede modificar la demanda");
-//	    }
-//	    
-//	    // Asegurar que no se cambie el estado mediante actualización
-//	    demanda.setIdEstadoDemanda(demandaExistente.getIdEstadoDemanda());
-//        
-//        gestionDemandaPersistencePort.actualizarDemanda(cuo, demanda);
-//    }
-//	
 
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
@@ -83,6 +46,34 @@ public class GestionDemandaUseCaseAdapter implements GestionDemandaUseCasePort {
 	public void registrarDemanda(String cuo, Demanda demanda) throws Exception {
 
 		gestionDemandaPersistencePort.registrarDemanda(cuo, demanda);
+	}
+
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+
+	public void actualizarDemanda(String cuo, Demanda demanda) throws Exception {
+		Map<String, Object> filters = new HashMap<>();
+		filters.put(Demanda.P_ID, demanda.getId());
+
+		List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
+
+		if (demandas.isEmpty()) {
+			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), Proceso.DEMANDA_ACTUALIZAR.getNombre()));
+		}
+
+		Demanda demandaExistente = demandas.get(0);
+
+		if (!"B".equals(demandaExistente.getIdEstadoDemanda())) {
+			throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getCodigo(),
+					String.format(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getNombre(), demandaExistente.getEstadoDemanda()));
+		}
+
+		// Asegurar que no se cambie el estado mediante actualización
+		demanda.setIdEstadoDemanda(demandaExistente.getIdEstadoDemanda());
+
+		gestionDemandaPersistencePort.actualizarDemanda(cuo, demanda);
 	}
 
 }

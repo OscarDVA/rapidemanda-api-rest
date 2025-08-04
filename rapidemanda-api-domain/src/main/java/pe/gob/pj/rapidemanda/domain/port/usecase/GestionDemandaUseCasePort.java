@@ -25,7 +25,7 @@ public interface GestionDemandaUseCasePort {
      * @return Demanda actualizada
      * @throws Exception Si la demanda no existe o no está en estado BORRADOR
      */
-    //public void actualizarDemanda(String cuo, Demanda demanda) throws Exception;
+   public void actualizarDemanda(String cuo, Demanda demanda) throws Exception;
 
     /**
      * Método que permite buscar demandas según filtros

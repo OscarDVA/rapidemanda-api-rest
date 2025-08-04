@@ -6,6 +6,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -83,17 +84,15 @@ public interface GestionDemanda extends Base {
 	 * @param demanda
 	 * @return
 	 */
-//	@PostMapping(value = "actualizar/{id}")
-//	public ResponseEntity<GlobalResponse> actualizarDemanda(
-//			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
-//			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
-//			@RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
-//			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
-//			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
-//			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-//			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-//			@PathVariable(name = "id") Integer id,
-//			@Validated @RequestBody DemandaRequest demanda);
-	
-
+	@PutMapping(value="actualizar/{id}")
+	public ResponseEntity<GlobalResponse> actualizarDemanda(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+			@RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+			@PathVariable(name = "id") Integer id,
+			@Validated @RequestBody DemandaRequest demanda);
 }

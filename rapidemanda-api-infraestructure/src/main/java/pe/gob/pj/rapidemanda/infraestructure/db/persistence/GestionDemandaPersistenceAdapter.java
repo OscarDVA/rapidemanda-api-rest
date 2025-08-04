@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -386,196 +387,116 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 						: Estado.INACTIVO_NUMERICO.getNombre());
 	}
 
-//	@Override
-//	public void actualizarDemanda(String cuo, Demanda demanda) throws Exception {
-//
-//		var session = sf.getCurrentSession();
-//
-//		// Habilitar filtro por ID
-//		session.enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, demanda.getId());
-//
-//		TypedQuery<MovDemanda> query = sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
-//
-//		MovDemanda movDemanda = query.getSingleResult();
-//
-//		// Actualizar datos básicos
-//		movDemanda.setSumilla(demanda.getSumilla());
-//		movDemanda.setXPdfUrl(demanda.getPdfUrl());
-//		movDemanda.setActivo(
-//				!Estado.INACTIVO_NUMERICO.getNombre().equals(demanda.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-//						: Estado.INACTIVO_NUMERICO.getNombre());
-//
-//		// Actualizar estado si es diferente
-//		if (!movDemanda.getEstadoDemanda().getBEstadoDemanda().equals(demanda.getIdEstadoDemanda())) {
-//			MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
-//			estadoDemanda.setBEstadoDemanda(demanda.getIdEstadoDemanda());
-//			movDemanda.setEstadoDemanda(estadoDemanda);
-//		}
-//
-//		// Actualizar tipo presentación solo si es diferente
-//		if (!movDemanda.getTipoPresentacion().getBTipoPresentacion().equals(demanda.getIdTipoPresentacion())) {
-//			MaeTipoPresentacion tipoPresentacion = new MaeTipoPresentacion();
-//			tipoPresentacion.setBTipoPresentacion(demanda.getIdTipoPresentacion());
-//			movDemanda.setTipoPresentacion(tipoPresentacion);
-//		}
-//
-//		// Actualizar relaciones
-//		actualizarDemandantes(movDemanda, demanda, session);
-//		actualizarDemandados(movDemanda, demanda, session);
-//		actualizarRelacionLaboral(movDemanda, demanda, session);
-//
-//		// Actualizar la demanda
-//		session.merge(movDemanda);
-//
-//		// sf.getCurrentSession().merge(movDemanda);
-//	}
-//
-//	private void actualizarDemandantes(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
-//		// Eliminar demandantes que ya no están en la demanda actualizada
-//		movDemanda.getDemandantes().removeIf(md -> demanda.getDemandantes().stream()
-//				.noneMatch(d -> d.getId() != null && d.getId().equals(md.getId())));
-//
-//		// Procesar cada demandante
-//		for (Demandante demandante : demanda.getDemandantes()) {
-//			if (demandante.getId() == null) {
-//				// Nuevo demandante
-//				MovDemandante nuevo = mapDemandanteToMovDemandante(demandante);
-//				nuevo.setDemanda(movDemanda);
-//				movDemanda.getDemandantes().add(nuevo);
-//			} else {
-//				// Demandante existente - actualizar
-//				movDemanda.getDemandantes().stream().filter(md -> md.getId().equals(demandante.getId())).findFirst()
-//						.ifPresent(md -> actualizarMovDemandante(md, demandante));
-//			}
-//		}
-//	}
-//
-//	private void actualizarDemandados(MovDemanda movDemanda, Demanda demanda, Session session) {
-//		// Eliminar demandados que ya no están en la demanda actualizada
-//		movDemanda.getDemandados().removeIf(md -> demanda.getDemandados().stream()
-//				.noneMatch(d -> d.getId() != null && d.getId().equals(md.getId())));
-//
-//		// Procesar cada demandado
-//		for (Demandado demandado : demanda.getDemandados()) {
-//			if (demandado.getId() == null) {
-//				// Nuevo demandado
-//				MovDemandado nuevo = mapDemandadoToMovDemandado(demandado);
-//				nuevo.setDemanda(movDemanda);
-//				movDemanda.getDemandados().add(nuevo);
-//			} else {
-//				// Demandado existente - actualizar
-//				movDemanda.getDemandados().stream().filter(md -> md.getId().equals(demandado.getId())).findFirst()
-//						.ifPresent(md -> actualizarMovDemandado(md, demandado));
-//			}
-//		}
-//	}
-//
-//	private void actualizarRelacionLaboral(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
-//		if (demanda.getRelacionLaboral() == null) {
-//			if (movDemanda.getRelacionLaboral() != null) {
-//				// Eliminar relación existente
-//				session.delete(movDemanda.getRelacionLaboral());
-//				movDemanda.setRelacionLaboral(null);
-//			}
-//			return;
-//		}
-//
-//		if (movDemanda.getRelacionLaboral() == null) {
-//			// Nueva relación laboral
-//			MovRelacionLaboral nueva = mapRelacionLaboralToMov(demanda.getRelacionLaboral());
-//			nueva.setDemanda(movDemanda);
-//			movDemanda.setRelacionLaboral(nueva);
-//		} else {
-//			// Actualizar relación existente
-//			actualizarMovRelacionLaboral(movDemanda.getRelacionLaboral(), demanda.getRelacionLaboral());
-//		}
-//	}
-//
-//	// Métodos auxiliares de mapeo
-//
-//	private MovDemandante mapDemandanteToMovDemandante(Demandante demandante) throws Exception {
-//		MovDemandante mov = new MovDemandante();
-//		mov.setCTipoDocumento(demandante.getTipoDocumento());
-//		mov.setXNumDocumento(demandante.getNumeroDocumento());
-//		mov.setXRazonSocial(demandante.getRazonSocial());
-//		mov.setCGenero(demandante.getGenero());
-//		mov.setFNacimiento(ProjectUtils.parseStringToDate(demandante.getFechaNacimiento(),
-//				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setXDepartamento(demandante.getDepartamento());
-//		mov.setXProvincia(demandante.getProvincia());
-//		mov.setXDistrito(demandante.getDistrito());
-//		mov.setCTipoDomicilio(demandante.getTipoDomicilio());
-//		mov.setXDomicilio(demandante.getDomicilio());
-//		mov.setXReferencia(demandante.getReferencia());
-//		mov.setXCorreo(demandante.getCorreo());
-//		mov.setXCelular(demandante.getCelular());
-//		mov.setXCasillaElectronica(demandante.getCasillaElectronica());
-//		mov.setLApoderadoComun("1".equals(demandante.getApoderadoComun()) ? "1" : "0");
-//		mov.setXArchivoUrl(demandante.getArchivoUrl());
-//		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(demandante.getActivo())
-//				? Estado.ACTIVO_NUMERICO.getNombre()
-//				: Estado.INACTIVO_NUMERICO.getNombre());
-//		return mov;
-//	}
-//
-//	private void actualizarMovDemandante(MovDemandante mov, Demandante demandante) {
-//		mov.setCTipoDocumento(demandante.getTipoDocumento());
-//		mov.setXNumDocumento(demandante.getNumeroDocumento());
-//		mov.setXRazonSocial(demandante.getRazonSocial());
-//
-//	}
-//
-//	private MovDemandado mapDemandadoToMovDemandado(Demandado demandado) {
-//		MovDemandado mov = new MovDemandado();
-//		mov.setCTipoDocumento(demandado.getTipoDocumento());
-//		mov.setXNumDocumento(demandado.getNumeroDocumento());
-//		mov.setXRazonSocial(demandado.getRazonSocial());
-//		mov.setXDepartamento(demandado.getDepartamento());
-//		mov.setXProvincia(demandado.getProvincia());
-//		mov.setXDistrito(demandado.getDistrito());
-//		mov.setCTipoDomicilio(demandado.getTipoDomicilio());
-//		mov.setXDomicilio(demandado.getDomicilio());
-//		mov.setXReferencia(demandado.getReferencia());
-//		mov.setActivo(
-//				!Estado.INACTIVO_NUMERICO.getNombre().equals(demandado.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-//						: Estado.INACTIVO_NUMERICO.getNombre());
-//		return mov;
-//	}
-//
-//	private void actualizarMovDemandado(MovDemandado mov, Demandado demandado) {
-//		mov.setCTipoDocumento(demandado.getTipoDocumento());
-//		mov.setXNumDocumento(demandado.getNumeroDocumento());
-//		mov.setXRazonSocial(demandado.getRazonSocial());
-//
-//	}
-//
-//	private MovRelacionLaboral mapRelacionLaboralToMov(RelacionLaboral relacion) throws Exception {
-//		MovRelacionLaboral mov = new MovRelacionLaboral();
-//		mov.setRegimen(relacion.getRegimen());
-//		mov.setFechaInicio(
-//				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setFechaFin(
-//				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setAnios(relacion.getAnios() != null ? relacion.getAnios().intValue() : null);
-//		mov.setMeses(relacion.getMeses() != null ? relacion.getMeses().intValue() : null);
-//		mov.setDias(relacion.getDias() != null ? relacion.getDias().intValue() : null);
-//		mov.setRemuneracion(relacion.getRemuneracion());
-//		mov.setActivo(
-//				!Estado.INACTIVO_NUMERICO.getNombre().equals(relacion.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-//						: Estado.INACTIVO_NUMERICO.getNombre());
-//		return mov;
-//	}
-//
-//	private void actualizarMovRelacionLaboral(MovRelacionLaboral mov, RelacionLaboral relacion) throws Exception {
-//		mov.setRegimen(relacion.getRegimen());
-//		mov.setFechaInicio(
-//				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setFechaFin(
-//				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setAnios(relacion.getAnios() != null ? relacion.getAnios().intValue() : null);
-//		mov.setMeses(relacion.getMeses() != null ? relacion.getMeses().intValue() : null);
-//		mov.setDias(relacion.getDias() != null ? relacion.getDias().intValue() : null);
-//		mov.setRemuneracion(relacion.getRemuneracion());
-//	}
+	@Override
+	public void actualizarDemanda(String cuo, Demanda demanda) throws Exception {
+
+		var session = sf.getCurrentSession();
+
+		// Habilitar filtro por ID
+		session.enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, demanda.getId());
+
+		TypedQuery<MovDemanda> query = sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
+
+		MovDemanda movDemanda = query.getSingleResult();
+
+		// Actualizar datos básicos
+		movDemanda.setSumilla(demanda.getSumilla());
+		movDemanda.setPdfUrl(demanda.getPdfUrl());
+		movDemanda.setActivo(
+				!Estado.INACTIVO_NUMERICO.getNombre().equals(demanda.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+						: Estado.INACTIVO_NUMERICO.getNombre());
+
+		// Actualizar estado si es diferente
+		if (!movDemanda.getEstadoDemanda().getBEstadoDemanda().equals(demanda.getIdEstadoDemanda())) {
+			MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
+			estadoDemanda.setBEstadoDemanda(demanda.getIdEstadoDemanda());
+			movDemanda.setEstadoDemanda(estadoDemanda);
+		}
+
+		// Actualizar tipo presentación solo si es diferente
+		if (!movDemanda.getTipoPresentacion().getBTipoPresentacion().equals(demanda.getIdTipoPresentacion())) {
+			MaeTipoPresentacion tipoPresentacion = new MaeTipoPresentacion();
+			tipoPresentacion.setBTipoPresentacion(demanda.getIdTipoPresentacion());
+			movDemanda.setTipoPresentacion(tipoPresentacion);
+		}
+
+		// Actualizar relaciones
+		actualizarDemandantes(movDemanda, demanda, session);
+		actualizarDemandados(movDemanda, demanda, session);
+		actualizarRelacionLaboral(movDemanda, demanda, session);
+
+		// Actualizar la demanda
+		session.merge(movDemanda);
+
+		// sf.getCurrentSession().merge(movDemanda);
+	}
+
+	private void actualizarDemandantes(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
+		// Eliminar demandantes que ya no están en la demanda actualizada
+		movDemanda.getDemandantes().removeIf(md -> demanda.getDemandantes().stream()
+				.noneMatch(d -> d.getId() != null && d.getId().equals(md.getId())));
+
+		// Procesar cada demandante
+		for (Demandante demandante : demanda.getDemandantes()) {
+			if (demandante.getId() == null) {
+				// Nuevo demandante
+				MovDemandante nuevo = mapDemandanteToMovDemandante(demandante);
+				nuevo.setDemanda(movDemanda);
+				movDemanda.getDemandantes().add(nuevo);
+			} else {
+				// Demandante existente - actualizar
+				movDemanda.getDemandantes().stream().filter(md -> md.getId().equals(demandante.getId())).findFirst()
+						.ifPresent(md -> {
+							try {
+								actualizarMovDemandante(md, demandante);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						});
+			}
+		}
+	}
+
+	private void actualizarDemandados(MovDemanda movDemanda, Demanda demanda, Session session) {
+		// Eliminar demandados que ya no están en la demanda actualizada
+		movDemanda.getDemandados().removeIf(md -> demanda.getDemandados().stream()
+				.noneMatch(d -> d.getId() != null && d.getId().equals(md.getId())));
+
+		// Procesar cada demandado
+		for (Demandado demandado : demanda.getDemandados()) {
+			if (demandado.getId() == null) {
+				// Nuevo demandado
+				MovDemandado nuevo = mapDemandadoToMovDemandado(demandado);
+				nuevo.setDemanda(movDemanda);
+				movDemanda.getDemandados().add(nuevo);
+			} else {
+				// Demandado existente - actualizar
+				movDemanda.getDemandados().stream().filter(md -> md.getId().equals(demandado.getId())).findFirst()
+						.ifPresent(md -> actualizarMovDemandado(md, demandado));
+			}
+		}
+	}
+
+	private void actualizarRelacionLaboral(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
+		if (demanda.getRelacionLaboral() == null) {
+			if (movDemanda.getRelacionLaboral() != null) {
+				// Eliminar relación existente
+				session.delete(movDemanda.getRelacionLaboral());
+				movDemanda.setRelacionLaboral(null);
+			}
+			return;
+		}
+
+		if (movDemanda.getRelacionLaboral() == null) {
+			// Nueva relación laboral
+			MovRelacionLaboral nueva = mapRelacionLaboralToMov(demanda.getRelacionLaboral());
+			nueva.setDemanda(movDemanda);
+			movDemanda.setRelacionLaboral(nueva);
+		} else {
+			// Actualizar relación existente
+			actualizarMovRelacionLaboral(movDemanda.getRelacionLaboral(), demanda.getRelacionLaboral());
+		}
+	}
 
 }

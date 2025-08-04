@@ -29,10 +29,14 @@ public interface GestionDemandaPersistencePort {
      * @return 
 	 * @throws Exception Si la demanda no existe o no está en estado BORRADOR
 	 */
-    //public Demanda actualizarDemanda(String cuo, Demanda demanda) throws Exception;
+    public void actualizarDemanda(String cuo, Demanda demanda) throws Exception;
         
-    List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception;
-
-    
-        
+    /**
+     * Método que permite buscar demandas según el CUO y filtros opcionales
+     * @param cuo
+     * @param filters
+     * @return
+     * @throws Exception
+     */
+    List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception; 
 }
