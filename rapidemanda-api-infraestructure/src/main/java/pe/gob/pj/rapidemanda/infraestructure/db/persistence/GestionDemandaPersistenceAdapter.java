@@ -3,18 +3,12 @@ package pe.gob.pj.rapidemanda.infraestructure.db.persistence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 import jakarta.persistence.TypedQuery;
-import jakarta.transaction.Transactional;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandado;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandante;

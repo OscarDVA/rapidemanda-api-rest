@@ -31,7 +31,4 @@ public interface DemandaMapper {
 
 	@Mapping(target = "NDemanda", ignore = true)
     RelacionLaboral toRelacionLaboral(RelacionLaboralRequest relacionLaboralRequest);
-    
-
-
 }
