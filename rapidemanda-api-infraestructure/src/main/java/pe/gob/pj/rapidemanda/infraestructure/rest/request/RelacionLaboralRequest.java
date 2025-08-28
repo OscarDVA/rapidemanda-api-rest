@@ -1,4 +1,5 @@
 package pe.gob.pj.rapidemanda.infraestructure.rest.request;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -50,4 +51,9 @@ public class RelacionLaboralRequest {
 	    @NotNull(message = "El parámetro remuneracion no puede ser nulo.")
 	    @JsonProperty("remuneracion")
 	    String remuneracion;
+	    
+		@Valid
+		@NotNull(message = "El auditoria es requerido no puede ser null")
+		@JsonProperty("auditoria")
+		AuditoriaRequest auditoria;
 }

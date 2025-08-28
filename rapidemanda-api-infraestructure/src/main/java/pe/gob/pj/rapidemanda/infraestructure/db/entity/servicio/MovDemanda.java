@@ -65,22 +65,21 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 
 	@OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<MovDemandado> demandados;
-//    
-//    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<MovPetitorio> petitorios;
-//    
+    
+    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MovPetitorio> petitorios;
 	
 	@OneToOne(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 	private MovRelacionLaboral relacionLaboral;
-//    
-//    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<MovFundamentacion> fundamentaciones;
-//    
+    
+    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MovFundamentacion> fundamentaciones;
+   
 //    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private List<MovAnexo> anexos;
-//    
-//    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<MovFirma> firmas;
+  
+    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MovFirma> firmas;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "N_USUARIO", referencedColumnName = "N_USUARIO", insertable = true, updatable = true)

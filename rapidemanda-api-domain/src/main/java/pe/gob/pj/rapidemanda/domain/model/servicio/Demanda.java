@@ -29,9 +29,9 @@ public class Demanda implements Serializable {
 
 	List<Demandante> demandantes;
 	List<Demandado> demandados;
-	// List<Petitorio> petitorios;
+	List<Petitorio> petitorios;
 	RelacionLaboral relacionLaboral;
-	// List<Fundamentacion> fundamentaciones;
+	List<Fundamentacion> fundamentaciones;
 	// List<Anexo> anexos;
-	// List<Firma> firmas;
+	List<Firma> firmas;
 }

@@ -8,10 +8,16 @@ import org.mapstruct.MappingConstants;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandado;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandante;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Firma;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Fundamentacion;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Petitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.RelacionLaboral;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.DemandaRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.DemandadoRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.DemandanteRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.FirmaRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.FundamentacionRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.PetitorioRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.RelacionLaboralRequest;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -23,12 +29,27 @@ public interface DemandaMapper {
 
 	List<Demandado> toDemandados(List<DemandadoRequest> demandados);
 	
+	List<Petitorio> toPetitorios(List<PetitorioRequest> petitorios);
+	
+	List<Fundamentacion> toFundamentaciones(List<FundamentacionRequest> fundamentaciones);
+	
+	List<Firma> toFirmas(List<FirmaRequest> firmas);
+	
 	@Mapping(target = "NDemanda", ignore = true)
 	Demandante toDemandante(DemandanteRequest demandanteRequest);
 
 	@Mapping(target = "NDemanda", ignore = true)
 	Demandado toDemandado(DemandadoRequest demandadoRequest);
+	
+	@Mapping(target = "NDemanda", ignore = true)
+	Petitorio toPetitorio(PetitorioRequest petitorioRequest);
 
 	@Mapping(target = "NDemanda", ignore = true)
     RelacionLaboral toRelacionLaboral(RelacionLaboralRequest relacionLaboralRequest);
+	
+	@Mapping(target = "NDemanda", ignore = true)
+	Fundamentacion toFundamentacion(FundamentacionRequest fundamentacionRequest);
+	
+	@Mapping(target = "NDemanda", ignore = true)
+	Firma toFirma(FirmaRequest firmaRequest);
 }

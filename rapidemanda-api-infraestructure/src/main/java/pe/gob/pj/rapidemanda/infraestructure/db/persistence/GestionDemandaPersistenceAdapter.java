@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandado;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandante;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Firma;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Fundamentacion;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Petitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.RelacionLaboral;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDemandaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
@@ -21,6 +24,9 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeTipoPresentac
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemanda;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandado;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandante;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovFirma;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovFundamentacion;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovPetitorio;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovRelacionLaboral;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuario;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Estado;
@@ -64,10 +70,14 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		demanda.setActivo(mov.getActivo());
 		demanda.setDemandantes(mapearDemandantes(mov.getDemandantes()));
 		demanda.setDemandados(mapearDemandados(mov.getDemandados()));
+		demanda.setPetitorios(mapearPetitorios(mov.getPetitorios()));
 
 		if (mov.getRelacionLaboral() != null) {
 			demanda.setRelacionLaboral(mapearRelacionLaboral(mov.getRelacionLaboral()));
 		}
+		demanda.setFundamentaciones(mapearFundamentaciones(mov.getFundamentaciones()));
+		demanda.setFirmas(mapearFirmas(mov.getFirmas()));
+
 		return demanda;
 	}
 
@@ -121,6 +131,27 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		return demandado;
 	}
 
+	private List<Petitorio> mapearPetitorios(List<MovPetitorio> petitorios) {
+		return petitorios.stream().map(this::mapearPetitorio).toList();
+	}
+
+	private Petitorio mapearPetitorio(MovPetitorio p) {
+		var petitorio = new Petitorio();
+		petitorio.setId(p.getId());
+		petitorio.setTipo(p.getCTipo());
+		petitorio.setPretensionPrincipal(p.getXPretensionPrincipal());
+		petitorio.setConcepto(p.getXConcepto());
+		petitorio.setPretensionAccesoria(p.getXPretensionAccesoria());
+		petitorio.setMonto(p.getNMonto());
+		petitorio.setJustificacion(p.getXJustificacion());
+		petitorio.setFechaInicio(
+				ProjectUtils.convertDateToString(p.getFInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		petitorio.setFechaFin(ProjectUtils.convertDateToString(p.getFFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		petitorio.setNDemanda(p.getDemanda() != null ? p.getDemanda().getId() : null);
+		petitorio.setActivo(p.getActivo());
+		return petitorio;
+	}
+
 	private RelacionLaboral mapearRelacionLaboral(MovRelacionLaboral r) {
 		var relacion = new RelacionLaboral();
 		relacion.setId(r.getId());
@@ -133,8 +164,36 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		relacion.setMeses(r.getMeses());
 		relacion.setDias(r.getDias());
 		relacion.setRemuneracion(r.getRemuneracion());
+		relacion.setNDemanda(r.getDemanda() != null ? r.getDemanda().getId() : null);
 		relacion.setActivo(r.getActivo());
 		return relacion;
+	}
+
+	private List<Fundamentacion> mapearFundamentaciones(List<MovFundamentacion> fundamentaciones) {
+		return fundamentaciones.stream().map(this::mapearFundamentaciones).toList();
+	}
+
+	private Fundamentacion mapearFundamentaciones(MovFundamentacion f) {
+		var fundamentacion = new Fundamentacion();
+		fundamentacion.setId(f.getId());
+		fundamentacion.setContenido(f.getXContenido());
+		fundamentacion.setNDemanda(f.getDemanda() != null ? f.getDemanda().getId() : null);
+		fundamentacion.setActivo(f.getActivo());
+		return fundamentacion;
+	}
+
+	private List<Firma> mapearFirmas(List<MovFirma> firmas) {
+		return firmas.stream().map(this::mapearFirmas).toList();
+	}
+
+	private Firma mapearFirmas(MovFirma f) {
+		var firma = new Firma();
+		firma.setId(f.getId());
+		firma.setTipo(f.getCTipo());
+		firma.setArchivoUrl(f.getXArchivoUrl());
+		firma.setNDemanda(f.getDemanda() != null ? f.getDemanda().getId() : null);
+		firma.setActivo(f.getActivo());
+		return firma;
 	}
 
 	@Override
