@@ -17,7 +17,7 @@ public class PetitorioRequest {
 	
 	@NotBlank(message = "El parámetro tipo no puede ser vacío.")
 	@NotNull(message = "El parámetro tipo no puede ser nulo.")
-	@JsonProperty("regimen")
+	@JsonProperty("tipo")
 	String tipo;
 	
 	@NotBlank(message = "El parámetro pretensionPrincipal no puede ser vacío.")

@@ -28,10 +28,7 @@ public class MovFundamentacion extends AuditoriaEntity implements Serializable {
 	@Column(name = "X_CONTENIDO", nullable = false)
 	private String xContenido;
 	
-    @Column(name = "N_DEMANDA", nullable = false, length = 1)
-    private Integer nDemanda;
-
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "N_DEMANDA", referencedColumnName = "N_DEMANDA", insertable = false, updatable = false)
+	@JoinColumn(name = "N_DEMANDA", nullable = false)
 	private MovDemanda demanda;
 }

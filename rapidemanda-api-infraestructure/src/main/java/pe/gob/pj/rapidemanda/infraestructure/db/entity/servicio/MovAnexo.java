@@ -32,11 +32,8 @@ public class MovAnexo extends AuditoriaEntity implements Serializable {
 	    
 	    @Column(name = "X_ARCHIVO_URL")
 	    private String xArchivoUrl;
-	    
-	    @Column(name = "N_DEMANDA", nullable = false, length = 1)
-	    private Integer nDemanda;
-	    
-	    @ManyToOne(fetch = FetchType.LAZY)
-	    @JoinColumn(name = "N_DEMANDA", referencedColumnName = "N_DEMANDA", insertable = false, updatable = false)
-	    private MovDemanda demanda;
+	    	    
+		@ManyToOne(fetch = FetchType.LAZY)
+		@JoinColumn(name = "N_DEMANDA", nullable = false)
+		private MovDemanda demanda;
 }

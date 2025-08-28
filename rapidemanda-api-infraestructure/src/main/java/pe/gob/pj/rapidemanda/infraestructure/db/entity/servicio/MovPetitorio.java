@@ -28,34 +28,30 @@ public class MovPetitorio extends AuditoriaEntity implements Serializable {
     private Integer id;
     
     @Column(name = "C_TIPO", nullable = false)
-    private String cTipo;
+    private String tipo;
     
     @Column(name = "X_PRETENSION_PRINCIPAL", nullable = false)
-    private String xPretensionPrincipal;
+    private String pretensionPrincipal;
         
     @Column(name = "X_CONCEPTO", nullable = false)	
-    private String xConcepto;
+    private String concepto;
     
     @Column(name = "X_PRETENSION_ACCESORIA", nullable = false)
-    private String xPretensionAccesoria;
+    private String pretensionAccesoria;
         
     @Column(name = "N_MONTO", nullable = false)
-    private BigDecimal nMonto;
+    private BigDecimal monto;
     
     @Column(name = "X_JUSTIFICACION", nullable = false)
-    private String xJustificacion;
+    private String justificacion;
     
     @Column(name = "F_INICIO", nullable = false)
-    private Date fInicio;
+    private Date fechaInicio;
     
     @Column(name = "F_FIN", nullable = false)
-    private Date fFin;
+    private Date fechaFin;
     
-    @Column(name = "N_DEMANDA", nullable = false, length = 1)
-    private Integer nDemanda;
-
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "N_DEMANDA", referencedColumnName = "N_DEMANDA", insertable = false, updatable = false)
-    private MovDemanda demanda;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "N_DEMANDA", nullable = false)
+	private MovDemanda demanda;
 }
