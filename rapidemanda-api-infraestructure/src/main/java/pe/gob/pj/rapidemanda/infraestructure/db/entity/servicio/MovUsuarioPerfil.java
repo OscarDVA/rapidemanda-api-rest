@@ -33,11 +33,16 @@ public class MovUsuarioPerfil extends AuditoriaEntity implements Serializable{/*
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_MOV_USUARIO_PERFIL")
 	@Column(name="N_USUARIO_PERFIL", nullable = false)
 	private Integer id;
+	
 	@ManyToOne(optional = false, cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
 	@JoinColumn(name="N_USUARIO")
 	private MovUsuario usuario;
+	
 	@ManyToOne(optional = false, cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
 	@JoinColumn(name="N_PERFIL")
 	private MaePerfil perfil;
+	
+	@Column(name = "L_ACTIVO", nullable = false)
+    private String activo;
 	
 }

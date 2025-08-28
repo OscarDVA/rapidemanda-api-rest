@@ -17,9 +17,12 @@ public class Usuario implements Serializable {
 	 */
 	static final long serialVersionUID = 1L;
 	
+	public static final String P_NOMBRE_USUARIO = "nombreUsuario";
+	
 	Integer idUsuario;
 	String usuario;
 	String clave;
+	String activo;
 	Persona persona = new Persona();
 	List<PerfilUsuario> perfiles = new ArrayList<PerfilUsuario>();
 	

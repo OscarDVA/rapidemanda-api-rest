@@ -19,8 +19,9 @@ public enum Proceso {
 	CATALOGO_CONSULTAR("Consultar Catalogos"),
 	DEMANDA_CONSULTAR("Consultar Demanda"),
 	DEMANDA_REGISTRAR("Registrar Demanda"),
-	DEMANDA_ACTUALIZAR("Actualizar Demanda");
-	
+	DEMANDA_ACTUALIZAR("Actualizar Demanda"),
+	USUARIO_CONSULTAR("Consultar Usuario"),
+	USUARIO_REGISTRAR("Registrar Usuario");
 	String nombre;
 	
 	Proceso(String nombre){
