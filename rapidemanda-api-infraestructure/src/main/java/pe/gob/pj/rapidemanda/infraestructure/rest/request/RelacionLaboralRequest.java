@@ -25,14 +25,10 @@ public class RelacionLaboralRequest {
 	    String regimen;
 	   
 	    @Pattern(regexp = ProjectConstants.Pattern.FECHA, message = "El parámetro fechaInicio tiene un formato no válido(dd/MM/yyyy).")
-	    @NotBlank(message = "El parámetro fechaInicio no puede ser vacío.")
-	    @NotNull(message = "El parámetro fechaInicio no puede ser nulo.")
 	    @JsonProperty("fechaInicio")
 	    String fechaInicio;
 	    
 	    @Pattern(regexp = ProjectConstants.Pattern.FECHA, message = "El parámetro fechaFin tiene un formato no válido(dd/MM/yyyy).")
-	    @NotBlank(message = "El parámetro fechaFin no puede ser vacío.")
-	    @NotNull(message = "El parámetro fechaFin no puede ser nulo.")
 	    @JsonProperty("fechaFin")
 	    String fechaFin;
 	    

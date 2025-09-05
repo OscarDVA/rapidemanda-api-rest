@@ -30,25 +30,25 @@ public class MovRelacionLaboral extends AuditoriaEntity implements Serializable 
     @Column(name = "N_RELACION")
     private Integer id;
     
-    @Column(name = "C_REGIMEN")
+    @Column(name = "C_REGIMEN", nullable = false)
     private String regimen;
     
-    @Column(name = "F_INICIO")
+    @Column(name = "F_INICIO",  nullable = true)
     private Date fechaInicio;
     
-    @Column(name = "F_FIN")
+    @Column(name = "F_FIN",  nullable = true)
     private Date fechaFin;
     
-    @Column(name = "N_ANIOS")
+    @Column(name = "N_ANIOS", nullable = false)
     private Integer anios;
     
-    @Column(name = "N_MESES")
+    @Column(name = "N_MESES", nullable = false)
     private Integer meses;
     
-    @Column(name = "N_DIAS")
+    @Column(name = "N_DIAS", nullable = false)
     private Integer dias;
     
-    @Column(name = " N_REMUNERACION")
+    @Column(name = " N_REMUNERACION", nullable = false)
     private BigDecimal remuneracion;
         
     @ToString.Exclude

@@ -146,7 +146,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		petitorio.setJustificacion(p.getJustificacion());
 		petitorio.setFechaInicio(
 				ProjectUtils.convertDateToString(p.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		petitorio.setFechaFin(ProjectUtils.convertDateToString(p.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		petitorio.setFechaFin(
+				ProjectUtils.convertDateToString(p.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		petitorio.setNDemanda(p.getDemanda() != null ? p.getDemanda().getId() : null);
 		petitorio.setActivo(p.getActivo());
 		return petitorio;
@@ -267,7 +268,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				session.persist(relacion);
 				movDemanda.setRelacionLaboral(relacion);
 			}
-			
+
 			// 6. Registrar fundamentaciones
 			if (demanda.getFundamentaciones() != null && !demanda.getFundamentaciones().isEmpty()) {
 				List<MovFundamentacion> movFundamentaciones = new ArrayList<>();
@@ -365,14 +366,27 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		petitorio.setDemanda(demanda);
 		return petitorio;
 	}
-	
+
 	private MovRelacionLaboral mapRelacionLaboralToEntity(RelacionLaboral r, MovDemanda demanda) throws Exception {
 		MovRelacionLaboral relacion = new MovRelacionLaboral();
 		relacion.setRegimen(r.getRegimen());
-		relacion.setFechaInicio(
-				ProjectUtils.parseStringToDate(r.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		relacion.setFechaFin(
-				ProjectUtils.parseStringToDate(r.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+//		relacion.setFechaInicio(
+//				ProjectUtils.parseStringToDate(r.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+//		relacion.setFechaFin(
+//				ProjectUtils.parseStringToDate(r.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		if (r.getFechaInicio() != null && !r.getFechaInicio().trim().isEmpty()) {
+			relacion.setFechaInicio(
+					ProjectUtils.parseStringToDate(r.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		} else {
+			relacion.setFechaInicio(null);
+		}
+
+		if (r.getFechaFin() != null && !r.getFechaFin().trim().isEmpty()) {
+			relacion.setFechaFin(
+					ProjectUtils.parseStringToDate(r.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		} else {
+			relacion.setFechaFin(null);
+		}
 		relacion.setAnios(r.getAnios());
 		relacion.setMeses(r.getMeses());
 		relacion.setDias(r.getDias());
@@ -383,7 +397,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		relacion.setDemanda(demanda);
 		return relacion;
 	}
-	
+
 	private MovFundamentacion mapFundamentacionToEntity(Fundamentacion f, MovDemanda demanda) {
 		MovFundamentacion fundamentacion = new MovFundamentacion();
 		fundamentacion.setXContenido(f.getContenido());
@@ -393,14 +407,13 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		fundamentacion.setDemanda(demanda);
 		return fundamentacion;
 	}
-	
+
 	private MovFirma mapFirmaToEntity(Firma f, MovDemanda demanda) {
 		MovFirma firma = new MovFirma();
 		firma.setCTipo(f.getTipo());
 		firma.setXArchivoUrl(f.getArchivoUrl());
-		firma.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(f.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
+		firma.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(f.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+				: Estado.INACTIVO_NUMERICO.getNombre());
 		firma.setDemanda(demanda);
 		return firma;
 	}
@@ -445,7 +458,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		actualizarRelacionLaboral(movDemanda, demanda, session);
 		actualizarFundamentaciones(movDemanda, demanda, session);
 		actualizarFirmas(movDemanda, demanda, session);
-		
+
 		// Actualizar la demanda
 		session.merge(movDemanda);
 
@@ -498,7 +511,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			}
 		}
 	}
-	
+
 	private void actualizarPetitorios(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
 		// Eliminar petitorios que ya no están en la demanda actualizada
 		movDemanda.getPetitorios().removeIf(mp -> demanda.getPetitorios().stream()
@@ -525,7 +538,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			}
 		}
 	}
-	
+
 	private void actualizarRelacionLaboral(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
 		if (demanda.getRelacionLaboral() == null) {
 			if (movDemanda.getRelacionLaboral() != null) {
@@ -546,7 +559,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			actualizarMovRelacionLaboral(movDemanda.getRelacionLaboral(), demanda.getRelacionLaboral());
 		}
 	}
-	
+
 	private void actualizarFundamentaciones(MovDemanda movDemanda, Demanda demanda, Session session) {
 		// Eliminar fundamentaciones que ya no están en la demanda actualizada
 		movDemanda.getFundamentaciones().removeIf(mf -> demanda.getFundamentaciones().stream()
@@ -561,16 +574,16 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				movDemanda.getFundamentaciones().add(nueva);
 			} else {
 				// Fundamentación existente - actualizar
-				movDemanda.getFundamentaciones().stream().filter(mf -> mf.getId().equals(fundamentacion.getId())).findFirst()
-						.ifPresent(mf -> actualizarMovFundamentacion(mf, fundamentacion));
+				movDemanda.getFundamentaciones().stream().filter(mf -> mf.getId().equals(fundamentacion.getId()))
+						.findFirst().ifPresent(mf -> actualizarMovFundamentacion(mf, fundamentacion));
 			}
 		}
 	}
-	
+
 	private void actualizarFirmas(MovDemanda movDemanda, Demanda demanda, Session session) {
 		// Eliminar firmas que ya no están en la demanda actualizada
-		movDemanda.getFirmas().removeIf(mf -> demanda.getFirmas().stream()
-				.noneMatch(f -> f.getId() != null && f.getId().equals(mf.getId())));
+		movDemanda.getFirmas().removeIf(
+				mf -> demanda.getFirmas().stream().noneMatch(f -> f.getId() != null && f.getId().equals(mf.getId())));
 
 		// Procesar cada firma
 		for (Firma firma : demanda.getFirmas()) {
@@ -585,8 +598,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 						.ifPresent(mf -> actualizarMovFirma(mf, firma));
 			}
 		}
-	}	
-	
+	}
+
 	private MovDemandante mapDemandanteToMovDemandante(Demandante demandante) throws Exception {
 		var mov = new MovDemandante();
 		mov.setTipoDocumento(demandante.getTipoDocumento());
@@ -679,12 +692,12 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				ProjectUtils.parseStringToDate(petitorio.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		mov.setFechaFin(
 				ProjectUtils.parseStringToDate(petitorio.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(petitorio.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
+		mov.setActivo(
+				!Estado.INACTIVO_NUMERICO.getNombre().equals(petitorio.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+						: Estado.INACTIVO_NUMERICO.getNombre());
 		return mov;
 	}
-	
+
 	private void actualizarMovPetitorio(MovPetitorio mov, Petitorio petitorio) throws Exception {
 		mov.setTipo(petitorio.getTipo());
 		mov.setPretensionPrincipal(petitorio.getPretensionPrincipal());
@@ -696,18 +709,32 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				ProjectUtils.parseStringToDate(petitorio.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		mov.setFechaFin(
 				ProjectUtils.parseStringToDate(petitorio.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(petitorio.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
-	}	
-	
+		mov.setActivo(
+				!Estado.INACTIVO_NUMERICO.getNombre().equals(petitorio.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+						: Estado.INACTIVO_NUMERICO.getNombre());
+	}
+
 	private MovRelacionLaboral mapRelacionLaboralToMov(RelacionLaboral relacion) throws Exception {
 		var mov = new MovRelacionLaboral();
 		mov.setRegimen(relacion.getRegimen());
-		mov.setFechaInicio(
-				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setFechaFin(
-				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+//		mov.setFechaInicio(
+//				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+//		mov.setFechaFin(
+//				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+
+		if (relacion.getFechaInicio() != null && !relacion.getFechaInicio().trim().isEmpty()) {
+			mov.setFechaInicio(
+					ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		} else {
+			mov.setFechaInicio(null);
+		}
+
+		if (relacion.getFechaFin() != null && !relacion.getFechaFin().trim().isEmpty()) {
+			mov.setFechaFin(
+					ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		} else {
+			mov.setFechaFin(null);
+		}
 		mov.setAnios(relacion.getAnios());
 		mov.setMeses(relacion.getMeses());
 		mov.setDias(relacion.getDias());
@@ -720,10 +747,22 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 
 	private void actualizarMovRelacionLaboral(MovRelacionLaboral mov, RelacionLaboral relacion) throws Exception {
 		mov.setRegimen(relacion.getRegimen());
-		mov.setFechaInicio(
-				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setFechaFin(
-				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+//		mov.setFechaInicio(
+//				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+//		mov.setFechaFin(
+//				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		if (relacion.getFechaInicio() != null && !relacion.getFechaInicio().trim().isEmpty()) {
+			mov.setFechaInicio(
+					ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		} else {
+			mov.setFechaInicio(null);
+		}
+		if (relacion.getFechaFin() != null && !relacion.getFechaFin().trim().isEmpty()) {
+			mov.setFechaFin(
+					ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		} else {
+			mov.setFechaFin(null);
+		}
 		mov.setAnios(relacion.getAnios());
 		mov.setMeses(relacion.getMeses());
 		mov.setDias(relacion.getDias());
@@ -732,7 +771,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				!Estado.INACTIVO_NUMERICO.getNombre().equals(relacion.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
 						: Estado.INACTIVO_NUMERICO.getNombre());
 	}
-	
+
 	private MovFundamentacion mapFundamentacionToMov(Fundamentacion fundamentacion) {
 		var mov = new MovFundamentacion();
 		mov.setXContenido(fundamentacion.getContenido());
@@ -741,29 +780,29 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				: Estado.INACTIVO_NUMERICO.getNombre());
 		return mov;
 	}
-	
+
 	private void actualizarMovFundamentacion(MovFundamentacion mov, Fundamentacion fundamentacion) {
 		mov.setXContenido(fundamentacion.getContenido());
 		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(fundamentacion.getActivo())
 				? Estado.ACTIVO_NUMERICO.getNombre()
 				: Estado.INACTIVO_NUMERICO.getNombre());
 	}
-	
+
 	private MovFirma mapFirmaToMov(Firma firma) {
 		var mov = new MovFirma();
 		mov.setCTipo(firma.getTipo());
 		mov.setXArchivoUrl(firma.getArchivoUrl());
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(firma.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
+		mov.setActivo(
+				!Estado.INACTIVO_NUMERICO.getNombre().equals(firma.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+						: Estado.INACTIVO_NUMERICO.getNombre());
 		return mov;
 	}
-	
+
 	private void actualizarMovFirma(MovFirma mov, Firma firma) {
 		mov.setCTipo(firma.getTipo());
 		mov.setXArchivoUrl(firma.getArchivoUrl());
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(firma.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
+		mov.setActivo(
+				!Estado.INACTIVO_NUMERICO.getNombre().equals(firma.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+						: Estado.INACTIVO_NUMERICO.getNombre());
 	}
 }
