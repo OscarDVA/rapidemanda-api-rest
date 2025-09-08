@@ -1,6 +1,7 @@
 package pe.gob.pj.rapidemanda.infraestructure.security;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -90,7 +91,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
 		String urlReq = request.getRequestURI();
 		String metodo = request.getMethod();
-		if(metodo.equalsIgnoreCase(ProjectConstants.METHOD_CORTA_ULTIMA_BARRA_INVERTIDA)) {
+		if(Arrays.stream(ProjectConstants.METHOD_CORTA_ULTIMA_BARRA_INVERTIDA).anyMatch(method -> method.equalsIgnoreCase(metodo))) {
 			urlReq = urlReq.substring(0, urlReq.lastIndexOf("/"));//corta el id que se manda en la url
 		}
 		String token = request.getHeader(SecurityConstants.TOKEN_HEADER);

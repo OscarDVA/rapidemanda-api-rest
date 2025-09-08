@@ -21,8 +21,9 @@ import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPersonaUseCasePort;
 public class GestionPersonaUseCaseAdapter implements GestionPersonaUseCasePort {
 
 	final GestionPersonaPersistencePort gestionPersonaPersistencePort;
-	
-	public GestionPersonaUseCaseAdapter(@Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort) {
+
+	public GestionPersonaUseCaseAdapter(
+			@Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort) {
 		this.gestionPersonaPersistencePort = gestionPersonaPersistencePort;
 	}
 
@@ -44,9 +45,9 @@ public class GestionPersonaUseCaseAdapter implements GestionPersonaUseCasePort {
 	public void registrarPersona(String cuo, Persona persona) throws Exception {
 		Map<String, Object> filters = new HashMap<String, Object>();
 		filters.put(Persona.P_NUMERO_DOCUMENTO, persona.getNumeroDocumento());
-		if(!gestionPersonaPersistencePort.buscarPersona(cuo, filters).isEmpty()) {
-			throw new ErrorException(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getCodigo(), 
-					String.format(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getNombre(), Proceso.PERSONA_REGISTRAR.getNombre()));
+		if (!gestionPersonaPersistencePort.buscarPersona(cuo, filters).isEmpty()) {
+			throw new ErrorException(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getCodigo(), String
+					.format(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getNombre(), Proceso.PERSONA_REGISTRAR.getNombre()));
 		}
 		gestionPersonaPersistencePort.registrarPersona(cuo, persona);
 	}
@@ -56,6 +57,18 @@ public class GestionPersonaUseCaseAdapter implements GestionPersonaUseCasePort {
 			Exception.class, SQLException.class })
 	public void actualizarPersona(String cuo, Persona persona) throws Exception {
 		gestionPersonaPersistencePort.actualizarPersona(cuo, persona);
+	}
+
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void cambiarEstadoPersona(String cuo, Integer idPersona, String nuevoEstado) throws Exception {
+		// Validaciones de negocio específicas
+		if (!"0".equals(nuevoEstado) && !"1".equals(nuevoEstado)) {
+			throw new ErrorException(Errors.NEGOCIO_ESTADO_INVALIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_ESTADO_INVALIDO.getNombre(), Proceso.PERSONA_ACTUALIZAR.getNombre()));
+		}
+		gestionPersonaPersistencePort.actualizarEstadoPersona(cuo, idPersona, nuevoEstado);
 	}
 
 }

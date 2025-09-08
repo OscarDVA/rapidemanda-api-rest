@@ -39,4 +39,15 @@ public interface GestionPersonaPersistencePort {
 	 */
 	public void actualizarPersona(String cuo, Persona persona) throws Exception;
 
+	/**
+	 * 
+	 * Método que permite actualizar únicamente el estado activo de una persona
+	 * 
+	 * @param cuo Código unico de operación
+	 * @param idPersona Identificador de la persona
+	 * @param nuevoEstado Nuevo estado activo ("0" o "1")
+	 * @throws Exception
+	 */
+	public void actualizarEstadoPersona(String cuo, Integer idPersona, String nuevoEstado) throws Exception;
+
 }

@@ -40,4 +40,16 @@ public interface GestionPersonaUseCasePort {
 	 */
 	public void actualizarPersona(String cuo, Persona persona) throws Exception;
 
+	/**
+	 * 
+	 * Método que permite cambiar el estado activo de una persona específica
+	 * aplicando reglas propias del negocio
+	 * 
+	 * @param cuo Código unico de operación
+	 * @param idPersona Identificador de la persona
+	 * @param nuevoEstado Nuevo estado activo ("0" o "1")
+	 * @throws Exception
+	 */
+	public void cambiarEstadoPersona(String cuo, Integer idPersona, String nuevoEstado) throws Exception;
+
 }

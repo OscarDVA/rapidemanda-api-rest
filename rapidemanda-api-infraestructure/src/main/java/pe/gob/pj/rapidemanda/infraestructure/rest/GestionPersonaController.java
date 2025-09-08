@@ -23,7 +23,6 @@ import pe.gob.pj.rapidemanda.domain.model.auditoriageneral.AuditoriaAplicativos;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
 import pe.gob.pj.rapidemanda.domain.port.usecase.AuditoriaGeneralUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPersonaUseCasePort;
-import pe.gob.pj.rapidemanda.infraestructure.client.servicioconsumir.services.TestClient;
 import pe.gob.pj.rapidemanda.infraestructure.enums.FormatoRespuesta;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.AuditoriaGeneralMapper;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.PersonaMapper;
@@ -42,7 +41,7 @@ public class GestionPersonaController implements GestionPersona, Serializable {
 
 //	@Qualifier("sunarpClient")
 //	final TestClient clientSunarp;
-	
+
 	@Qualifier("gestionPersonaUseCasePort")
 	final GestionPersonaUseCasePort gestionPersonaUseCasePort;
 	final AuditoriaGeneralUseCasePort auditoriaGeneralUseCasePort;
@@ -51,10 +50,10 @@ public class GestionPersonaController implements GestionPersona, Serializable {
 
 	@Override
 	public ResponseEntity<GlobalResponse> consultarPersonas(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip,String formatoRespuesta, String numeroDocumento) {
+			String params, String herramienta, String ip, String formatoRespuesta, String numeroDocumento) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
-		
+
 		try {
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
@@ -65,14 +64,15 @@ public class GestionPersonaController implements GestionPersona, Serializable {
 			handleException(cuo, e, res);
 		} catch (Exception e) {
 			handleException(cuo,
-					new ErrorException(
-							Errors.ERROR_INESPERADO.getCodigo(), 
-							String.format(Errors.ERROR_INESPERADO.getNombre(),Proceso.PERSONA_CONSULTAR.getNombre()),
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.PERSONA_CONSULTAR.getNombre()),
 							e.getMessage(), e.getCause()),
 					res);
 		}
 		HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(formatoRespuesta) ? MediaType.APPLICATION_XML_VALUE : MediaType.APPLICATION_JSON_VALUE));
+		headers.setContentType(MediaType.parseMediaType(
+				FormatoRespuesta.XML.getNombre().equalsIgnoreCase(formatoRespuesta) ? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 
@@ -100,14 +100,16 @@ public class GestionPersonaController implements GestionPersona, Serializable {
 			handleException(cuo, e, res);
 		} catch (Exception e) {
 			handleException(cuo,
-					new ErrorException(
-							Errors.ERROR_INESPERADO.getCodigo(), 
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
 							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.PERSONA_REGISTRAR.getNombre()),
 							e.getMessage(), e.getCause()),
 					res);
 		}
 		HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta()) ? MediaType.APPLICATION_XML_VALUE : MediaType.APPLICATION_JSON_VALUE));
+		headers.setContentType(MediaType
+				.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+						? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 
@@ -127,14 +129,43 @@ public class GestionPersonaController implements GestionPersona, Serializable {
 			handleException(cuo, e, res);
 		} catch (Exception e) {
 			handleException(cuo,
-					new ErrorException(
-							Errors.ERROR_INESPERADO.getCodigo(), 
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
 							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.PERSONA_ACTUALIZAR.getNombre()),
 							e.getMessage(), e.getCause()),
 					res);
 		}
 		HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta()) ? MediaType.APPLICATION_XML_VALUE : MediaType.APPLICATION_JSON_VALUE));
+		headers.setContentType(MediaType
+				.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+						? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> cambiarEstadoPersona(String cuo, String ips, String usuauth, String uri,
+			String params, String herramienta, String ip, Integer id, String activo) {
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			gestionPersonaUseCasePort.cambiarEstadoPersona(cuo, id, activo);
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion("Estado actualizado correctamente");
+			// Agregar información a la respuesta
+			Map<String, Object> data = new HashMap<>();
+			data.put("estado", activo);
+			res.setData(data);
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.PERSONA_ACTUALIZAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(MediaType.APPLICATION_JSON_VALUE));
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 }

@@ -94,5 +94,21 @@ public class GestionPersonaPersistenceAdapter implements GestionPersonaPersisten
 		movPersona.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(persona.getActivo())?Estado.ACTIVO_NUMERICO.getNombre() : Estado.INACTIVO_NUMERICO.getNombre());
 		this.sf.getCurrentSession().merge(movPersona);
 	}
+	
+
+	@Override
+	public void actualizarEstadoPersona(String cuo, Integer idPersona, String nuevoEstado) throws Exception {
+	    this.sf.getCurrentSession().enableFilter(MovPersona.F_ID)
+	        .setParameter(MovPersona.P_ID, idPersona);
+	    TypedQuery<MovPersona> query = this.sf.getCurrentSession().createNamedQuery(MovPersona.Q_ALL, MovPersona.class);
+	    MovPersona movPersona = query.getSingleResult();
+	    
+	    // Solo actualizar el campo específico
+	    movPersona.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(nuevoEstado) 
+	        ? Estado.ACTIVO_NUMERICO.getNombre() 
+	        : Estado.INACTIVO_NUMERICO.getNombre());
+	    
+	    this.sf.getCurrentSession().merge(movPersona);
+	}
 
 }

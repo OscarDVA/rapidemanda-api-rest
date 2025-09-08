@@ -24,7 +24,8 @@ public enum Proceso {
 	USUARIO_REGISTRAR("Registrar Usuario"),
 	DEPARTAMENTO_CONSULTAR("Consultar Departamento"),
 	PROVINCIA_CONSULTAR("Consultar Provincia"),
-	DISTRITO_CONSULTAR("Consultar Distrito");
+	DISTRITO_CONSULTAR("Consultar Distrito"),
+	ESTADO_ACTUALIZAR("Actualizar Estado");
 	String nombre;
 	
 	Proceso(String nombre){
