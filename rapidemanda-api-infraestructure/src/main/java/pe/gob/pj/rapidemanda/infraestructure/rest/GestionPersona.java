@@ -134,5 +134,4 @@ public interface GestionPersona extends Base{
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
 			@PathVariable(name = "id") Integer id,
 			@RequestParam(name = "activo") String activo);
-
 }
