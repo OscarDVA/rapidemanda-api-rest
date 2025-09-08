@@ -6,6 +6,7 @@ import org.hibernate.validator.constraints.Length;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,9 +23,8 @@ import pe.gob.pj.rapidemanda.infraestructure.rest.request.PersonaRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
 @RestController
-@RequestMapping(value = "personas", produces = {
-		MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
-public interface GestionPersona extends Base{
+@RequestMapping(value = "personas", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+public interface GestionPersona extends Base {
 
 	/***
 	 * 
@@ -51,9 +51,7 @@ public interface GestionPersona extends Base{
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
 			@RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta,
-			@Length(min=8, max=8, message = "El parámetro numero_documento tiene un tamaño no valido [min1,max=1].")
-			@Pattern(regexp = ProjectConstants.Pattern.NUMBER, message = "El parámetro numero_documento solo permite valores numéricos.")
-			@RequestParam(name = "numero_documento", required = false) String numeroDocumento);
+			@Length(min = 8, max = 8, message = "El parámetro numero_documento tiene un tamaño no valido [min1,max=1].") @Pattern(regexp = ProjectConstants.Pattern.NUMBER, message = "El parámetro numero_documento solo permite valores numéricos.") @RequestParam(name = "numero_documento", required = false) String numeroDocumento);
 
 	/***
 	 * 
@@ -69,7 +67,7 @@ public interface GestionPersona extends Base{
 	 * @param persona
 	 * @return
 	 */
-	@PostMapping(value="crear")
+	@PostMapping(value = "crear")
 	public ResponseEntity<GlobalResponse> registrarPersona(
 			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
 			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
@@ -95,7 +93,7 @@ public interface GestionPersona extends Base{
 	 * @param persona
 	 * @return
 	 */
-	@PutMapping(value="actualizar/{id}")
+	@PutMapping(value = "actualizar/{id}")
 	public ResponseEntity<GlobalResponse> actualizarPersona(
 			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
 			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
@@ -103,11 +101,9 @@ public interface GestionPersona extends Base{
 			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
 			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-			@PathVariable(name = "id") Integer id,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@Validated @RequestBody PersonaRequest persona);
-	
-	
+
 	/***
 	 * 
 	 * PATCH /personas/{id}/estado : Cambiar estado activo de una persona
@@ -123,7 +119,7 @@ public interface GestionPersona extends Base{
 	 * @param activo
 	 * @return
 	 */
-	@PatchMapping(value="/actualizar/estado/{id}")
+	@PatchMapping(value = "actualizar/estado/{id}")
 	public ResponseEntity<GlobalResponse> cambiarEstadoPersona(
 			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
 			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
@@ -131,7 +127,6 @@ public interface GestionPersona extends Base{
 			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
 			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-			@PathVariable(name = "id") Integer id,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@RequestParam(name = "activo") String activo);
 }
