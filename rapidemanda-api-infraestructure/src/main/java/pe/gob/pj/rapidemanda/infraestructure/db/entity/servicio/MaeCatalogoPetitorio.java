@@ -1,7 +1,6 @@
 package pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio;
 
 import java.io.Serializable;
-import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -21,15 +20,11 @@ public class MaeCatalogoPetitorio extends AuditoriaEntity implements Serializabl
     public static final String Q_ALL = "MaeCatalogoPetitorio.q.all";
 	
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "N_PETITORIO")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "N_PETITORIO", nullable = false)
     private Integer id;
     
     @Column(name = "X_NOMBRE", nullable = false)
     private String nombre;
     
-    
-    @OneToMany(mappedBy = "petitorio", fetch = FetchType.LAZY)
-    private List<MaeCatalogoPretension> pretensiones;
-
 }

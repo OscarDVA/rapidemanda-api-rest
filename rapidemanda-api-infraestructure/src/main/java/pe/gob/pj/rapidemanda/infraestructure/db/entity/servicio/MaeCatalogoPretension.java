@@ -1,7 +1,10 @@
 package pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio;
 
 import java.io.Serializable;
-import java.util.List;
+
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -14,11 +17,17 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 @Entity
 @Table(name = "MAE_CATALOGO_PRETENSION", schema = ProjectConstants.Esquema.RAPIDEMANDA)
 @NamedQuery(name = MaeCatalogoPretension.Q_ALL, query = "SELECT mcp FROM MaeCatalogoPretension mcp")
+
+@FilterDef(name = MaeCatalogoPretension.F_PETITORIO_FILTER, parameters = @ParamDef(name = MaeCatalogoPretension.P_PETITORIO_ID, type = Integer.class))
+@Filter(name = MaeCatalogoPretension.F_PETITORIO_FILTER, condition = "N_PETITORIO = :" + MaeCatalogoPretension.P_PETITORIO_ID)
+
 public class MaeCatalogoPretension extends AuditoriaEntity implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
 	public static final String Q_ALL = "MaeCatalogoPretension.q.all";
+	public static final String F_PETITORIO_FILTER = "MaeCatalogoPretension.f.petitorioFilter";
+	public static final String P_PETITORIO_ID = "petitorioId";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,9 +44,4 @@ public class MaeCatalogoPretension extends AuditoriaEntity implements Serializab
 	@JoinColumn(name = "N_PETITORIO", nullable = false)
 	private MaeCatalogoPetitorio petitorio;
 
-	@OneToMany(mappedBy = "pretension", fetch = FetchType.LAZY)
-	private List<MaeCatalogoConcepto> conceptos;
-
-	@OneToMany(mappedBy = "pretension", fetch = FetchType.LAZY)
-	private List<MaeCatalogoAccesorio> accesorios;
 }

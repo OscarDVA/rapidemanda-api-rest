@@ -6,6 +6,6 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPetitorio;
 
 
 
-public interface  GestionCatalogoPersistencePort {
-	 List<CatalogoPetitorio> buscarCatalogo(String cuo) throws Exception;
+public interface  GestionPetitorioPersistencePort {
+	 List<CatalogoPetitorio> buscarPetitorio(String cuo) throws Exception;
 }
