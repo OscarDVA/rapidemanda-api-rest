@@ -21,10 +21,12 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 @FilterDef(name = MaeCatalogoAccesorio.F_PRETENSION_PRINCIPAL_FILTER, parameters = @ParamDef(name = MaeCatalogoAccesorio.P_PRETENSION_PRINCIPAL_ID, type = Integer.class))
 @FilterDef(name = MaeCatalogoAccesorio.F_CONCEPTO_FILTER, parameters = @ParamDef(name = MaeCatalogoAccesorio.P_CONCEPTO_ID, type = Integer.class))
 
-@Filter(name = MaeCatalogoAccesorio.F_PRETENSION_PRINCIPAL_FILTER, condition = "N_PRETENSION = :"
-		+ MaeCatalogoAccesorio.P_PRETENSION_PRINCIPAL_ID)
-@Filter(name = MaeCatalogoAccesorio.F_CONCEPTO_FILTER, condition = "N_CONCEPTO = :"
-		+ MaeCatalogoAccesorio.P_CONCEPTO_ID)
+@Filter(name = MaeCatalogoAccesorio.F_PRETENSION_PRINCIPAL_FILTER, condition = "(N_PRETENSION = :"
+		+ MaeCatalogoAccesorio.P_PRETENSION_PRINCIPAL_ID + " OR (N_PRETENSION IS NULL AND :"
+		+ MaeCatalogoAccesorio.P_PRETENSION_PRINCIPAL_ID + " = -1))")
+@Filter(name = MaeCatalogoAccesorio.F_CONCEPTO_FILTER, condition = "(N_CONCEPTO = :"
+		+ MaeCatalogoAccesorio.P_CONCEPTO_ID + " OR (N_CONCEPTO IS NULL AND :"
+		+ MaeCatalogoAccesorio.P_CONCEPTO_ID + " = -1))")
 
 public class MaeCatalogoAccesorio extends AuditoriaEntity implements Serializable {
 
@@ -47,10 +49,10 @@ public class MaeCatalogoAccesorio extends AuditoriaEntity implements Serializabl
 	private String nombre;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "N_CONCEPTO", nullable = false)
+	@JoinColumn(name = "N_CONCEPTO", nullable = true)
 	private MaeCatalogoConcepto concepto;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "N_PRETENSION", nullable = false)
+	@JoinColumn(name = "N_PRETENSION", nullable = true)
 	private MaeCatalogoPretension pretension;
 }

@@ -27,15 +27,18 @@ public class GestionCatalogoPretensionAccesoriaPersistenceAdapter implements Ges
 
 		List<CatalogoPretensionAccesoria> lista = new ArrayList<>();
 
+		// Filtro por concepto: si es -1, busca registros sin concepto (N_CONCEPTO IS NULL)
 		if (!ProjectUtils.isNullOrEmpty(filters.get(CatalogoPretensionAccesoria.P_CONCEPTO_ID))) {
+            Integer conceptoId = (Integer) filters.get(CatalogoPretensionAccesoria.P_CONCEPTO_ID);
             this.sf.getCurrentSession().enableFilter(MaeCatalogoAccesorio.F_CONCEPTO_FILTER).setParameter(
-                    MaeCatalogoAccesorio.P_CONCEPTO_ID, filters.get(CatalogoPretensionAccesoria.P_CONCEPTO_ID));
+                    MaeCatalogoAccesorio.P_CONCEPTO_ID, conceptoId);
         }
 
+        // Filtro por pretensión principal: si es -1, busca registros sin pretensión (N_PRETENSION IS NULL)
         if (!ProjectUtils.isNullOrEmpty(filters.get(CatalogoPretensionAccesoria.P_PRETENSION_PRINCIPAL_ID))) {
+            Integer pretensionId = (Integer) filters.get(CatalogoPretensionAccesoria.P_PRETENSION_PRINCIPAL_ID);
             this.sf.getCurrentSession().enableFilter(MaeCatalogoAccesorio.F_PRETENSION_PRINCIPAL_FILTER).setParameter(
-                    MaeCatalogoAccesorio.P_PRETENSION_PRINCIPAL_ID,
-                    filters.get(CatalogoPretensionAccesoria.P_PRETENSION_PRINCIPAL_ID));
+                    MaeCatalogoAccesorio.P_PRETENSION_PRINCIPAL_ID, pretensionId);
         }
 
 		TypedQuery<MaeCatalogoAccesorio> query = this.sf.getCurrentSession()
