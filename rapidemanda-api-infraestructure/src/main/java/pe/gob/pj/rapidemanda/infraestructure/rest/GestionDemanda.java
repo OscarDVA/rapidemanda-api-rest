@@ -44,8 +44,10 @@ public interface GestionDemanda extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
 			@RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta,
-			@RequestParam(name = "id", required = false) Integer id);
-	
+			@RequestParam(name = "id", required = false) Integer id,
+			@RequestParam(name = "idEstadoDemanda", required = false) String bEstadoId,
+			@RequestParam(name = "idUsuario", required = false) Integer idUsuario);
+
 	/***
 	 * 
 	 * POST /demanda/crear : Crear demanda en base a los datos enviados
@@ -68,8 +70,7 @@ public interface GestionDemanda extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
 			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-			@RequestBody DemandaRequest demanda);
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @RequestBody DemandaRequest demanda);
 
 	/**
 	 * PUT /demanda/actualizar : Actualizar demanda en base al id
@@ -84,7 +85,7 @@ public interface GestionDemanda extends Base {
 	 * @param demanda
 	 * @return
 	 */
-	@PutMapping(value="actualizar/{id}")
+	@PutMapping(value = "actualizar/{id}")
 	public ResponseEntity<GlobalResponse> actualizarDemanda(
 			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
 			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
@@ -92,7 +93,6 @@ public interface GestionDemanda extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
 			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-			@PathVariable(name = "id") Integer id,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@Validated @RequestBody DemandaRequest demanda);
 }

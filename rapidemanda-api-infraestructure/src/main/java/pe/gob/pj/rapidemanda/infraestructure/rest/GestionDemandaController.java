@@ -43,17 +43,26 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 
 	@Override
 	public ResponseEntity<GlobalResponse> consultarDemandas(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip, String formatoRespuesta, Integer id) {
+			String params, String herramienta, String ip, String formatoRespuesta, Integer id, String bEstadoId, Integer idUsuario) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
 
 		try {
+			
+			Map<String, Object> filters = new HashMap<String, Object>();
+			
+			if (id != null) {
+				filters.put(Demanda.P_ID, id);
+			}
+			if (bEstadoId != null && !bEstadoId.trim().isEmpty()) {
+				filters.put(Demanda.P_ESTADO_ID, bEstadoId);
+			}
+			if (idUsuario != null) {
+				filters.put(Demanda.P_USUARIO, idUsuario);
+			}
+			
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
-
-			Map<String, Object> filters = new HashMap<String, Object>();
-			filters.put(Demanda.P_ID, id);
-
 			res.setData(gestionDemandaUseCasePort.buscarDemandas(cuo, filters));
 		} catch (ErrorException e) {
 			handleException(cuo, e, res);

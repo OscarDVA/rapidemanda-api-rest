@@ -51,7 +51,7 @@ public interface GestionUsuario extends Base{
 
 	/***
 	 * 
-	 * POST /personas/crear : Crear usuario en base a los datos enviados
+	 * POST /usuarios/registrar : Crear usuario registrado desde la web
 	 * 
 	 * @param cuo
 	 * @param ips
@@ -63,7 +63,7 @@ public interface GestionUsuario extends Base{
 	 * @param usuario
 	 * @return
 	 */
-	@PostMapping(value="crear")
+	@PostMapping(value="registrar")
 	public ResponseEntity<GlobalResponse> registrarUsuario(
 			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
 			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,

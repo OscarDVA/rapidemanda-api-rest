@@ -41,9 +41,19 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 	@Override
 	public List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception {
 
-		var idFilter = filters.get(Demanda.P_ID);
-		if (!ProjectUtils.isNullOrEmpty(idFilter)) {
-			sf.getCurrentSession().enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, idFilter);
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ID))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID,
+					filters.get(Demanda.P_ID));
+		}
+
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_ID))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA).setParameter(MovDemanda.P_ESTADO_DEMANDA,
+					filters.get(Demanda.P_ESTADO_ID));
+		}
+		
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_USUARIO))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_USUARIO).setParameter(MovDemanda.P_USUARIO,
+					filters.get(Demanda.P_USUARIO));
 		}
 
 		TypedQuery<MovDemanda> query = this.sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
@@ -723,8 +733,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 //				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 
 		if (relacion.getFechaInicio() != null && !relacion.getFechaInicio().trim().isEmpty()) {
-			mov.setFechaInicio(
-					ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+			mov.setFechaInicio(ProjectUtils.parseStringToDate(relacion.getFechaInicio(),
+					ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		} else {
 			mov.setFechaInicio(null);
 		}
@@ -752,8 +762,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 //		mov.setFechaFin(
 //				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		if (relacion.getFechaInicio() != null && !relacion.getFechaInicio().trim().isEmpty()) {
-			mov.setFechaInicio(
-					ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+			mov.setFechaInicio(ProjectUtils.parseStringToDate(relacion.getFechaInicio(),
+					ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		} else {
 			mov.setFechaInicio(null);
 		}

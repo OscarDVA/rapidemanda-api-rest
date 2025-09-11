@@ -13,7 +13,7 @@ public class Demanda implements Serializable {
 	static final long serialVersionUID = 1L;
 	
 	public static final String P_ID = "idDemanda";
-	public static final String P_ESTADO = "estadoDemanda";
+	public static final String P_ESTADO_ID = "idEstadoDemanda";
 	public static final String P_USUARIO = "usuarioDemanda";
 
 	Integer id;
