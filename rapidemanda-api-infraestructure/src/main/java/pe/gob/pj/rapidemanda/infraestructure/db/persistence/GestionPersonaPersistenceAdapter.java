@@ -30,6 +30,10 @@ public class GestionPersonaPersistenceAdapter implements GestionPersonaPersisten
 	public List<Persona> buscarPersona(String cuo, Map<String, Object> filters) throws Exception {
 		List<Persona> lista = new ArrayList<>();
 		
+		// Limpiar filtros previos
+		this.sf.getCurrentSession().disableFilter(MovPersona.F_DOCUMENTO_IDENTIDAD);
+		this.sf.getCurrentSession().disableFilter(MovPersona.F_CORREO);
+		
 		if(!ProjectUtils.isNullOrEmpty(filters.get(Persona.P_NUMERO_DOCUMENTO))) {
 			this.sf.getCurrentSession().enableFilter(MovPersona.F_DOCUMENTO_IDENTIDAD)
 				.setParameter(MovPersona.P_DOCUMENTO_IDENTIDAD, filters.get(Persona.P_NUMERO_DOCUMENTO));

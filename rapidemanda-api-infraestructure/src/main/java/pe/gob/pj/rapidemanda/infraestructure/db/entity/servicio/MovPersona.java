@@ -49,7 +49,7 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 		@Filter(name=MovPersona.F_DOCUMENTO_IDENTIDAD, condition = "X_DOCUMENTO_IDENTIDAD=:"+MovPersona.P_DOCUMENTO_IDENTIDAD),
 		@Filter(name=MovPersona.F_PRIMER_APELLIDO, condition = "X_PRIMER_APELLIDO=:"+MovPersona.P_PRIMER_APELLIDO),
 		@Filter(name=MovPersona.F_SEGUNDO_APELLIDO, condition = "X_SEGUNDO_APELLIDO=:"+MovPersona.P_SEGUNDO_APELLIDO),
-		@Filter(name=MovPersona.F_CORREO, condition = "X_CORREO=:"+MovPersona.P_CORREO)
+		@Filter(name=MovPersona.F_CORREO, condition = "X_CORREO=:"+MovPersona.P_CORREO+" AND X_CORREO IS NOT NULL")
 })
 public class MovPersona extends AuditoriaEntity implements Serializable {/**
 	 * 

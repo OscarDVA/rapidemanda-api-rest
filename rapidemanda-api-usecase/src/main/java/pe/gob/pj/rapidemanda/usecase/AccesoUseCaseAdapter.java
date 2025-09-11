@@ -99,7 +99,7 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 			Map<String, Object> filtersCorreo = new HashMap<>();
 			filtersCorreo.put(Persona.P_CORREO, correo);
 			
-			List<Persona> personasC = gestionPersonaPersistencePort.buscarPersona(cuo, filters);
+			List<Persona> personasC = gestionPersonaPersistencePort.buscarPersona(cuo, filtersCorreo);
 			if (!personasC.isEmpty()) {
 				throw new ErrorException(Errors.NEGOCIO_CORREO_YA_REGISTRADO.getCodigo(),
 						String.format(Errors.NEGOCIO_CORREO_YA_REGISTRADO.getNombre(), correo));
