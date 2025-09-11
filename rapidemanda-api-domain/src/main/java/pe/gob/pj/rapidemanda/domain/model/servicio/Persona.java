@@ -13,6 +13,7 @@ public class Persona implements Serializable{
 	static final long serialVersionUID = 1L;
 	
 	public static final String P_NUMERO_DOCUMENTO = "numeroDocumentoPersona";
+	public static final String P_CORREO = "correoPersona";
 	
 	Integer id;
 	String numeroDocumento;

@@ -40,14 +40,16 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 		@FilterDef(name=MovPersona.F_TIPO_DOCUMENTO, parameters = {@ParamDef(name=MovPersona.P_TIPO_DOCUMENTO, type=String.class)}),
 		@FilterDef(name=MovPersona.F_DOCUMENTO_IDENTIDAD, parameters = {@ParamDef(name=MovPersona.P_DOCUMENTO_IDENTIDAD, type=String.class)}),
 		@FilterDef(name=MovPersona.F_PRIMER_APELLIDO, parameters = {@ParamDef(name=MovPersona.P_PRIMER_APELLIDO, type=String.class)}),
-		@FilterDef(name=MovPersona.F_SEGUNDO_APELLIDO, parameters = {@ParamDef(name=MovPersona.P_SEGUNDO_APELLIDO, type=String.class)})
+		@FilterDef(name=MovPersona.F_SEGUNDO_APELLIDO, parameters = {@ParamDef(name=MovPersona.P_SEGUNDO_APELLIDO, type=String.class)}),
+		@FilterDef(name=MovPersona.F_CORREO, parameters = {@ParamDef(name=MovPersona.P_CORREO, type=String.class)})
 })
 @Filters(value= {
 		@Filter(name=MovPersona.F_ID, condition = "N_PERSONA=:"+MovPersona.P_ID),
 		@Filter(name=MovPersona.F_TIPO_DOCUMENTO, condition = "B_TIPO_DOCUMENTO_PERSONA=:"+MovPersona.P_TIPO_DOCUMENTO),
 		@Filter(name=MovPersona.F_DOCUMENTO_IDENTIDAD, condition = "X_DOCUMENTO_IDENTIDAD=:"+MovPersona.P_DOCUMENTO_IDENTIDAD),
 		@Filter(name=MovPersona.F_PRIMER_APELLIDO, condition = "X_PRIMER_APELLIDO=:"+MovPersona.P_PRIMER_APELLIDO),
-		@Filter(name=MovPersona.F_SEGUNDO_APELLIDO, condition = "X_SEGUNDO_APELLIDO=:"+MovPersona.P_SEGUNDO_APELLIDO)
+		@Filter(name=MovPersona.F_SEGUNDO_APELLIDO, condition = "X_SEGUNDO_APELLIDO=:"+MovPersona.P_SEGUNDO_APELLIDO),
+		@Filter(name=MovPersona.F_CORREO, condition = "X_CORREO=:"+MovPersona.P_CORREO)
 })
 public class MovPersona extends AuditoriaEntity implements Serializable {/**
 	 * 
@@ -61,12 +63,14 @@ public class MovPersona extends AuditoriaEntity implements Serializable {/**
 	public static final String F_DOCUMENTO_IDENTIDAD = "MovPersona.f.documentoIdentidad";
 	public static final String F_PRIMER_APELLIDO = "MovPersona.f.primerApellido";
 	public static final String F_SEGUNDO_APELLIDO = "MovPersona.f.segundoApellido";
+	public static final String F_CORREO = "MovPersona.f.correo";
 
 	public static final String P_ID = "idMovPersona";
 	public static final String P_TIPO_DOCUMENTO = "tipoDocumentoMovPersona";
 	public static final String P_DOCUMENTO_IDENTIDAD = "documentoIdentidadMovPersona";
 	public static final String P_PRIMER_APELLIDO = "primerApellidoMovPersona";
 	public static final String P_SEGUNDO_APELLIDO = "segundoApellidoMovPersona";
+	public static final String P_CORREO = "correoMovPersona";
 	
 	@Id
 	@SequenceGenerator(name="SEQ_MOV_PERSONA", schema = ProjectConstants.Esquema.RAPIDEMANDA, sequenceName = "USEQ_MOV_PERSONA" , initialValue = 1, allocationSize = 1)

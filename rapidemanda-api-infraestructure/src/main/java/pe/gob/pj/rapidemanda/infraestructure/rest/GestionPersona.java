@@ -1,5 +1,6 @@
 package pe.gob.pj.rapidemanda.infraestructure.rest;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 
 import org.hibernate.validator.constraints.Length;
@@ -51,7 +52,8 @@ public interface GestionPersona extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
 			@RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta,
-			@Length(min = 8, max = 8, message = "El parámetro numero_documento tiene un tamaño no valido [min1,max=1].") @Pattern(regexp = ProjectConstants.Pattern.NUMBER, message = "El parámetro numero_documento solo permite valores numéricos.") @RequestParam(name = "numero_documento", required = false) String numeroDocumento);
+			@Length(min = 8, max = 8, message = "El parámetro numero_documento tiene un tamaño no valido [min1,max=1].") @Pattern(regexp = ProjectConstants.Pattern.NUMBER, message = "El parámetro numero_documento solo permite valores numéricos.") @RequestParam(name = "numero_documento", required = false) String numeroDocumento,
+			@Email(message = "El parámetro correo no tiene un formato válido.") @RequestParam(name = "correo", required = false) String correo);
 
 	/***
 	 * 

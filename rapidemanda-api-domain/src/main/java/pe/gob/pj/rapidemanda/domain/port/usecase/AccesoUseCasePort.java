@@ -21,6 +21,18 @@ public interface AccesoUseCasePort {
 	
 	/**
 	 * 
+	 * Método que permite registrar un nuevo usuario en el sistema.
+	 * Valida que no exista un usuario con el mismo nombre de usuario o correo electrónico.
+	 * 
+	 * @param cuo Código unico de operación
+	 * @param usuario Objeto Usuario con los datos del nuevo usuario a registrar
+	 * @return Usuario registrado con su ID generado
+	 * @throws Exception Si el usuario ya existe o hay errores de validación
+	 */
+	public Usuario registrarUsuario(String cuo, Usuario usuario) throws Exception;
+	
+	/**
+	 * 
 	 * Método que permite enviar el identificador de perfil para ser validado si existe y
 	 * devolver las opciones asignadas a este perfil.
 	 * 

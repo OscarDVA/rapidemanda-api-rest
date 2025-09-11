@@ -18,6 +18,17 @@ public interface AccesoPersistencePort {
 	
 	/**
 	 * 
+	 * Método que permite registrar un nuevo usuario en el sistema.
+	 * 
+	 * @param cuo Código unico de operación
+	 * @param usuario Modelo Usuario con los datos del usuario a registrar
+	 * @return Usuario registrado con su ID generado
+	 * @throws Exception
+	 */
+	public Usuario registrarUsuario(String cuo, Usuario usuario) throws Exception;
+	
+	/**
+	 * 
 	 * Método que permite obtener una lista de la entidad MaeOpcion asignadas a la entidad MaePerfil y 
 	 * encapsularlo en el modelo PerfilOpcions
 	 * 

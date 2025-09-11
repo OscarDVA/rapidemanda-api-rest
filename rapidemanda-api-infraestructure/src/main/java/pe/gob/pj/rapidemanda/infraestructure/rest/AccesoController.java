@@ -1,5 +1,6 @@
 package pe.gob.pj.rapidemanda.infraestructure.rest;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -30,9 +31,11 @@ import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
+import pe.gob.pj.rapidemanda.domain.model.auditoriageneral.AuditoriaAplicativos;
 import pe.gob.pj.rapidemanda.domain.model.servicio.PerfilOpcions;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
 import pe.gob.pj.rapidemanda.domain.port.usecase.AccesoUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.AuditoriaGeneralUseCasePort;
 import pe.gob.pj.rapidemanda.domain.utils.CaptchaUtils;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectProperties;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
@@ -40,18 +43,31 @@ import pe.gob.pj.rapidemanda.domain.utils.SecurityConstants;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Claim;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Estado;
 import pe.gob.pj.rapidemanda.infraestructure.enums.FormatoRespuesta;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.AuditoriaGeneralMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.RegistroMapper;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.LoginRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ObtenerOpcionesRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.RegistroRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AccesoController implements Acceso {
+public class AccesoController implements Acceso, Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
 	@Qualifier("accesoUseCasePort")
 	final AccesoUseCasePort accesoUC;
+	//final AuditoriaGeneralUseCasePort auditoriaGeneralUseCasePort;
+	//final AuditoriaGeneralMapper auditoriaGeneralMapper;
+	final RegistroMapper registroMapper;
 
 	@Override
 	public ResponseEntity<GlobalResponse> iniciarSesion(String cuo, String ip, String jwt, @Valid LoginRequest request) {
@@ -213,6 +229,46 @@ public class AccesoController implements Acceso {
 					ProjectUtils.isNull(e.getCause()).concat(e.getMessage()));
 		}
 		return newToken;
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> registrarUsuario(String cuo, String jwt, String ip, RegistroRequest request) {
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+
+			// Validar que las claves coincidan
+			if (!request.getClave().equals(request.getConfirmarClave())) {
+				throw new ErrorException(Errors.ERROR_INESPERADO.getCodigo(), 
+						String.format(Errors.ERROR_INESPERADO.getNombre(),Proceso.PERSONA_CONSULTAR.getNombre()));
+			}
+			
+			// Crear objeto Usuario 
+			Usuario usuario = registroMapper.toRegistro(request);
+			
+			Usuario usuarioRegistrado = accesoUC.registrarUsuario(cuo, usuario);
+			res.setData(usuarioRegistrado);
+			// Llamar al caso de uso para registrar el usuario
+			
+			
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+						
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_REGISTRAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType
+				.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+						? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
+		return ResponseEntity.ok(res);
 	}
 
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.LoginRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ObtenerOpcionesRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.RegistroRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
 @RestController
@@ -52,5 +53,22 @@ public interface Acceso extends Base{
 			@RequestAttribute(name=ProjectConstants.AUD_IP) String ip, 
 			@RequestAttribute(name=ProjectConstants.AUD_JWT) String jwt,
 			@Valid @RequestBody ObtenerOpcionesRequest perfil);
+	
+	/***
+	 * 
+	 * POST /authenticate/registrar : Registrar nuevo usuario
+	 * 
+	 * @param cuo
+	 * @param ip
+	 * @param jwt
+	 * @param registro
+	 * @return
+	 */
+	@PostMapping(value = "registrar")
+	public ResponseEntity<GlobalResponse> registrarUsuario(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+			@RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt, 
+			@Valid @RequestBody RegistroRequest registro);
 
 }

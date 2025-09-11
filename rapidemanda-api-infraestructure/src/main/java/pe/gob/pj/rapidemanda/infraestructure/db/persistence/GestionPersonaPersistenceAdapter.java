@@ -29,10 +29,17 @@ public class GestionPersonaPersistenceAdapter implements GestionPersonaPersisten
 	@Override
 	public List<Persona> buscarPersona(String cuo, Map<String, Object> filters) throws Exception {
 		List<Persona> lista = new ArrayList<>();
+		
 		if(!ProjectUtils.isNullOrEmpty(filters.get(Persona.P_NUMERO_DOCUMENTO))) {
 			this.sf.getCurrentSession().enableFilter(MovPersona.F_DOCUMENTO_IDENTIDAD)
 				.setParameter(MovPersona.P_DOCUMENTO_IDENTIDAD, filters.get(Persona.P_NUMERO_DOCUMENTO));
 		}
+		
+		if(!ProjectUtils.isNullOrEmpty(filters.get(Persona.P_CORREO))) {
+			this.sf.getCurrentSession().enableFilter(MovPersona.F_CORREO)
+				.setParameter(MovPersona.P_CORREO, filters.get(Persona.P_CORREO));
+		}
+		
 		TypedQuery<MovPersona> query = this.sf.getCurrentSession().createNamedQuery(MovPersona.Q_ALL, MovPersona.class);
 		query.getResultStream().forEach(movUsuario -> {
 			Persona personaDto = new Persona();

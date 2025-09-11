@@ -50,15 +50,23 @@ public class GestionPersonaController implements GestionPersona, Serializable {
 
 	@Override
 	public ResponseEntity<GlobalResponse> consultarPersonas(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip, String formatoRespuesta, String numeroDocumento) {
+			String params, String herramienta, String ip, String formatoRespuesta, String numeroDocumento,
+			String correo) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
 
 		try {
+
+			Map<String, Object> filters = new HashMap<String, Object>();
+
+			if (numeroDocumento != null && !numeroDocumento.trim().isEmpty()) {
+				filters.put(Persona.P_NUMERO_DOCUMENTO, numeroDocumento);
+			}
+			if (correo != null && !correo.trim().isEmpty()) {
+				filters.put(Persona.P_CORREO, correo);
+			}
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
-			Map<String, Object> filters = new HashMap<String, Object>();
-			filters.put(Persona.P_NUMERO_DOCUMENTO, numeroDocumento);
 			res.setData(gestionPersonaUseCasePort.buscarPersona(cuo, filters));
 		} catch (ErrorException e) {
 			handleException(cuo, e, res);

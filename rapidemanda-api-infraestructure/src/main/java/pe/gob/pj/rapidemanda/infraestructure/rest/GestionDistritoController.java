@@ -49,10 +49,8 @@ public class GestionDistritoController implements GestionDistrito, Serializable 
 			if (idDistrito != null && !idDistrito.trim().isEmpty()) {
 				filters.put(Distrito.P_DISTRITO_ID, idDistrito);
 			}
-			
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
-			filters.put(Distrito.P_PROVINCIA_ID, idProvincia);
 			res.setData(gestionDistritoUseCasePort.buscarDistrito(cuo, filters));
 		} catch (ErrorException e) {
 			handleException(cuo, e, res);
