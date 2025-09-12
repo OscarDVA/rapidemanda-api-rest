@@ -95,12 +95,6 @@ public class RegistroRequest {
 	@JsonProperty("clave")
 	String clave;
 
-	@Size(min = 8, max = 50, message = "El parámetro confirmarClave debe tener entre 8 y 50 caracteres.")
-	@NotBlank(message = "El parámetro confirmarClave no puede ser vacío.")
-	@NotNull(message = "El parámetro confirmarClave no puede ser nulo.")
-	@JsonProperty("confirmarClave")
-	String confirmarClave;
-
 	// Validación de captcha
 	@JsonProperty("aplicaCaptcha")
 	String aplicaCaptcha;

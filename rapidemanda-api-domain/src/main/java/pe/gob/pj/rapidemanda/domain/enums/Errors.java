@@ -30,6 +30,7 @@ public enum Errors {
 	NEGOCIO_CREDENCIALES_INCORRECTAS("N001"," Error al %s - Las credenciales son incorrectas o el usuario esta inactivo."),
 	NEGOCIO_PERFIL_NO_ENCONTRADO("N002"," Error al %s - No se encontro el perfil indicado y/o no tiene opciones asignadas."),
 	NEGOCIO_PERSONA_YA_REGISTRADA("N003"," Error al %s - La persona ingresada ya esta registrada."),
+	NEGOCIO_PERSONA_DNI_EXISTE("N003"," Error en %s - El dni ingresado ya esta registrado."),
 	NEGOCIO_CORREO_YA_REGISTRADO("N004"," Error al %s - El correo ingresado ya esta registrado."),
 	NEGOCIO_DEMANDA_YA_REGISTRADA("N003"," Error al %s - La demanda ingresada ya esta registrada."),
 	NEGOCIO_DEMANDA_NO_EDITABLE("N004"," Error al %s - La demanda no se puede editar porque no esta en estado BORRADOR, estado actual: %s."),

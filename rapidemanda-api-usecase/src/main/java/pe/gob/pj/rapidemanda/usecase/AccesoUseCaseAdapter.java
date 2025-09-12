@@ -90,8 +90,8 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 
 			List<Persona> personas = gestionPersonaPersistencePort.buscarPersona(cuo, filters);
 			if (!personas.isEmpty()) {
-				throw new ErrorException(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getCodigo(),
-						String.format(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getNombre(), numeroDocumento));
+				throw new ErrorException(Errors.NEGOCIO_PERSONA_DNI_EXISTE.getCodigo(),
+						String.format(Errors.NEGOCIO_PERSONA_DNI_EXISTE.getNombre(), numeroDocumento));
 			}
 			
 			// Validar que el correo no exista

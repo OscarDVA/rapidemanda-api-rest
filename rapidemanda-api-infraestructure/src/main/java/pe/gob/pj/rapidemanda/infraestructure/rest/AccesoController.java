@@ -237,12 +237,6 @@ public class AccesoController implements Acceso, Serializable {
 		res.setCodigoOperacion(cuo);
 		try {
 
-			// Validar que las claves coincidan
-			if (!request.getClave().equals(request.getConfirmarClave())) {
-				throw new ErrorException(Errors.ERROR_INESPERADO.getCodigo(), 
-						String.format(Errors.ERROR_INESPERADO.getNombre(),Proceso.PERSONA_CONSULTAR.getNombre()));
-			}
-			
 			// Crear objeto Usuario 
 			Usuario usuario = registroMapper.toRegistro(request);
 			
