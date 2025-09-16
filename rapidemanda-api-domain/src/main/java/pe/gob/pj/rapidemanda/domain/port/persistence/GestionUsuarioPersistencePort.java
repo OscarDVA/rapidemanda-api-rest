@@ -6,6 +6,8 @@ import java.util.Map;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
 
 public interface GestionUsuarioPersistencePort {
-	  void registrarUsuario(String cuo, Usuario usuario) throws Exception;
-	  public List<Usuario> buscarUsuario(String cuo, Map<String, Object> filters) throws Exception;
+
+	public List<Usuario> buscarUsuario(String cuo, Map<String, Object> filters) throws Exception;
+
+	public void crearUsuario(String cuo, Usuario usuario) throws Exception;
 }

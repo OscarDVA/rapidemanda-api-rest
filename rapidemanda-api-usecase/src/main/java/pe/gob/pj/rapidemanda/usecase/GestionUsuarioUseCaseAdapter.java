@@ -13,9 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
-import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
-import pe.gob.pj.rapidemanda.domain.port.persistence.GestionPersonaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionUsuarioPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionUsuarioUseCasePort;
 
@@ -23,13 +21,11 @@ import pe.gob.pj.rapidemanda.domain.port.usecase.GestionUsuarioUseCasePort;
 public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 
 	private final GestionUsuarioPersistencePort gestionUsuarioPersistencePort;
-	private final GestionPersonaPersistencePort gestionPersonaPersistencePort;
+
 
 	public GestionUsuarioUseCaseAdapter(
-			@Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort,
-			@Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort) {
+			@Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort) {
 		this.gestionUsuarioPersistencePort = gestionUsuarioPersistencePort;
-		this.gestionPersonaPersistencePort = gestionPersonaPersistencePort;
 	}
 	
 	@Override
@@ -47,37 +43,14 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
 			Exception.class })
-	public void registrarUsuario(String cuo, Usuario usuario) throws Exception {
-		try {
-			// Validar que la persona no exista
-			String numeroDocumento = usuario.getPersona().getNumeroDocumento();
-			Map<String, Object> filters = new HashMap<>();
-			filters.put(Persona.P_NUMERO_DOCUMENTO, numeroDocumento);
-
-			List<Persona> personas = gestionPersonaPersistencePort.buscarPersona(cuo, filters);
-			if (!personas.isEmpty()) {
-				throw new ErrorException(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getCodigo(),
-						String.format(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getNombre(), numeroDocumento));
-			}
-			// Validar que el usuario no exista
-			 String nombreUsuario = usuario.getUsuario();
-			 Map<String, Object> filtersUsuario = new HashMap<>();
-			 filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, nombreUsuario);
-			 List<Usuario> usuarios = gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario);
-			 if (!usuarios.isEmpty()) {
-				 throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(),
-						String.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), nombreUsuario));
-			 }
-
-			// Registrar usuario (incluye persona y perfil)
-			gestionUsuarioPersistencePort.registrarUsuario(cuo, usuario);
-		} catch (ErrorException ee) {
-			// Re-lanzar directamente los errores de negocio
-			throw ee;
-		} catch (Exception e) {
-			throw new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
-					String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_REGISTRAR.getNombre()),
-					e.getMessage(), e.getCause());
-		}
+	public void crearUsuario(String cuo, Usuario usuario) throws Exception {
+		 Map<String, Object> filtersUsuario = new HashMap<String, Object>();
+		 filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, usuario.getUsuario());
+		 
+		 if (!gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario).isEmpty()) {
+			 throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(),
+					String.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), Proceso.USUARIO_REGISTRAR.getNombre()));
+		 }
+		 gestionUsuarioPersistencePort.crearUsuario(cuo, usuario);
 	}
 }

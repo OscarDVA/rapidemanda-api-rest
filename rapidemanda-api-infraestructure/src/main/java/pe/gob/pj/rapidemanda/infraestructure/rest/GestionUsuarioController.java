@@ -44,13 +44,13 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 	final AuditoriaGeneralUseCasePort auditoriaGeneralUseCasePort;
 	final UsuarioMapper usuarioMapper;
 	final AuditoriaGeneralMapper auditoriaGeneralMapper;
-	
+
 	@Override
 	public ResponseEntity<GlobalResponse> consultarUsuarios(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip,String formatoRespuesta, String usuario) {
+			String params, String herramienta, String ip, String formatoRespuesta, String usuario) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
-		
+
 		try {
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
@@ -61,19 +61,20 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 			handleException(cuo, e, res);
 		} catch (Exception e) {
 			handleException(cuo,
-					new ErrorException(
-							Errors.ERROR_INESPERADO.getCodigo(), 
-							String.format(Errors.ERROR_INESPERADO.getNombre(),Proceso.PERSONA_CONSULTAR.getNombre()),
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.PERSONA_CONSULTAR.getNombre()),
 							e.getMessage(), e.getCause()),
 					res);
 		}
 		HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(formatoRespuesta) ? MediaType.APPLICATION_XML_VALUE : MediaType.APPLICATION_JSON_VALUE));
+		headers.setContentType(MediaType.parseMediaType(
+				FormatoRespuesta.XML.getNombre().equalsIgnoreCase(formatoRespuesta) ? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 
 	@Override
-	public ResponseEntity<GlobalResponse> registrarUsuario(String cuo, String ips, String usuauth, String uri,
+	public ResponseEntity<GlobalResponse> crearUsuario(String cuo, String ips, String usuauth, String uri,
 			String params, String herramienta, String ip, UsuarioRequest request) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
@@ -81,13 +82,16 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 			long inicio = System.currentTimeMillis();
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+
 			Usuario usuarioDto = usuarioMapper.toUsuario(request);
-			gestionUsuarioUseCasePort.registrarUsuario(cuo, usuarioDto);
+			gestionUsuarioUseCasePort.crearUsuario(cuo, usuarioDto);
 			res.setData(usuarioDto);
+
 			long fin = System.currentTimeMillis();
 			AuditoriaAplicativos auditoriaAplicativos = auditoriaGeneralMapper.toAuditoriaAplicativos(
 					request.getAuditoria(), cuo, ips, usuauth, uri, params, herramienta, res.getCodigo(),
 					res.getDescripcion(), fin - inicio);
+
 			ObjectMapper objectMapper = new ObjectMapper();
 			String jsonString = objectMapper.writeValueAsString(request);
 			auditoriaAplicativos.setPeticionBody(jsonString);

@@ -21,11 +21,8 @@ import pe.gob.pj.rapidemanda.domain.port.persistence.GestionUsuarioPersistencePo
 import pe.gob.pj.rapidemanda.domain.utils.EncryptUtils;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
-import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaePerfil;
-import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeTipoDocumentoPersona;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovPersona;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuario;
-import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuarioPerfil;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Estado;
 
 @Component("gestionUsuarioPersistencePort")
@@ -39,62 +36,6 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 	@Qualifier("sessionNegocio")
 	private SessionFactory sf;
 
-//	@Override
-//	public List<Usuario> buscarUsuario(String cuo, Map<String, Object> filters) throws Exception {
-//	    TypedQuery<MovUsuario> query = this.sf.getCurrentSession()
-//	        .createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
-//
-//	    if (!ProjectUtils.isNullOrEmpty(filters.get(Usuario.P_NOMBRE_USUARIO))) {
-//	        this.sf.getCurrentSession()
-//	            .enableFilter(MovUsuario.F_USUARIO)
-//	            .setParameter(MovUsuario.P_USUARIO, filters.get(Usuario.P_NOMBRE_USUARIO));
-//	    }
-//
-//	    List<Usuario> lista = new ArrayList<>();
-//
-//	    for (MovUsuario mu : query.getResultList()) {
-//	        // Inicializar relaciones
-//	        if (mu.getPersona() != null) {
-//	            Hibernate.initialize(mu.getPersona());
-//	            if (mu.getPersona().getTipoDocumento() != null) {
-//	                Hibernate.initialize(mu.getPersona().getTipoDocumento());
-//	            }
-//	        }
-//
-//	        // Mapear a DTO en un solo bloque
-//	        Usuario usuario = new Usuario();
-//	        usuario.setIdUsuario(mu.getId());
-//	        usuario.setUsuario(mu.getUsuario());
-//	        usuario.setClave("******");
-//	        usuario.setActivo(mu.getActivo());
-//
-//	        if (mu.getPersona() != null) {
-//	            MovPersona mp = mu.getPersona();
-//	            Persona persona = new Persona();
-//	            persona.setId(mp.getId());
-//	            persona.setNumeroDocumento(mp.getNumeroDocumento());
-//	            persona.setFechaNacimiento(ProjectUtils.convertDateToString(mp.getFechaNacimiento(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//	            persona.setPrimerApellido(mp.getPrimerApellido());
-//	            persona.setSegundoApellido(mp.getSegundoApellido());
-//	            persona.setNombres(mp.getNombres());
-//	            persona.setSexo(mp.getSexo());
-//	            persona.setCorreo(mp.getCorreo());
-//	            persona.setTelefono(mp.getTelefono());
-//	            persona.setActivo(mp.getActivo());
-//
-//	            if (mp.getTipoDocumento() != null) {
-//	                persona.setIdTipoDocumento(mp.getTipoDocumento().getCodigo());
-//	                persona.setTipoDocumento(mp.getTipoDocumento().getAbreviatura());
-//	            }
-//
-//	            usuario.setPersona(persona);
-//	        }
-//
-//	        lista.add(usuario);
-//	    }
-//
-//	    return lista;
-//	}
 	@Override
 	public List<Usuario> buscarUsuario(String cuo, Map<String, Object> filters) throws Exception {
 		List<Usuario> lista = new ArrayList<>();
@@ -156,67 +97,33 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 	}
 
 	@Override
-	public void registrarUsuario(String cuo, Usuario usuario) throws Exception {
+	public void crearUsuario(String cuo, Usuario usuario) throws Exception {
 
-		// 0. Encriptar la contraseña
 		String claveEncriptada = EncryptUtils.cryptBase64u(usuario.getClave(), Cipher.ENCRYPT_MODE);
 		usuario.setClave(claveEncriptada);
 
-		MaeTipoDocumentoPersona maeTipoDocumento = new MaeTipoDocumentoPersona();
-		maeTipoDocumento.setCodigo(usuario.getPersona().getIdTipoDocumento());
-
-		// 1. Crear y persistir persona
-		MovPersona movPersona = new MovPersona();
-		movPersona.setTipoDocumento(maeTipoDocumento);
-		// Mapear todos los campos de usuario.getPersona() a movPersona
-		movPersona.setNumeroDocumento(usuario.getPersona().getNumeroDocumento());
-		movPersona.setPrimerApellido(usuario.getPersona().getPrimerApellido());
-		movPersona.setSegundoApellido(usuario.getPersona().getSegundoApellido());
-		movPersona.setNombres(usuario.getPersona().getNombres());
-		movPersona.setSexo(usuario.getPersona().getSexo());
-		movPersona.setCorreo(usuario.getPersona().getCorreo());
-		movPersona.setTelefono(usuario.getPersona().getTelefono());
-		movPersona.setFechaNacimiento(ProjectUtils.parseStringToDate(usuario.getPersona().getFechaNacimiento(),
-				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		movPersona.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(usuario.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-
-		sf.getCurrentSession().persist(movPersona);
-		usuario.getPersona().setId(movPersona.getId());
-
-		// 2. Crear y persistir usuario
 		MovUsuario movUsuario = new MovUsuario();
+
+		this.sf.getCurrentSession().enableFilter(MovPersona.F_ID).setParameter(MovPersona.P_ID,
+				usuario.getPersona().getId());
+
+		TypedQuery<MovPersona> personaQuery = this.sf.getCurrentSession().createNamedQuery(MovPersona.Q_ALL,
+				MovPersona.class);
+
+		
+		MovPersona movPersona = personaQuery.getSingleResult();
+
 		movUsuario.setUsuario(usuario.getUsuario());
 		movUsuario.setClave(usuario.getClave());
-		movUsuario.setPersona(movPersona); // Entidad gestionada
 		movUsuario.setActivo(
 				!Estado.INACTIVO_NUMERICO.getNombre().equals(usuario.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
 						: Estado.INACTIVO_NUMERICO.getNombre());
+		movUsuario.setPersona(movPersona);
+		
+		usuario.setClave("******");
 
-		sf.getCurrentSession().persist(movUsuario);
+		this.sf.getCurrentSession().persist(movUsuario);
 		usuario.setIdUsuario(movUsuario.getId());
 
-		// 3. Obtener el perfil por defecto (3) de la base de datos
-		MaePerfil perfilDefault = sf.getCurrentSession().get(MaePerfil.class, 3);
-		if (perfilDefault == null) {
-			throw new Exception("Perfil por defecto no encontrado");
-		}
-
-		// 4. Asignar perfil por defecto (3)
-		MovUsuarioPerfil usuarioPerfil = new MovUsuarioPerfil();
-		usuarioPerfil.setUsuario(movUsuario);
-		usuarioPerfil.setPerfil(perfilDefault); // Perfil por defecto para usuarios externos
-		usuarioPerfil.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(usuario.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-
-		sf.getCurrentSession().persist(usuarioPerfil);
-		// 7. Limpiar la contraseña en el objeto de retorno
-		usuario.setClave("******");
-		
-		// 8. Inicializar perfiles en el objeto de retorno
-		usuario.getPerfiles().add(new PerfilUsuario(usuarioPerfil.getId(), perfilDefault.getId(), perfilDefault.getNombre(), perfilDefault.getRol()));
-		
 	}
 }
