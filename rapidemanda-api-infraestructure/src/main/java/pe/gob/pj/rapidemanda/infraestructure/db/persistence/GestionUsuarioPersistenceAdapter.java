@@ -3,6 +3,7 @@ package pe.gob.pj.rapidemanda.infraestructure.db.persistence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.crypto.Cipher;
 
@@ -12,7 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import pe.gob.pj.rapidemanda.domain.enums.Errors;
+import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
 import pe.gob.pj.rapidemanda.domain.model.servicio.PerfilUsuario;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
@@ -21,8 +25,10 @@ import pe.gob.pj.rapidemanda.domain.port.persistence.GestionUsuarioPersistencePo
 import pe.gob.pj.rapidemanda.domain.utils.EncryptUtils;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaePerfil;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovPersona;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuario;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuarioPerfil;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Estado;
 
 @Component("gestionUsuarioPersistencePort")
@@ -124,6 +130,65 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 		this.sf.getCurrentSession().persist(movUsuario);
 		usuario.setIdUsuario(movUsuario.getId());
 
+		// Asignar perfiles al usuario
+		if (usuario.getPerfiles() != null && !usuario.getPerfiles().isEmpty()) {
+			// Crear una lista temporal para almacenar los perfiles completos
+			List<PerfilUsuario> perfilesCompletos = new ArrayList<>();
+
+			for (PerfilUsuario perfilUsuario : usuario.getPerfiles()) {
+				if (perfilUsuario.getIdPerfil() != null) {
+					// Obtener el perfil de la base de datos
+					MaePerfil maePerfil = this.sf.getCurrentSession().get(MaePerfil.class, perfilUsuario.getIdPerfil());
+					if (maePerfil == null) {
+						throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+								String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(),
+										"Perfil con ID: " + perfilUsuario.getIdPerfil()));
+					}
+
+					// Crear la relación usuario-perfil
+					MovUsuarioPerfil movUsuarioPerfil = new MovUsuarioPerfil();
+					movUsuarioPerfil.setUsuario(movUsuario);
+					movUsuarioPerfil.setPerfil(maePerfil);
+					movUsuarioPerfil.setActivo(Estado.ACTIVO_NUMERICO.getNombre());
+
+					this.sf.getCurrentSession().persist(movUsuarioPerfil);
+
+					// Agregar el perfil completo a la lista temporal
+					perfilesCompletos.add(new PerfilUsuario(movUsuarioPerfil.getId(), maePerfil.getId(),
+							maePerfil.getNombre(), maePerfil.getRol()));
+				}
+			}
+
+			// Reemplazar la lista de perfiles con los datos completos
+			usuario.getPerfiles().clear();
+			usuario.getPerfiles().addAll(perfilesCompletos);
+		} else {
+			// Si no se especifican perfiles, asignar perfil por defecto (ID=3) como en
+			// AccesoPersistenceAdapter
+			MaePerfil perfilDefault = this.sf.getCurrentSession().get(MaePerfil.class, 3);
+			if (perfilDefault == null) {
+				throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+						String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Perfil por defecto con ID: 3"));
+			}
+
+			// Crear la relación usuario-perfil por defecto
+			MovUsuarioPerfil usuarioPerfil = new MovUsuarioPerfil();
+			usuarioPerfil.setUsuario(movUsuario);
+			usuarioPerfil.setPerfil(perfilDefault);
+			usuarioPerfil.setActivo(Estado.ACTIVO_NUMERICO.getNombre());
+
+			this.sf.getCurrentSession().persist(usuarioPerfil);
+
+			// Inicializar la lista de perfiles si es null
+			if (usuario.getPerfiles() == null) {
+				usuario.setPerfiles(new ArrayList<>());
+			}
+
+			// Agregar el perfil por defecto al objeto de retorno
+			usuario.getPerfiles().add(new PerfilUsuario(usuarioPerfil.getId(), perfilDefault.getId(),
+					perfilDefault.getNombre(), perfilDefault.getRol()));
+		}
+
 	}
 
 	@Override
@@ -147,16 +212,125 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 
 		MovPersona movPersona = personaQuery.getSingleResult();
 
-		// Actualizar datos
+		// Actualizar datos básicos del usuario
 		movUsuario.setUsuario(usuario.getUsuario());
 		movUsuario.setClave(usuario.getClave());
 		movUsuario.setActivo(
 				!Estado.INACTIVO_NUMERICO.getNombre().equals(usuario.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
 						: Estado.INACTIVO_NUMERICO.getNombre());
 		movUsuario.setPersona(movPersona);
-		
+
+		// Actualizar perfiles del usuario
+		actualizarPerfilesUsuario(movUsuario, usuario);
+
 		usuario.setClave("******");
 
 		this.sf.getCurrentSession().merge(movUsuario);
+	}
+
+	/**
+	 * Método privado para actualizar los perfiles de un usuario
+	 * 
+	 * @param movUsuario Entidad del usuario en base de datos
+	 * @param usuario    Objeto de dominio con los nuevos perfiles
+	 * @throws Exception
+	 */
+	private void actualizarPerfilesUsuario(MovUsuario movUsuario, Usuario usuario) throws Exception {
+		// 1. Eliminar todos los perfiles existentes del usuario (marcar como inactivos)
+		eliminarPerfilesExistentes(movUsuario);
+
+		// 2. Asignar los nuevos perfiles
+		if (usuario.getPerfiles() != null && !usuario.getPerfiles().isEmpty()) {
+			// Crear una lista temporal para almacenar los perfiles completos
+			List<PerfilUsuario> perfilesCompletos = new ArrayList<>();
+
+			for (PerfilUsuario perfilUsuario : usuario.getPerfiles()) {
+				if (perfilUsuario.getIdPerfil() != null) {
+					// Obtener el perfil de la base de datos
+					MaePerfil maePerfil = this.sf.getCurrentSession().get(MaePerfil.class, perfilUsuario.getIdPerfil());
+					if (maePerfil == null) {
+						throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+								String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(),
+										"Perfil con ID: " + perfilUsuario.getIdPerfil()));
+					}
+
+					// Crear la nueva relación usuario-perfil
+					MovUsuarioPerfil movUsuarioPerfil = new MovUsuarioPerfil();
+					movUsuarioPerfil.setUsuario(movUsuario);
+					movUsuarioPerfil.setPerfil(maePerfil);
+					movUsuarioPerfil.setActivo(Estado.ACTIVO_NUMERICO.getNombre());
+
+					this.sf.getCurrentSession().persist(movUsuarioPerfil);
+
+					// Agregar el perfil completo a la lista temporal
+					perfilesCompletos.add(new PerfilUsuario(movUsuarioPerfil.getId(), maePerfil.getId(),
+							maePerfil.getNombre(), maePerfil.getRol()));
+				}
+			}
+
+			// Reemplazar la lista de perfiles con los datos completos
+			usuario.getPerfiles().clear();
+			usuario.getPerfiles().addAll(perfilesCompletos);
+		} else {
+			// Si no se especifican perfiles, asignar perfil por defecto (ID=3)
+			asignarPerfilPorDefecto(movUsuario, usuario);
+		}
+	}
+
+	/**
+	 * Método privado para eliminar (marcar como inactivos) los perfiles existentes
+	 * de un usuario
+	 * 
+	 * @param movUsuario Entidad del usuario
+	 */
+	private void eliminarPerfilesExistentes(MovUsuario movUsuario) {
+		// Buscar todos los perfiles activos del usuario
+		String hql = "FROM MovUsuarioPerfil up WHERE up.usuario.id = :usuarioId AND up.activo = :activo";
+		TypedQuery<MovUsuarioPerfil> queryPerfiles = this.sf.getCurrentSession().createQuery(hql,
+				MovUsuarioPerfil.class);
+		queryPerfiles.setParameter("usuarioId", movUsuario.getId());
+		queryPerfiles.setParameter("activo", Estado.ACTIVO_NUMERICO.getNombre());
+
+		List<MovUsuarioPerfil> perfilesExistentes = queryPerfiles.getResultList();
+
+		// Marcar todos los perfiles como inactivos
+		for (MovUsuarioPerfil perfilExistente : perfilesExistentes) {
+			perfilExistente.setActivo(Estado.INACTIVO_NUMERICO.getNombre());
+			this.sf.getCurrentSession().merge(perfilExistente);
+		}
+	}
+
+	/**
+	 * Método privado para asignar el perfil por defecto cuando no se especifican
+	 * perfiles
+	 * 
+	 * @param movUsuario Entidad del usuario
+	 * @param usuario    Objeto de dominio del usuario
+	 * @throws Exception
+	 */
+	private void asignarPerfilPorDefecto(MovUsuario movUsuario, Usuario usuario) throws Exception {
+		// Asignar perfil por defecto (ID=3) como en AccesoPersistenceAdapter
+		MaePerfil perfilDefault = this.sf.getCurrentSession().get(MaePerfil.class, 3);
+		if (perfilDefault == null) {
+			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Perfil por defecto con ID: 3"));
+		}
+
+		// Crear la relación usuario-perfil por defecto
+		MovUsuarioPerfil usuarioPerfil = new MovUsuarioPerfil();
+		usuarioPerfil.setUsuario(movUsuario);
+		usuarioPerfil.setPerfil(perfilDefault);
+		usuarioPerfil.setActivo(Estado.ACTIVO_NUMERICO.getNombre());
+
+		this.sf.getCurrentSession().persist(usuarioPerfil);
+
+		// Inicializar la lista de perfiles si es null
+		if (usuario.getPerfiles() == null) {
+			usuario.setPerfiles(new ArrayList<>());
+		}
+
+		// Agregar el perfil por defecto al objeto de retorno
+		usuario.getPerfiles().add(new PerfilUsuario(usuarioPerfil.getId(), perfilDefault.getId(),
+				perfilDefault.getNombre(), perfilDefault.getRol()));
 	}
 }

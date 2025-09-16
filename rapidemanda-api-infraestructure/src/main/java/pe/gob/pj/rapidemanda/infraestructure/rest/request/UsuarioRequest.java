@@ -1,4 +1,6 @@
 package pe.gob.pj.rapidemanda.infraestructure.rest.request;
+import java.util.List;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -36,6 +38,9 @@ public class UsuarioRequest {
     
     @JsonProperty("activo")
     String activo;
+    
+    @JsonProperty("perfiles")
+    List<Integer> perfiles;
 
     @Valid
     @NotNull(message = "El auditoria es requerido no puede ser null")
