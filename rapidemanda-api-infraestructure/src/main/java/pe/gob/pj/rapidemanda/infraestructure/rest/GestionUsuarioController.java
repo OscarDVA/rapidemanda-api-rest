@@ -113,4 +113,48 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 
+	@Override
+	public ResponseEntity<GlobalResponse> actualizarUsuario(String cuo, String ips, String usuauth, String uri,
+			String params, String herramienta, String ip, Integer id, UsuarioRequest request) {
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+
+		try {
+			long inicio = System.currentTimeMillis();
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+
+			Usuario usuarioDto = usuarioMapper.toUsuario(request);
+			usuarioDto.setIdUsuario(id);
+			gestionUsuarioUseCasePort.actualizarUsuario(cuo, usuarioDto);
+			res.setData(usuarioDto);
+
+			long fin = System.currentTimeMillis();
+			AuditoriaAplicativos auditoriaAplicativos = auditoriaGeneralMapper.toAuditoriaAplicativos(
+					request.getAuditoria(), cuo, ips, usuauth, uri, params, herramienta, res.getCodigo(),
+					res.getDescripcion(), fin - inicio);
+
+			ObjectMapper objectMapper = new ObjectMapper();
+			String jsonString = objectMapper.writeValueAsString(request);
+			auditoriaAplicativos.setPeticionBody(jsonString);
+			auditoriaGeneralUseCasePort.crear(cuo, auditoriaAplicativos);
+
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType
+				.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+						? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
+
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
+	}
 }

@@ -25,6 +25,7 @@ public enum Proceso {
 	DEMANDA_ACTUALIZAR("Actualizar Demanda"),
 	USUARIO_CONSULTAR("Consultar Usuario"),
 	USUARIO_REGISTRAR("Registrar Usuario"),
+	USUARIO_ACTUALIZAR("Actualizar Usuario"),
 	DEPARTAMENTO_CONSULTAR("Consultar Departamento"),
 	PROVINCIA_CONSULTAR("Consultar Provincia"),
 	DISTRITO_CONSULTAR("Consultar Distrito"),

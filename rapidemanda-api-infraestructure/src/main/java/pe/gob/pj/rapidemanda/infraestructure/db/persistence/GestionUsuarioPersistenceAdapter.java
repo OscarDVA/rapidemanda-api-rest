@@ -110,9 +110,44 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 		TypedQuery<MovPersona> personaQuery = this.sf.getCurrentSession().createNamedQuery(MovPersona.Q_ALL,
 				MovPersona.class);
 
-		
 		MovPersona movPersona = personaQuery.getSingleResult();
 
+		movUsuario.setUsuario(usuario.getUsuario());
+		movUsuario.setClave(usuario.getClave());
+		movUsuario.setActivo(
+				!Estado.INACTIVO_NUMERICO.getNombre().equals(usuario.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
+						: Estado.INACTIVO_NUMERICO.getNombre());
+		movUsuario.setPersona(movPersona);
+
+		usuario.setClave("******");
+
+		this.sf.getCurrentSession().persist(movUsuario);
+		usuario.setIdUsuario(movUsuario.getId());
+
+	}
+
+	@Override
+	public void actualizarUsuario(String cuo, Usuario usuario) throws Exception {
+
+		String claveEncriptada = EncryptUtils.cryptBase64u(usuario.getClave(), Cipher.ENCRYPT_MODE);
+		usuario.setClave(claveEncriptada);
+		// Buscar el usuario existente
+		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, usuario.getIdUsuario());
+
+		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+
+		MovUsuario movUsuario = query.getSingleResult();
+
+		// Buscar la persona existente
+		this.sf.getCurrentSession().enableFilter(MovPersona.F_ID).setParameter(MovPersona.P_ID,
+				usuario.getPersona().getId());
+
+		TypedQuery<MovPersona> personaQuery = this.sf.getCurrentSession().createNamedQuery(MovPersona.Q_ALL,
+				MovPersona.class);
+
+		MovPersona movPersona = personaQuery.getSingleResult();
+
+		// Actualizar datos
 		movUsuario.setUsuario(usuario.getUsuario());
 		movUsuario.setClave(usuario.getClave());
 		movUsuario.setActivo(
@@ -122,8 +157,6 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 		
 		usuario.setClave("******");
 
-		this.sf.getCurrentSession().persist(movUsuario);
-		usuario.setIdUsuario(movUsuario.getId());
-
+		this.sf.getCurrentSession().merge(movUsuario);
 	}
 }

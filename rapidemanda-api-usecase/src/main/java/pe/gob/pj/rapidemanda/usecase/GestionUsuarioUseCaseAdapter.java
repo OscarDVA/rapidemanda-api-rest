@@ -53,4 +53,23 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 		 }
 		 gestionUsuarioPersistencePort.crearUsuario(cuo, usuario);
 	}
+	
+	@Override
+    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+            Exception.class, SQLException.class })
+    public void actualizarUsuario(String cuo, Usuario usuario) throws Exception {
+               
+        Map<String, Object> filtersUsuario = new HashMap<>();
+        filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, usuario.getUsuario());
+        
+        List<Usuario> usuariosMismoNombre = gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario);
+        
+        if (!usuariosMismoNombre.isEmpty() && 
+            !usuariosMismoNombre.get(0).getIdUsuario().equals(usuario.getIdUsuario())) {
+            throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(), 
+                    String.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+        }
+                
+        gestionUsuarioPersistencePort.actualizarUsuario(cuo, usuario);
+    }
 }

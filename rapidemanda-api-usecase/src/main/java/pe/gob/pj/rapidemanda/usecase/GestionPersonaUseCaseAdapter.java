@@ -14,6 +14,7 @@ import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionPersonaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPersonaUseCasePort;
 
@@ -56,6 +57,17 @@ public class GestionPersonaUseCaseAdapter implements GestionPersonaUseCasePort {
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
 			Exception.class, SQLException.class })
 	public void actualizarPersona(String cuo, Persona persona) throws Exception {
+		// Validar que no exista otra persona con el mismo número de documento (excepto él mismo para casos de actualización)
+		Map<String, Object> filters = new HashMap<String, Object>();
+		filters.put(Persona.P_NUMERO_DOCUMENTO, persona.getNumeroDocumento());
+
+		List<Persona> personasMismoNombre = gestionPersonaPersistencePort.buscarPersona(cuo, filters);
+
+		if (!personasMismoNombre.isEmpty() && !personasMismoNombre.get(0).getId().equals(persona.getId())) {
+			throw new ErrorException(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getCodigo(), String
+					.format(Errors.NEGOCIO_PERSONA_YA_REGISTRADA.getNombre(), Proceso.PERSONA_REGISTRAR.getNombre()));
+		}
+		// Continuar con la actualización
 		gestionPersonaPersistencePort.actualizarPersona(cuo, persona);
 	}
 
