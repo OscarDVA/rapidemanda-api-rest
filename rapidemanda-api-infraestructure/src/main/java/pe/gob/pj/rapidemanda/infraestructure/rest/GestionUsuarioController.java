@@ -20,6 +20,7 @@ import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
 import pe.gob.pj.rapidemanda.domain.model.auditoriageneral.AuditoriaAplicativos;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionAccesoria;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
 import pe.gob.pj.rapidemanda.domain.port.usecase.AuditoriaGeneralUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionUsuarioUseCasePort;
@@ -48,15 +49,21 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 
 	@Override
 	public ResponseEntity<GlobalResponse> consultarUsuarios(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip, String formatoRespuesta, String usuario) {
+			String params, String herramienta, String ip, String formatoRespuesta, String usuario, Integer usuarioId) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
-
+		
 		try {
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
 			Map<String, Object> filters = new HashMap<String, Object>();
-			filters.put(Usuario.P_NOMBRE_USUARIO, usuario);
+			
+			if (usuario != null && !usuario.isEmpty()) {
+				filters.put(Usuario.P_NOMBRE_USUARIO, usuario);
+			}
+			if (usuarioId != null) {
+				filters.put(Usuario.P_USUARIO_ID, usuarioId);
+			}
 			res.setData(gestionUsuarioUseCasePort.buscarUsuario(cuo, filters));
 		} catch (ErrorException e) {
 			handleException(cuo, e, res);
@@ -156,6 +163,32 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 						? MediaType.APPLICATION_XML_VALUE
 						: MediaType.APPLICATION_JSON_VALUE));
 
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> cambiarEstadoUsuario(String cuo, String ips, String usuauth, String uri,
+			String params, String herramienta, String ip, Integer id, String activo) {
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			gestionUsuarioUseCasePort.actualizarEstadoUsuario(cuo, id, activo);
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion("Estado actualizado correctamente");
+			Map<String, Object> data = new HashMap<>();
+			data.put("estado", activo);
+			res.setData(data);
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(MediaType.APPLICATION_JSON_VALUE));
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 }

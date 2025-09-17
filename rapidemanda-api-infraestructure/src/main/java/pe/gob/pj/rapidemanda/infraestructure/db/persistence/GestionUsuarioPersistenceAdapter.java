@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
@@ -51,6 +50,10 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 		if (!ProjectUtils.isNullOrEmpty(filters.get(Usuario.P_NOMBRE_USUARIO))) {
 			this.sf.getCurrentSession().enableFilter(MovUsuario.F_USUARIO).setParameter(MovUsuario.P_USUARIO,
 					filters.get(Usuario.P_NOMBRE_USUARIO));
+		}
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Usuario.P_USUARIO_ID))) {
+			this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID,
+					filters.get(Usuario.P_USUARIO_ID));
 		}
 		query.getResultStream().forEach(movUsuario -> {
 			Usuario usuarioDto = new Usuario();
@@ -327,5 +330,17 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 		// Agregar el perfil por defecto al objeto de retorno
 		usuario.getPerfiles().add(new PerfilUsuario(usuarioPerfil.getId(), perfilDefault.getId(),
 				perfilDefault.getNombre(), perfilDefault.getRol()));
+	}
+
+	@Override
+	public void actualizarEstadoUsuario(String cuo, Integer id, String nuevoEstado) throws Exception {
+		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, id);
+		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+		MovUsuario movUser = query.getSingleResult();
+
+		movUser.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(nuevoEstado) ? Estado.ACTIVO_NUMERICO.getNombre()
+				: Estado.INACTIVO_NUMERICO.getNombre());
+
+		this.sf.getCurrentSession().merge(movUser);
 	}
 }

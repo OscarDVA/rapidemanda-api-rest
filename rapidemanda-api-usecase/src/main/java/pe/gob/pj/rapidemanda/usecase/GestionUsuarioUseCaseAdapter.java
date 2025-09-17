@@ -22,12 +22,11 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 
 	private final GestionUsuarioPersistencePort gestionUsuarioPersistencePort;
 
-
 	public GestionUsuarioUseCaseAdapter(
 			@Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort) {
 		this.gestionUsuarioPersistencePort = gestionUsuarioPersistencePort;
 	}
-	
+
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
 			Exception.class, SQLException.class })
@@ -44,32 +43,43 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
 			Exception.class })
 	public void crearUsuario(String cuo, Usuario usuario) throws Exception {
-		 Map<String, Object> filtersUsuario = new HashMap<String, Object>();
-		 filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, usuario.getUsuario());
-		 
-		 if (!gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario).isEmpty()) {
-			 throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(),
-					String.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), Proceso.USUARIO_REGISTRAR.getNombre()));
-		 }
-		 gestionUsuarioPersistencePort.crearUsuario(cuo, usuario);
+		Map<String, Object> filtersUsuario = new HashMap<String, Object>();
+		filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, usuario.getUsuario());
+
+		if (!gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario).isEmpty()) {
+			throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(), String
+					.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), Proceso.USUARIO_REGISTRAR.getNombre()));
+		}
+		gestionUsuarioPersistencePort.crearUsuario(cuo, usuario);
 	}
-	
+
 	@Override
-    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
-            Exception.class, SQLException.class })
-    public void actualizarUsuario(String cuo, Usuario usuario) throws Exception {
-               
-        Map<String, Object> filtersUsuario = new HashMap<>();
-        filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, usuario.getUsuario());
-        
-        List<Usuario> usuariosMismoNombre = gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario);
-        
-        if (!usuariosMismoNombre.isEmpty() && 
-            !usuariosMismoNombre.get(0).getIdUsuario().equals(usuario.getIdUsuario())) {
-            throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(), 
-                    String.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
-        }
-                
-        gestionUsuarioPersistencePort.actualizarUsuario(cuo, usuario);
-    }
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void actualizarUsuario(String cuo, Usuario usuario) throws Exception {
+
+		Map<String, Object> filtersUsuario = new HashMap<>();
+		filtersUsuario.put(Usuario.P_NOMBRE_USUARIO, usuario.getUsuario());
+
+		List<Usuario> usuariosMismoNombre = gestionUsuarioPersistencePort.buscarUsuario(cuo, filtersUsuario);
+
+		if (!usuariosMismoNombre.isEmpty()
+				&& !usuariosMismoNombre.get(0).getIdUsuario().equals(usuario.getIdUsuario())) {
+			throw new ErrorException(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getCodigo(), String
+					.format(Errors.NEGOCIO_USUARIO_YA_REGISTRADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+		}
+
+		gestionUsuarioPersistencePort.actualizarUsuario(cuo, usuario);
+	}
+
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void actualizarEstadoUsuario(String cuo, Integer id, String nuevoEstado) throws Exception {
+		if (!"0".equals(nuevoEstado) && !"1".equals(nuevoEstado)) {
+			throw new ErrorException(Errors.NEGOCIO_ESTADO_INVALIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_ESTADO_INVALIDO.getNombre(), Proceso.PERSONA_ACTUALIZAR.getNombre()));
+		}
+		gestionUsuarioPersistencePort.actualizarEstadoUsuario(cuo, id, nuevoEstado);
+	}
 }

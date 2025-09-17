@@ -4,6 +4,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,7 +48,8 @@ public interface GestionUsuario extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
 			@RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta,
-			@RequestParam(name = "usuario", required = false) String usuario);
+			@RequestParam(name = "usuario", required = false) String usuario,
+			@RequestParam(name = "id", required = false) Integer usuarioId);
 
 	/***
 	 * 
@@ -96,4 +98,28 @@ public interface GestionUsuario extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@Validated @RequestBody ActualizarUsuarioRequest usuario);
+
+	/***
+	 * 
+	 * @param cuo
+	 * @param ips
+	 * @param usuauth
+	 * @param uri
+	 * @param params
+	 * @param herramienta
+	 * @param ip
+	 * @param id
+	 * @param activo
+	 * @return
+	 */
+	@PatchMapping(value = "actualizar/estado/{id}")
+	public ResponseEntity<GlobalResponse> cambiarEstadoUsuario(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+			@RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
+			@RequestParam(name = "activo") String activo);
 }

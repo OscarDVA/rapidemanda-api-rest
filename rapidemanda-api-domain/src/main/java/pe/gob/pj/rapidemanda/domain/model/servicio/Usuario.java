@@ -18,6 +18,7 @@ public class Usuario implements Serializable {
 	static final long serialVersionUID = 1L;
 	
 	public static final String P_NOMBRE_USUARIO = "nombreUsuario";
+	public static final String P_USUARIO_ID = "usuarioId";
 	
 	Integer idUsuario;
 	String usuario;
