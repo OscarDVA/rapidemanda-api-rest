@@ -81,7 +81,7 @@ public class RegistroRequest {
 	String correo;
 
 	// Datos de usuario
-	@Length(min = 4, max = 20, message = "El parámetro usuario tiene un tamaño no válido (min=4,max=20).")
+	@Length(min = 8, max = 15, message = "El parámetro usuario tiene un tamaño no válido (min=8,max=15).")
 	@NotBlank(message = "El parámetro usuario no puede ser vacío.")
 	@NotNull(message = "El parámetro usuario no puede ser nulo.")
 	@Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "El parámetro usuario solo puede contener letras, números, puntos, guiones y guiones bajos.")

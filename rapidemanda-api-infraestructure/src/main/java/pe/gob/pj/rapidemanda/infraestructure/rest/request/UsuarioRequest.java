@@ -20,7 +20,7 @@ public class UsuarioRequest {
 	@JsonProperty(value = "formatoRespuesta")
     String formatoRespuesta;
     
-    @Length(min = 4, max = 15, message = "El parámetro usuario tiene un tamaño no válido (min=4,max=15).")
+    @Length(min = 8, max = 15, message = "El parámetro usuario tiene un tamaño no válido (min=4,max=15).")
     @NotBlank(message = "El parámetro usuario no puede ser vacío.")
     @NotNull(message = "El parámetro usuario no puede ser nulo.")
     @JsonProperty("usuario")
