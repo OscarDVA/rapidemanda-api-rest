@@ -194,8 +194,6 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 	@Override
 	public void actualizarUsuario(String cuo, Usuario usuario) throws Exception {
 
-		String claveEncriptada = EncryptUtils.cryptBase64u(usuario.getClave(), Cipher.ENCRYPT_MODE);
-		usuario.setClave(claveEncriptada);
 		// Buscar el usuario existente
 		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, usuario.getIdUsuario());
 
@@ -212,9 +210,7 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 
 		MovPersona movPersona = personaQuery.getSingleResult();
 
-		// Actualizar datos básicos del usuario
 		movUsuario.setUsuario(usuario.getUsuario());
-		movUsuario.setClave(usuario.getClave());
 		movUsuario.setActivo(
 				!Estado.INACTIVO_NUMERICO.getNombre().equals(usuario.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
 						: Estado.INACTIVO_NUMERICO.getNombre());
@@ -222,8 +218,6 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 
 		// Actualizar perfiles del usuario
 		actualizarPerfilesUsuario(movUsuario, usuario);
-
-		usuario.setClave("******");
 
 		this.sf.getCurrentSession().merge(movUsuario);
 	}

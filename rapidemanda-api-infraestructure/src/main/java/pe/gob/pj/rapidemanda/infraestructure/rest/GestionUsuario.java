@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ActualizarUsuarioRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.UsuarioRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
@@ -94,5 +95,5 @@ public interface GestionUsuario extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
-			@Validated @RequestBody UsuarioRequest usuario);
+			@Validated @RequestBody ActualizarUsuarioRequest usuario);
 }

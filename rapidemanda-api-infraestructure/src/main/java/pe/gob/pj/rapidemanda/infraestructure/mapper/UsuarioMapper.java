@@ -10,6 +10,7 @@ import org.mapstruct.Named;
 
 import pe.gob.pj.rapidemanda.domain.model.servicio.PerfilUsuario;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ActualizarUsuarioRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.UsuarioRequest;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -21,6 +22,13 @@ public interface UsuarioMapper {
     @Mapping(target = "idUsuario", ignore = true)
     
     Usuario toUsuario(UsuarioRequest usuarioRequest);
+    
+    @Mapping(target = "persona.id", source = "idPersona")
+    @Mapping(target = "perfiles", source = "perfiles", qualifiedByName = "mapPerfiles")
+    @Mapping(target = "token", ignore = true)
+    @Mapping(target = "idUsuario", ignore = true)
+    @Mapping(target = "clave", ignore = true)
+    Usuario toUsuarioFromActualizar(ActualizarUsuarioRequest actualizarUsuarioRequest);
     
     @Named("mapPerfiles")
     default List<PerfilUsuario> mapPerfiles(List<Integer> perfilesIds) {

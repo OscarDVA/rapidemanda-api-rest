@@ -26,6 +26,7 @@ import pe.gob.pj.rapidemanda.domain.port.usecase.GestionUsuarioUseCasePort;
 import pe.gob.pj.rapidemanda.infraestructure.enums.FormatoRespuesta;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.AuditoriaGeneralMapper;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.UsuarioMapper;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ActualizarUsuarioRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.UsuarioRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
@@ -115,7 +116,7 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 
 	@Override
 	public ResponseEntity<GlobalResponse> actualizarUsuario(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip, Integer id, UsuarioRequest request) {
+			String params, String herramienta, String ip, Integer id, ActualizarUsuarioRequest request) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
 
@@ -124,7 +125,7 @@ public class GestionUsuarioController implements GestionUsuario, Serializable {
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
 
-			Usuario usuarioDto = usuarioMapper.toUsuario(request);
+			Usuario usuarioDto = usuarioMapper.toUsuarioFromActualizar(request);
 			usuarioDto.setIdUsuario(id);
 			gestionUsuarioUseCasePort.actualizarUsuario(cuo, usuarioDto);
 			res.setData(usuarioDto);
