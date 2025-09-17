@@ -216,8 +216,9 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 						: Estado.INACTIVO_NUMERICO.getNombre());
 		movUsuario.setPersona(movPersona);
 
-		// Actualizar perfiles del usuario
 		actualizarPerfilesUsuario(movUsuario, usuario);
+
+		usuario.setClave("******");
 
 		this.sf.getCurrentSession().merge(movUsuario);
 	}
