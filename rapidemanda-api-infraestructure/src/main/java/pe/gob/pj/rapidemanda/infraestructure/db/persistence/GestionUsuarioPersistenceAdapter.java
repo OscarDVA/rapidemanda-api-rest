@@ -44,8 +44,6 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 	public List<Usuario> buscarUsuario(String cuo, Map<String, Object> filters) throws Exception {
 		List<Usuario> lista = new ArrayList<>();
 
-		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
-
 		if (!ProjectUtils.isNullOrEmpty(filters.get(Usuario.P_NOMBRE_USUARIO))) {
 			this.sf.getCurrentSession().enableFilter(MovUsuario.F_USUARIO).setParameter(MovUsuario.P_USUARIO,
 					filters.get(Usuario.P_NOMBRE_USUARIO));
@@ -54,6 +52,8 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 			this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID,
 					filters.get(Usuario.P_USUARIO_ID));
 		}
+		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+		
 		query.getResultStream().forEach(movUsuario -> {
 			Usuario usuarioDto = new Usuario();
 			usuarioDto.setIdUsuario(movUsuario.getId());
