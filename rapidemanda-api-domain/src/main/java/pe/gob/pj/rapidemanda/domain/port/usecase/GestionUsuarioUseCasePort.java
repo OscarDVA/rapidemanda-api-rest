@@ -14,4 +14,6 @@ public interface GestionUsuarioUseCasePort {
 	public void actualizarUsuario(String cuo, Usuario usuario) throws Exception;
 	
 	public void actualizarEstadoUsuario(String cuo, Integer id, String nuevoEstado) throws Exception;
+	
+	public void resetearClaveUsuario(String cuo, Integer id, String nuevaClave) throws Exception;
 }

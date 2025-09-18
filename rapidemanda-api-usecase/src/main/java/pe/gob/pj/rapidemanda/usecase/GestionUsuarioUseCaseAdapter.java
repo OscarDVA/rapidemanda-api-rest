@@ -82,4 +82,15 @@ public class GestionUsuarioUseCaseAdapter implements GestionUsuarioUseCasePort {
 		}
 		gestionUsuarioPersistencePort.actualizarEstadoUsuario(cuo, id, nuevoEstado);
 	}
+
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void resetearClaveUsuario(String cuo, Integer id, String nuevaClave) throws Exception {
+		if (nuevaClave == null || nuevaClave.trim().isEmpty()) {
+			throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "nuevaClave"));
+		}
+		gestionUsuarioPersistencePort.resetearClaveUsuario(cuo, id, nuevaClave);
+	}
 }

@@ -122,4 +122,30 @@ public interface GestionUsuario extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@RequestParam(name = "activo") String activo);
+
+	/***
+	 * 
+	 * PATCH /usuarios/resetear/clave/{id} : Resetear contraseña de un usuario
+	 * 
+	 * @param cuo
+	 * @param ips
+	 * @param usuauth
+	 * @param uri
+	 * @param params
+	 * @param herramienta
+	 * @param ip
+	 * @param id
+	 * @param nuevaClave
+	 * @return
+	 */
+	@PatchMapping(value = "resetear-clave/{id}")
+	public ResponseEntity<GlobalResponse> resetearClaveUsuario(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+			@RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
+			@RequestParam(name = "nuevaClave") String nuevaClave);
 }

@@ -14,7 +14,6 @@ import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
-import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionPersonaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPersonaUseCasePort;
 

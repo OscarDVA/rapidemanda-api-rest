@@ -3,7 +3,6 @@ package pe.gob.pj.rapidemanda.infraestructure.db.persistence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.crypto.Cipher;
 
@@ -340,6 +339,18 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 
 		movUser.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(nuevoEstado) ? Estado.ACTIVO_NUMERICO.getNombre()
 				: Estado.INACTIVO_NUMERICO.getNombre());
+
+		this.sf.getCurrentSession().merge(movUser);
+	}
+
+	@Override
+	public void resetearClaveUsuario(String cuo, Integer id, String nuevaClave) throws Exception {
+		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, id);
+		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+		MovUsuario movUser = query.getSingleResult();
+
+		String claveEncriptada = EncryptUtils.cryptBase64u(nuevaClave, Cipher.ENCRYPT_MODE);
+		movUser.setClave(claveEncriptada);
 
 		this.sf.getCurrentSession().merge(movUser);
 	}
