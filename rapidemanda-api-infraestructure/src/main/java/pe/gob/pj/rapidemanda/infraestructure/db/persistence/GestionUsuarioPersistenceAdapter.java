@@ -333,8 +333,10 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 
 	@Override
 	public void actualizarEstadoUsuario(String cuo, Integer id, String nuevoEstado) throws Exception {
-		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, id);
 		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+		
+		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, id);
+		
 		MovUsuario movUser = query.getSingleResult();
 
 		movUser.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(nuevoEstado) ? Estado.ACTIVO_NUMERICO.getNombre()
@@ -345,8 +347,10 @@ public class GestionUsuarioPersistenceAdapter implements GestionUsuarioPersisten
 
 	@Override
 	public void resetearClaveUsuario(String cuo, Integer id, String nuevaClave) throws Exception {
-		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, id);
 		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+		
+		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ID).setParameter(MovUsuario.P_ID, id);
+		
 		MovUsuario movUser = query.getSingleResult();
 
 		String claveEncriptada = EncryptUtils.cryptBase64u(nuevaClave, Cipher.ENCRYPT_MODE);
