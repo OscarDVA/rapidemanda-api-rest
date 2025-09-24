@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = false, exclude = {"demanda"})
 @Entity
 @Table(name = "MOV_PETITORIO", schema = ProjectConstants.Esquema.RAPIDEMANDA)
 @NamedQuery(name = MovPetitorio.Q_ALL, query = "SELECT mp FROM MovPetitorio mp")

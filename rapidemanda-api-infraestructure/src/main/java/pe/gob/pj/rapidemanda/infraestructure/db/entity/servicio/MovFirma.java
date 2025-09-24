@@ -10,7 +10,7 @@ import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = false, exclude = {"demanda"})
 @Entity
 @Table(name = "MOV_FIRMA", schema = ProjectConstants.Esquema.RAPIDEMANDA)
 @NamedQuery(name = MovFirma.Q_ALL, query = "SELECT mf FROM MovFirma mf")
