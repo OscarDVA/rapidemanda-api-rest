@@ -25,6 +25,14 @@ public class ProjectProperties implements Serializable {
     private static int timeoutClientApiReadSegundos;
     private static String captchaUrl;
     private static String captchaToken;
+    
+    // Parámetros de Alfresco
+    private static String alfrescoHost;
+    private static String alfrescoPuerto;
+    private static String alfrescoUsuario;
+    private static String alfrescoClave;
+    private static String alfrescoPath;
+    private static String alfrescoVersion;
 
     @Autowired
     public ProjectProperties(
@@ -36,7 +44,13 @@ public class ProjectProperties implements Serializable {
             @Value("${timeout.client.api.conection.segundos:60}") int timeoutClientApiConectionSegundos,
             @Value("${timeout.client.api.read.segundos:60}") int timeoutClientApiReadSegundos,
         	@Value("${captcha.url:null}") String captchaUrl,
-        	@Value("${captcha.token:null}") String captchaToken) {
+        	@Value("${captcha.token:null}") String captchaToken,
+        	@Value("${alfresco.rapidemanda.host:localhost}") String alfrescoHost,
+        	@Value("${alfresco.rapidemanda.puerto:8080}") String alfrescoPuerto,
+        	@Value("${alfresco.rapidemanda.usuario:admin}") String alfrescoUsuario,
+        	@Value("${alfresco.rapidemanda.clave:admin}") String alfrescoClave,
+        	@Value("${alfresco.rapidemanda.path:/app:company_home/cm:RAPIDEMANDA}") String alfrescoPath,
+        	@Value("${alfresco.rapidemanda.version:4.2}") String alfrescoVersion) {
 
         ProjectProperties.seguridadSecretToken = seguridadSecretToken;
         ProjectProperties.seguridadIdAplicativo = seguridadIdAplicativo;
@@ -47,6 +61,12 @@ public class ProjectProperties implements Serializable {
         ProjectProperties.timeoutClientApiReadSegundos = timeoutClientApiReadSegundos;
         ProjectProperties.captchaUrl = captchaUrl;
         ProjectProperties.captchaToken = captchaToken;
+        ProjectProperties.alfrescoHost = alfrescoHost;
+        ProjectProperties.alfrescoPuerto = alfrescoPuerto;
+        ProjectProperties.alfrescoUsuario = alfrescoUsuario;
+        ProjectProperties.alfrescoClave = alfrescoClave;
+        ProjectProperties.alfrescoPath = alfrescoPath;
+        ProjectProperties.alfrescoVersion = alfrescoVersion;
     }
 
 	public static String getSeguridadSecretToken() {
@@ -83,6 +103,30 @@ public class ProjectProperties implements Serializable {
 
 	public static String getCaptchaToken() {
 		return captchaToken;
+	}
+
+	public static String getAlfrescoHost() {
+		return alfrescoHost;
+	}
+
+	public static String getAlfrescoPuerto() {
+		return alfrescoPuerto;
+	}
+
+	public static String getAlfrescoUsuario() {
+		return alfrescoUsuario;
+	}
+
+	public static String getAlfrescoClave() {
+		return alfrescoClave;
+	}
+
+	public static String getAlfrescoPath() {
+		return alfrescoPath;
+	}
+
+	public static String getAlfrescoVersion() {
+		return alfrescoVersion;
 	}
 
 }

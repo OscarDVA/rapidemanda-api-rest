@@ -44,13 +44,19 @@ public class CmisAdapter implements CmisPort {
 	@Override
 	public void inicializarCredenciales(String host, String puerto, String usuario, String clave, String path,
 			String version) throws Exception {
-    	credencialesConexion.put(SessionParameter.ATOMPUB_URL, "http://"+ host +":"+ puerto +"/" + (version.equals(ProjectConstants.Alfresco.VERSION_4_2)?this.atompubUrl42 : this.atompubUrl41));
+		String baseUrl = "http://" + host + ":" + puerto;
+    	credencialesConexion.put(SessionParameter.ATOMPUB_URL, baseUrl +"/" + (version.equals(ProjectConstants.Alfresco.VERSION_4_2)?this.atompubUrl42 : this.atompubUrl41));
     	credencialesConexion.put(SessionParameter.USER, usuario);
     	credencialesConexion.put(SessionParameter.PASSWORD, clave);
     	credencialesConexion.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
     	// Set the alfresco object manager
         // Used when using the CMIS extension for Alfresco for working with aspects
         //parameter.put(SessionParameter.OBJECT_FACTORY_CLASS, "org.alfresco.cmis.client.impl.AlfrescoObjectFactoryImpl");
+    	// Forzar URLs públicas en todas las operaciones
+        credencialesConexion.put("org.apache.chemistry.opencmis.binding.atompub.url.override", baseUrl);
+        credencialesConexion.put("org.apache.chemistry.opencmis.binding.spi.type", "atompub");
+        credencialesConexion.put("org.apache.chemistry.opencmis.server.override", "true");
+        credencialesConexion.put("org.apache.chemistry.opencmis.server.value", baseUrl);
     	this.rootFolder=path;
 	}
     
