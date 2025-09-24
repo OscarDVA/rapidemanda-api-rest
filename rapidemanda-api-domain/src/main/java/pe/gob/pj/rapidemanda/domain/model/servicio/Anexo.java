@@ -17,7 +17,6 @@ public class Anexo implements Serializable{
     Integer id;
     String tipo;
     String incluido;
-    String archivoUrl;
     Integer nDemanda;
     String activo;
 }

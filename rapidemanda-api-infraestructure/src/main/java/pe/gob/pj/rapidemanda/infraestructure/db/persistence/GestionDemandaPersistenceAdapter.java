@@ -17,7 +17,6 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.Fundamentacion;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Petitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.RelacionLaboral;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDemandaPersistencePort;
-import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeEstadoDemanda;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeTipoPresentacion;
@@ -30,6 +29,12 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovPetitorio;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovRelacionLaboral;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuario;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Estado;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandadoEntityMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandanteEntityMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.FirmaEntityMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.FundamentacionEntityMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.PetitorioEntityMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.RelacionLaboralEntityMapper;
 
 @Component("gestionDemandaPersistencePort")
 public class GestionDemandaPersistenceAdapter implements GestionDemandaPersistencePort {
@@ -37,6 +42,24 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 	@Autowired
 	@Qualifier("sessionNegocio")
 	private SessionFactory sf;
+
+	@Autowired
+	private DemandanteEntityMapper demandanteEntityMapper;
+
+	@Autowired
+	private DemandadoEntityMapper demandadoEntityMapper;
+
+	@Autowired
+	private FirmaEntityMapper firmaEntityMapper;
+
+	@Autowired
+	private PetitorioEntityMapper petitorioEntityMapper;
+
+	@Autowired
+	private RelacionLaboralEntityMapper relacionLaboralEntityMapper;
+
+	@Autowired
+	private FundamentacionEntityMapper fundamentacionEntityMapper;
 
 	@Override
 	public List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception {
@@ -50,161 +73,14 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA).setParameter(MovDemanda.P_ESTADO_DEMANDA,
 					filters.get(Demanda.P_ESTADO_ID));
 		}
-		
+
 		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_USUARIO))) {
 			sf.getCurrentSession().enableFilter(MovDemanda.F_USUARIO).setParameter(MovDemanda.P_USUARIO,
 					filters.get(Demanda.P_USUARIO));
 		}
 
 		TypedQuery<MovDemanda> query = this.sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
-
-		return query.getResultStream().map(this::mapearDemanda).toList();
-
-	}
-
-	private Demanda mapearDemanda(MovDemanda mov) {
-		var demanda = new Demanda();
-		demanda.setId(mov.getId());
-		demanda.setSumilla(mov.getSumilla());
-
-		demanda.setIdEstadoDemanda(mov.getEstadoDemanda().getBEstadoDemanda());
-		demanda.setEstadoDemanda(mov.getEstadoDemanda().getXEstado());
-
-		demanda.setIdTipoPresentacion(mov.getTipoPresentacion().getBTipoPresentacion());
-		demanda.setTipoPresentacion(mov.getTipoPresentacion().getXTipo());
-
-		demanda.setIdUsuario(mov.getUsuarioDemanda().getId());
-		demanda.setUsuarioDemanda(mov.getUsuarioDemanda().getUsuario());
-
-		demanda.setPdfUrl(mov.getPdfUrl());
-		demanda.setActivo(mov.getActivo());
-		demanda.setDemandantes(mapearDemandantes(mov.getDemandantes()));
-		demanda.setDemandados(mapearDemandados(mov.getDemandados()));
-		demanda.setPetitorios(mapearPetitorios(mov.getPetitorios()));
-
-		if (mov.getRelacionLaboral() != null) {
-			demanda.setRelacionLaboral(mapearRelacionLaboral(mov.getRelacionLaboral()));
-		}
-		demanda.setFundamentaciones(mapearFundamentaciones(mov.getFundamentaciones()));
-		demanda.setFirmas(mapearFirmas(mov.getFirmas()));
-
-		return demanda;
-	}
-
-	private List<Demandante> mapearDemandantes(List<MovDemandante> demandantes) {
-		return demandantes.stream().map(this::mapearDemandante).toList();
-	}
-
-	private Demandante mapearDemandante(MovDemandante d) {
-		var demandante = new Demandante();
-		demandante.setId(d.getId());
-		demandante.setTipoDocumento(d.getTipoDocumento());
-		demandante.setNumeroDocumento(d.getNumeroDocumento());
-		demandante.setRazonSocial(d.getRazonSocial());
-		demandante.setGenero(d.getGenero());
-		demandante.setFechaNacimiento(
-				ProjectUtils.convertDateToString(d.getFechaNacimiento(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		demandante.setDepartamento(d.getDepartamento());
-		demandante.setProvincia(d.getProvincia());
-		demandante.setDistrito(d.getDistrito());
-		demandante.setTipoDomicilio(d.getTipoDomicilio());
-		demandante.setDomicilio(d.getDomicilio());
-		demandante.setReferencia(d.getReferencia());
-		demandante.setCorreo(d.getCorreo());
-		demandante.setCelular(d.getCelular());
-		demandante.setCasillaElectronica(d.getCasillaElectronica());
-		demandante.setApoderadoComun("1".equals(d.getApoderadoComun()) ? "1" : "0");
-		demandante.setArchivoUrl(d.getArchivoUrl());
-		demandante.setNDemanda(d.getDemanda() != null ? d.getDemanda().getId() : null);
-		demandante.setActivo(d.getActivo());
-		return demandante;
-	}
-
-	private List<Demandado> mapearDemandados(List<MovDemandado> demandados) {
-		return demandados.stream().map(this::mapearDemandado).toList();
-	}
-
-	private Demandado mapearDemandado(MovDemandado d) {
-		var demandado = new Demandado();
-		demandado.setId(d.getId());
-		demandado.setTipoDocumento(d.getTipoDocumento());
-		demandado.setNumeroDocumento(d.getNumeroDocumento());
-		demandado.setRazonSocial(d.getRazonSocial());
-		demandado.setDepartamento(d.getDepartamento());
-		demandado.setProvincia(d.getProvincia());
-		demandado.setDistrito(d.getDistrito());
-		demandado.setTipoDomicilio(d.getTipoDomicilio());
-		demandado.setDomicilio(d.getDomicilio());
-		demandado.setReferencia(d.getReferencia());
-		demandado.setNDemanda(d.getDemanda() != null ? d.getDemanda().getId() : null);
-		demandado.setActivo(d.getActivo());
-		return demandado;
-	}
-
-	private List<Petitorio> mapearPetitorios(List<MovPetitorio> petitorios) {
-		return petitorios.stream().map(this::mapearPetitorio).toList();
-	}
-
-	private Petitorio mapearPetitorio(MovPetitorio p) {
-		var petitorio = new Petitorio();
-		petitorio.setId(p.getId());
-		petitorio.setTipo(p.getTipo());
-		petitorio.setPretensionPrincipal(p.getPretensionPrincipal());
-		petitorio.setConcepto(p.getConcepto());
-		petitorio.setPretensionAccesoria(p.getPretensionAccesoria());
-		petitorio.setMonto(p.getMonto());
-		petitorio.setJustificacion(p.getJustificacion());
-		petitorio.setFechaInicio(
-				ProjectUtils.convertDateToString(p.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		petitorio.setFechaFin(
-				ProjectUtils.convertDateToString(p.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		petitorio.setNDemanda(p.getDemanda() != null ? p.getDemanda().getId() : null);
-		petitorio.setActivo(p.getActivo());
-		return petitorio;
-	}
-
-	private RelacionLaboral mapearRelacionLaboral(MovRelacionLaboral r) {
-		var relacion = new RelacionLaboral();
-		relacion.setId(r.getId());
-		relacion.setRegimen(r.getRegimen());
-		relacion.setFechaInicio(
-				ProjectUtils.convertDateToString(r.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		relacion.setFechaFin(
-				ProjectUtils.convertDateToString(r.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		relacion.setAnios(r.getAnios());
-		relacion.setMeses(r.getMeses());
-		relacion.setDias(r.getDias());
-		relacion.setRemuneracion(r.getRemuneracion());
-		relacion.setNDemanda(r.getDemanda() != null ? r.getDemanda().getId() : null);
-		relacion.setActivo(r.getActivo());
-		return relacion;
-	}
-
-	private List<Fundamentacion> mapearFundamentaciones(List<MovFundamentacion> fundamentaciones) {
-		return fundamentaciones.stream().map(this::mapearFundamentaciones).toList();
-	}
-
-	private Fundamentacion mapearFundamentaciones(MovFundamentacion f) {
-		var fundamentacion = new Fundamentacion();
-		fundamentacion.setId(f.getId());
-		fundamentacion.setContenido(f.getXContenido());
-		fundamentacion.setNDemanda(f.getDemanda() != null ? f.getDemanda().getId() : null);
-		fundamentacion.setActivo(f.getActivo());
-		return fundamentacion;
-	}
-
-	private List<Firma> mapearFirmas(List<MovFirma> firmas) {
-		return firmas.stream().map(this::mapearFirmas).toList();
-	}
-
-	private Firma mapearFirmas(MovFirma f) {
-		var firma = new Firma();
-		firma.setId(f.getId());
-		firma.setTipo(f.getCTipo());
-		firma.setArchivoUrl(f.getXArchivoUrl());
-		firma.setNDemanda(f.getDemanda() != null ? f.getDemanda().getId() : null);
-		firma.setActivo(f.getActivo());
-		return firma;
+		return query.getResultStream().map(this::mapToModel).toList();
 	}
 
 	@Override
@@ -212,7 +88,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		Session session = sf.getCurrentSession();
 		session.beginTransaction();
 		try {
-
+			// Crear entidades de referencia
 			MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
 			estadoDemanda.setBEstadoDemanda(demanda.getIdEstadoDemanda());
 
@@ -222,6 +98,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			MovUsuario usuario = new MovUsuario();
 			usuario.setId(demanda.getIdUsuario());
 
+			// Crear y configurar la entidad principal de demanda
 			MovDemanda movDemanda = new MovDemanda();
 			movDemanda.setSumilla(demanda.getSumilla());
 			movDemanda.setEstadoDemanda(estadoDemanda);
@@ -232,215 +109,273 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 					? Estado.ACTIVO_NUMERICO.getNombre()
 					: Estado.INACTIVO_NUMERICO.getNombre());
 
-			// Persistir primero la demanda para obtener el ID
+			// Persistir la demanda principal para obtener el ID
 			session.persist(movDemanda);
 			session.flush(); // Forzar generación del ID
 
-			// 2. Registrar demandantes
-			if (demanda.getDemandantes() != null && !demanda.getDemandantes().isEmpty()) {
-				List<MovDemandante> movDemandantes = new ArrayList<>();
-				System.out.println("Demandantes registrados: " + movDemandantes.size());
-				for (Demandante d : demanda.getDemandantes()) {
-					MovDemandante demandante = mapDemandanteToEntity(d, movDemanda);
-					session.persist(demandante);
-					movDemandantes.add(demandante);
-				}
-				movDemanda.setDemandantes(movDemandantes);
-			}
+			// Registrar entidades relacionadas
+			registrarDemandantes(movDemanda, demanda, session);
+			registrarDemandados(movDemanda, demanda, session);
+			registrarPetitorios(movDemanda, demanda, session);
+			registrarRelacionLaboral(movDemanda, demanda, session);
+			registrarFundamentaciones(movDemanda, demanda, session);
+			registrarFirmas(movDemanda, demanda, session);
 
-			// 3. Registrar demandados
-			if (demanda.getDemandados() != null && !demanda.getDemandados().isEmpty()) {
-				List<MovDemandado> movDemandados = new ArrayList<>();
-				System.out.println("Demandantes registrados: " + movDemandados.size());
-				for (Demandado d : demanda.getDemandados()) {
-					MovDemandado demandado = mapDemandadoToEntity(d, movDemanda);
-					session.persist(demandado);
-					movDemandados.add(demandado);
-				}
-
-				movDemanda.setDemandados(movDemandados);
-			}
-			// 4. Registrar petitorios
-			if (demanda.getPetitorios() != null && !demanda.getPetitorios().isEmpty()) {
-				List<MovPetitorio> movPetitorios = new ArrayList<>();
-				System.out.println("Petitorios registrados: " + movPetitorios.size());
-				for (Petitorio p : demanda.getPetitorios()) {
-					MovPetitorio petitorio = mapPetitorioToEntity(p, movDemanda);
-					session.persist(petitorio);
-					movPetitorios.add(petitorio);
-				}
-
-				movDemanda.setPetitorios(movPetitorios);
-			}
-			// 5. Registrar relación laboral
-			if (demanda.getRelacionLaboral() != null) {
-				MovRelacionLaboral relacion = mapRelacionLaboralToEntity(demanda.getRelacionLaboral(), movDemanda);
-				session.persist(relacion);
-				movDemanda.setRelacionLaboral(relacion);
-			}
-
-			// 6. Registrar fundamentaciones
-			if (demanda.getFundamentaciones() != null && !demanda.getFundamentaciones().isEmpty()) {
-				List<MovFundamentacion> movFundamentaciones = new ArrayList<>();
-				System.out.println("Fundamentaciones registradas: " + movFundamentaciones.size());
-				for (Fundamentacion f : demanda.getFundamentaciones()) {
-					MovFundamentacion fundamentacion = mapFundamentacionToEntity(f, movDemanda);
-					session.persist(fundamentacion);
-					movFundamentaciones.add(fundamentacion);
-				}
-
-				movDemanda.setFundamentaciones(movFundamentaciones);
-			}
-			// 7. Registrar firmas
-			if (demanda.getFirmas() != null && !demanda.getFirmas().isEmpty()) {
-				List<MovFirma> movFirmas = new ArrayList<>();
-				System.out.println("Firmas registradas: " + movFirmas.size());
-				for (Firma f : demanda.getFirmas()) {
-					MovFirma firma = mapFirmaToEntity(f, movDemanda);
-					session.persist(firma);
-					movFirmas.add(firma);
-				}
-
-				movDemanda.setFirmas(movFirmas);
-			}
-
-			// Forzar operaciones pendientes session.flush();
+			// Confirmar transacción
 			session.getTransaction().commit();
-
 			demanda.setId(movDemanda.getId());
+
 		} catch (Exception e) {
 			session.getTransaction().rollback();
 			throw new Exception("Error al registrar demanda: " + e.getMessage(), e);
 		}
 	}
 
-	private MovDemandante mapDemandanteToEntity(Demandante d, MovDemanda demanda) throws Exception {
-		MovDemandante demandante = new MovDemandante();
-		demandante.setTipoDocumento(d.getTipoDocumento());
-		demandante.setNumeroDocumento(d.getNumeroDocumento());
-		demandante.setRazonSocial(d.getRazonSocial());
-		demandante.setGenero(d.getGenero());
-		demandante.setFechaNacimiento(
-				ProjectUtils.parseStringToDate(d.getFechaNacimiento(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		demandante.setDepartamento(d.getDepartamento());
-		demandante.setProvincia(d.getProvincia());
-		demandante.setDistrito(d.getDistrito());
-		demandante.setTipoDomicilio(d.getTipoDomicilio());
-		demandante.setDomicilio(d.getDomicilio());
-		demandante.setReferencia(d.getReferencia());
-		demandante.setCorreo(d.getCorreo());
-		demandante.setCelular(d.getCelular());
-		demandante.setCasillaElectronica(d.getCasillaElectronica());
-		demandante.setApoderadoComun("1".equals(d.getApoderadoComun()) ? "1" : "0");
-		demandante.setArchivoUrl(d.getArchivoUrl());
-		demandante.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(d.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		demandante.setDemanda(demanda);
-		return demandante;
-	}
-
-	private MovDemandado mapDemandadoToEntity(Demandado d, MovDemanda demanda) {
-		MovDemandado demandado = new MovDemandado();
-		demandado.setTipoDocumento(d.getTipoDocumento());
-		demandado.setNumeroDocumento(d.getNumeroDocumento());
-		demandado.setRazonSocial(d.getRazonSocial());
-		demandado.setDepartamento(d.getDepartamento());
-		demandado.setProvincia(d.getProvincia());
-		demandado.setDistrito(d.getDistrito());
-		demandado.setTipoDomicilio(d.getTipoDomicilio());
-		demandado.setDomicilio(d.getDomicilio());
-		demandado.setReferencia(d.getReferencia());
-		demandado.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(d.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		demandado.setDemanda(demanda);
-		return demandado;
-	}
-
-	private MovPetitorio mapPetitorioToEntity(Petitorio p, MovDemanda demanda) throws Exception {
-		MovPetitorio petitorio = new MovPetitorio();
-		petitorio.setTipo(p.getTipo());
-		petitorio.setPretensionPrincipal(p.getPretensionPrincipal());
-		petitorio.setConcepto(p.getConcepto());
-		petitorio.setPretensionAccesoria(p.getPretensionAccesoria());
-		petitorio.setMonto(p.getMonto());
-		petitorio.setJustificacion(p.getJustificacion());
-		petitorio.setFechaInicio(
-				ProjectUtils.parseStringToDate(p.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		petitorio.setFechaFin(
-				ProjectUtils.parseStringToDate(p.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		petitorio.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(p.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		petitorio.setDemanda(demanda);
-		return petitorio;
-	}
-
-	private MovRelacionLaboral mapRelacionLaboralToEntity(RelacionLaboral r, MovDemanda demanda) throws Exception {
-		MovRelacionLaboral relacion = new MovRelacionLaboral();
-		relacion.setRegimen(r.getRegimen());
-//		relacion.setFechaInicio(
-//				ProjectUtils.parseStringToDate(r.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		relacion.setFechaFin(
-//				ProjectUtils.parseStringToDate(r.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		if (r.getFechaInicio() != null && !r.getFechaInicio().trim().isEmpty()) {
-			relacion.setFechaInicio(
-					ProjectUtils.parseStringToDate(r.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		} else {
-			relacion.setFechaInicio(null);
-		}
-
-		if (r.getFechaFin() != null && !r.getFechaFin().trim().isEmpty()) {
-			relacion.setFechaFin(
-					ProjectUtils.parseStringToDate(r.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		} else {
-			relacion.setFechaFin(null);
-		}
-		relacion.setAnios(r.getAnios());
-		relacion.setMeses(r.getMeses());
-		relacion.setDias(r.getDias());
-		relacion.setRemuneracion(r.getRemuneracion());
-		relacion.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(r.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		relacion.setDemanda(demanda);
-		return relacion;
-	}
-
-	private MovFundamentacion mapFundamentacionToEntity(Fundamentacion f, MovDemanda demanda) {
-		MovFundamentacion fundamentacion = new MovFundamentacion();
-		fundamentacion.setXContenido(f.getContenido());
-		fundamentacion.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(f.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		fundamentacion.setDemanda(demanda);
-		return fundamentacion;
-	}
-
-	private MovFirma mapFirmaToEntity(Firma f, MovDemanda demanda) {
-		MovFirma firma = new MovFirma();
-		firma.setCTipo(f.getTipo());
-		firma.setXArchivoUrl(f.getArchivoUrl());
-		firma.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(f.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
-		firma.setDemanda(demanda);
-		return firma;
-	}
-
 	@Override
 	public void actualizarDemanda(String cuo, Demanda demanda) throws Exception {
-
 		var session = sf.getCurrentSession();
 
-		// Habilitar filtro por ID
+		// Buscar la demanda existente
 		session.enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, demanda.getId());
-
 		TypedQuery<MovDemanda> query = sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
-
 		MovDemanda movDemanda = query.getSingleResult();
 
-		// Actualizar datos básicos
+		// Actualizar datos básicos de la demanda
+		actualizarDatosBasicos(movDemanda, demanda);
+
+		// Actualizar entidades relacionadas
+		actualizarDemandantes(movDemanda, demanda, session);
+		actualizarDemandados(movDemanda, demanda, session);
+		actualizarPetitorios(movDemanda, demanda, session);
+		actualizarRelacionLaboral(movDemanda, demanda, session);
+		actualizarFundamentaciones(movDemanda, demanda, session);
+		actualizarFirmas(movDemanda, demanda, session);
+
+		// Persistir cambios
+		session.merge(movDemanda);
+	}
+
+	// ========================================================================
+	// MÉTODOS PRIVADOS - MAPEO PRINCIPAL DE ENTIDAD A MODELO
+	// ========================================================================
+
+	private Demanda mapToModel(MovDemanda entity) {
+		if (entity == null)
+			return null;
+
+		Demanda demanda = new Demanda();
+
+		// Mapear campos básicos
+		demanda.setId(entity.getId());
+		demanda.setSumilla(entity.getSumilla());
+		demanda.setPdfUrl(entity.getPdfUrl());
+		demanda.setActivo(entity.getActivo());
+
+		// Mapear referencias con validación de nulos
+		mapearReferenciasBasicas(entity, demanda);
+
+		// Mapear entidades relacionadas
+		mapearEntidadesRelacionadas(entity, demanda);
+
+		return demanda;
+	}
+
+	private void mapearReferenciasBasicas(MovDemanda entity, Demanda demanda) {
+		if (entity.getEstadoDemanda() != null) {
+			demanda.setIdEstadoDemanda(entity.getEstadoDemanda().getBEstadoDemanda());
+			demanda.setEstadoDemanda(entity.getEstadoDemanda().getXEstado());
+		}
+
+		if (entity.getTipoPresentacion() != null) {
+			demanda.setIdTipoPresentacion(entity.getTipoPresentacion().getBTipoPresentacion());
+			demanda.setTipoPresentacion(entity.getTipoPresentacion().getXTipo());
+		}
+
+		if (entity.getUsuarioDemanda() != null) {
+			demanda.setIdUsuario(entity.getUsuarioDemanda().getId());
+			demanda.setUsuarioDemanda(entity.getUsuarioDemanda().getUsuario());
+		}
+	}
+
+	private void mapearEntidadesRelacionadas(MovDemanda entity, Demanda demanda) {
+		// Mapear demandantes
+		if (entity.getDemandantes() != null && !entity.getDemandantes().isEmpty()) {
+			demanda.setDemandantes(entity.getDemandantes().stream().map(this::mapDemandanteToModel).toList());
+		}
+
+		// Mapear demandados
+		if (entity.getDemandados() != null && !entity.getDemandados().isEmpty()) {
+			demanda.setDemandados(entity.getDemandados().stream().map(this::mapDemandadoToModel).toList());
+		}
+
+		// Mapear petitorios
+		if (entity.getPetitorios() != null && !entity.getPetitorios().isEmpty()) {
+			demanda.setPetitorios(entity.getPetitorios().stream().map(this::mapPetitorioToModel).toList());
+		}
+
+		// Mapear relación laboral
+		if (entity.getRelacionLaboral() != null) {
+			demanda.setRelacionLaboral(mapRelacionLaboralToModel(entity.getRelacionLaboral()));
+		}
+
+		// Mapear fundamentaciones
+		if (entity.getFundamentaciones() != null && !entity.getFundamentaciones().isEmpty()) {
+			demanda.setFundamentaciones(
+					entity.getFundamentaciones().stream().map(this::mapFundamentacionToModel).toList());
+		}
+
+		// Mapear firmas
+		if (entity.getFirmas() != null && !entity.getFirmas().isEmpty()) {
+			demanda.setFirmas(entity.getFirmas().stream().map(this::mapFirmaToModel).toList());
+		}
+	}
+
+	// ========================================================================
+	// MÉTODOS PRIVADOS - MAPEO DE ENTIDADES A MODELOS (ENTITY TO MODEL)
+	// ========================================================================
+
+	private Demandante mapDemandanteToModel(MovDemandante entity) {
+		return demandanteEntityMapper.toModel(entity);
+	}
+
+	private Demandado mapDemandadoToModel(MovDemandado entity) {
+		return demandadoEntityMapper.toModel(entity);
+	}
+
+	private Petitorio mapPetitorioToModel(MovPetitorio entity) {
+		return petitorioEntityMapper.toModel(entity);
+	}
+
+	private RelacionLaboral mapRelacionLaboralToModel(MovRelacionLaboral entity) {
+		return relacionLaboralEntityMapper.toModel(entity);
+	}
+
+	private Fundamentacion mapFundamentacionToModel(MovFundamentacion entity) {
+		return fundamentacionEntityMapper.toModel(entity);
+	}
+
+	private Firma mapFirmaToModel(MovFirma entity) {
+		return firmaEntityMapper.toModel(entity);
+	}
+
+	// ========================================================================
+	// MÉTODOS PRIVADOS - MAPEO DE MODELOS A ENTIDADES (MODEL TO ENTITY)
+	// ========================================================================
+
+	private MovDemandante mapDemandanteToEntity(Demandante model) throws Exception {
+		return demandanteEntityMapper.toEntity(model);
+	}
+
+	private MovDemandado mapDemandadoToEntity(Demandado model) {
+		return demandadoEntityMapper.toEntity(model);
+	}
+
+	private MovPetitorio mapPetitorioToEntity(Petitorio model) throws Exception {
+		return petitorioEntityMapper.toEntity(model);
+	}
+
+	private MovRelacionLaboral mapRelacionLaboralToEntity(RelacionLaboral model) throws Exception {
+		return relacionLaboralEntityMapper.toEntity(model);
+	}
+
+	private MovFundamentacion mapFundamentacionToEntity(Fundamentacion model) {
+		return fundamentacionEntityMapper.toEntity(model);
+	}
+
+	private MovFirma mapFirmaToEntity(Firma model) {
+		return firmaEntityMapper.toEntity(model);
+	}
+
+	// ========================================================================
+	// MÉTODOS PRIVADOS - REGISTRO DE ENTIDADES RELACIONADAS
+	// ========================================================================
+
+	private void registrarDemandantes(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
+		if (demanda.getDemandantes() != null && !demanda.getDemandantes().isEmpty()) {
+			List<MovDemandante> movDemandantes = new ArrayList<>();
+			for (int i = 0; i < demanda.getDemandantes().size(); i++) {
+				Demandante d = demanda.getDemandantes().get(i);
+				MovDemandante demandante = mapDemandanteToEntity(d);
+				demandante.setDemanda(movDemanda);
+				session.persist(demandante);
+				session.flush(); // Forzar generación del ID
+				movDemandantes.add(demandante);
+
+				// Actualizar el demandante en el objeto de dominio con los datos generados
+				d.setId(demandante.getId());
+				d.setNDemanda(movDemanda.getId());
+			}
+			movDemanda.setDemandantes(movDemandantes);
+		}
+	}
+
+	private void registrarDemandados(MovDemanda movDemanda, Demanda demanda, Session session) {
+		if (demanda.getDemandados() != null && !demanda.getDemandados().isEmpty()) {
+			List<MovDemandado> movDemandados = new ArrayList<>();
+			for (Demandado d : demanda.getDemandados()) {
+				MovDemandado demandado = mapDemandadoToEntity(d);
+				demandado.setDemanda(movDemanda);
+				session.persist(demandado);
+				movDemandados.add(demandado);
+			}
+			movDemanda.setDemandados(movDemandados);
+		}
+	}
+
+	private void registrarPetitorios(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
+		if (demanda.getPetitorios() != null && !demanda.getPetitorios().isEmpty()) {
+			List<MovPetitorio> movPetitorios = new ArrayList<>();
+			for (Petitorio p : demanda.getPetitorios()) {
+				MovPetitorio petitorio = mapPetitorioToEntity(p);
+				petitorio.setDemanda(movDemanda);
+				session.persist(petitorio);
+				movPetitorios.add(petitorio);
+			}
+			movDemanda.setPetitorios(movPetitorios);
+		}
+	}
+
+	private void registrarRelacionLaboral(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
+		if (demanda.getRelacionLaboral() != null) {
+			MovRelacionLaboral relacion = mapRelacionLaboralToEntity(demanda.getRelacionLaboral());
+			relacion.setDemanda(movDemanda);
+			session.persist(relacion);
+			movDemanda.setRelacionLaboral(relacion);
+		}
+	}
+
+	private void registrarFundamentaciones(MovDemanda movDemanda, Demanda demanda, Session session) {
+		if (demanda.getFundamentaciones() != null && !demanda.getFundamentaciones().isEmpty()) {
+			List<MovFundamentacion> movFundamentaciones = new ArrayList<>();
+			for (Fundamentacion f : demanda.getFundamentaciones()) {
+				MovFundamentacion fundamentacion = mapFundamentacionToEntity(f);
+				fundamentacion.setDemanda(movDemanda);
+				session.persist(fundamentacion);
+				movFundamentaciones.add(fundamentacion);
+			}
+			movDemanda.setFundamentaciones(movFundamentaciones);
+		}
+	}
+
+	private void registrarFirmas(MovDemanda movDemanda, Demanda demanda, Session session) {
+		if (demanda.getFirmas() != null && !demanda.getFirmas().isEmpty()) {
+			List<MovFirma> movFirmas = new ArrayList<>();
+			for (Firma f : demanda.getFirmas()) {
+				MovFirma firma = mapFirmaToEntity(f);
+				firma.setDemanda(movDemanda);
+				session.persist(firma);
+				movFirmas.add(firma);
+			}
+			movDemanda.setFirmas(movFirmas);
+		}
+	}
+
+	// ========================================================================
+	// MÉTODOS PRIVADOS - ACTUALIZACIÓN DE DATOS BÁSICOS
+	// ========================================================================
+
+	private void actualizarDatosBasicos(MovDemanda movDemanda, Demanda demanda) {
+		// Actualizar campos básicos
 		movDemanda.setSumilla(demanda.getSumilla());
 		movDemanda.setPdfUrl(demanda.getPdfUrl());
 		movDemanda.setActivo(
@@ -460,20 +395,11 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			tipoPresentacion.setBTipoPresentacion(demanda.getIdTipoPresentacion());
 			movDemanda.setTipoPresentacion(tipoPresentacion);
 		}
-
-		// Actualizar relaciones
-		actualizarDemandantes(movDemanda, demanda, session);
-		actualizarDemandados(movDemanda, demanda, session);
-		actualizarPetitorios(movDemanda, demanda, session);
-		actualizarRelacionLaboral(movDemanda, demanda, session);
-		actualizarFundamentaciones(movDemanda, demanda, session);
-		actualizarFirmas(movDemanda, demanda, session);
-
-		// Actualizar la demanda
-		session.merge(movDemanda);
-
-		// sf.getCurrentSession().merge(movDemanda);
 	}
+
+	// ========================================================================
+	// MÉTODOS PRIVADOS - ACTUALIZACIÓN DE ENTIDADES RELACIONADAS
+	// ========================================================================
 
 	private void actualizarDemandantes(MovDemanda movDemanda, Demanda demanda, Session session) throws Exception {
 		// Eliminar demandantes que ya no están en la demanda actualizada
@@ -484,7 +410,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		for (Demandante demandante : demanda.getDemandantes()) {
 			if (demandante.getId() == null) {
 				// Nuevo demandante
-				MovDemandante nuevo = mapDemandanteToMovDemandante(demandante);
+				MovDemandante nuevo = mapDemandanteToEntity(demandante);
 				nuevo.setDemanda(movDemanda);
 				movDemanda.getDemandantes().add(nuevo);
 			} else {
@@ -492,9 +418,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				movDemanda.getDemandantes().stream().filter(md -> md.getId().equals(demandante.getId())).findFirst()
 						.ifPresent(md -> {
 							try {
-								actualizarMovDemandante(md, demandante);
+								updateDemandanteEntity(md, demandante);
 							} catch (Exception e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						});
@@ -511,13 +436,13 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		for (Demandado demandado : demanda.getDemandados()) {
 			if (demandado.getId() == null) {
 				// Nuevo demandado
-				MovDemandado nuevo = mapDemandadoToMovDemandado(demandado);
+				MovDemandado nuevo = mapDemandadoToEntity(demandado);
 				nuevo.setDemanda(movDemanda);
 				movDemanda.getDemandados().add(nuevo);
 			} else {
 				// Demandado existente - actualizar
 				movDemanda.getDemandados().stream().filter(md -> md.getId().equals(demandado.getId())).findFirst()
-						.ifPresent(md -> actualizarMovDemandado(md, demandado));
+						.ifPresent(md -> updateDemandadoEntity(md, demandado));
 			}
 		}
 	}
@@ -531,7 +456,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		for (Petitorio petitorio : demanda.getPetitorios()) {
 			if (petitorio.getId() == null) {
 				// Nuevo petitorio
-				MovPetitorio nuevo = mapPetitorioToMov(petitorio);
+				MovPetitorio nuevo = mapPetitorioToEntity(petitorio);
 				nuevo.setDemanda(movDemanda);
 				movDemanda.getPetitorios().add(nuevo);
 			} else {
@@ -539,9 +464,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 				movDemanda.getPetitorios().stream().filter(mp -> mp.getId().equals(petitorio.getId())).findFirst()
 						.ifPresent(mp -> {
 							try {
-								actualizarMovPetitorio(mp, petitorio);
+								updatePetitorioEntity(mp, petitorio);
 							} catch (Exception e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						});
@@ -561,12 +485,12 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 
 		if (movDemanda.getRelacionLaboral() == null) {
 			// Nueva relación laboral
-			MovRelacionLaboral nueva = mapRelacionLaboralToMov(demanda.getRelacionLaboral());
+			MovRelacionLaboral nueva = mapRelacionLaboralToEntity(demanda.getRelacionLaboral());
 			nueva.setDemanda(movDemanda);
 			movDemanda.setRelacionLaboral(nueva);
 		} else {
 			// Actualizar relación existente
-			actualizarMovRelacionLaboral(movDemanda.getRelacionLaboral(), demanda.getRelacionLaboral());
+			updateRelacionLaboralEntity(movDemanda.getRelacionLaboral(), demanda.getRelacionLaboral());
 		}
 	}
 
@@ -579,13 +503,13 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		for (Fundamentacion fundamentacion : demanda.getFundamentaciones()) {
 			if (fundamentacion.getId() == null) {
 				// Nueva fundamentación
-				MovFundamentacion nueva = mapFundamentacionToMov(fundamentacion);
+				MovFundamentacion nueva = mapFundamentacionToEntity(fundamentacion);
 				nueva.setDemanda(movDemanda);
 				movDemanda.getFundamentaciones().add(nueva);
 			} else {
 				// Fundamentación existente - actualizar
 				movDemanda.getFundamentaciones().stream().filter(mf -> mf.getId().equals(fundamentacion.getId()))
-						.findFirst().ifPresent(mf -> actualizarMovFundamentacion(mf, fundamentacion));
+						.findFirst().ifPresent(mf -> updateFundamentacionEntity(mf, fundamentacion));
 			}
 		}
 	}
@@ -599,220 +523,42 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		for (Firma firma : demanda.getFirmas()) {
 			if (firma.getId() == null) {
 				// Nueva firma
-				MovFirma nueva = mapFirmaToMov(firma);
+				MovFirma nueva = mapFirmaToEntity(firma);
 				nueva.setDemanda(movDemanda);
 				movDemanda.getFirmas().add(nueva);
 			} else {
 				// Firma existente - actualizar
 				movDemanda.getFirmas().stream().filter(mf -> mf.getId().equals(firma.getId())).findFirst()
-						.ifPresent(mf -> actualizarMovFirma(mf, firma));
+						.ifPresent(mf -> updateFirmaEntity(mf, firma));
 			}
 		}
 	}
 
-	private MovDemandante mapDemandanteToMovDemandante(Demandante demandante) throws Exception {
-		var mov = new MovDemandante();
-		mov.setTipoDocumento(demandante.getTipoDocumento());
-		mov.setNumeroDocumento(demandante.getNumeroDocumento());
-		mov.setRazonSocial(demandante.getRazonSocial());
-		mov.setGenero(demandante.getGenero());
-		mov.setFechaNacimiento(ProjectUtils.parseStringToDate(demandante.getFechaNacimiento(),
-				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setDepartamento(demandante.getDepartamento());
-		mov.setProvincia(demandante.getProvincia());
-		mov.setDistrito(demandante.getDistrito());
-		mov.setTipoDomicilio(demandante.getTipoDomicilio());
-		mov.setDomicilio(demandante.getDomicilio());
-		mov.setReferencia(demandante.getReferencia());
-		mov.setCorreo(demandante.getCorreo());
-		mov.setCelular(demandante.getCelular());
-		mov.setCasillaElectronica(demandante.getCasillaElectronica());
-		mov.setApoderadoComun("1".equals(demandante.getApoderadoComun()) ? "1" : "0");
-		mov.setArchivoUrl(demandante.getArchivoUrl());
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(demandante.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
-		return mov;
+	// ========================================================================
+	// MÉTODOS PRIVADOS - ACTUALIZACIÓN DE ENTIDADES INDIVIDUALES
+	// ========================================================================
+
+	private void updateDemandanteEntity(MovDemandante entity, Demandante model) throws Exception {
+		demandanteEntityMapper.updateEntity(entity, model);
 	}
 
-	private void actualizarMovDemandante(MovDemandante mov, Demandante demandante) throws Exception {
-		mov.setTipoDocumento(demandante.getTipoDocumento());
-		mov.setNumeroDocumento(demandante.getNumeroDocumento());
-		mov.setRazonSocial(demandante.getRazonSocial());
-		mov.setGenero(demandante.getGenero());
-		mov.setFechaNacimiento(ProjectUtils.parseStringToDate(demandante.getFechaNacimiento(),
-				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setDepartamento(demandante.getDepartamento());
-		mov.setProvincia(demandante.getProvincia());
-		mov.setDistrito(demandante.getDistrito());
-		mov.setTipoDomicilio(demandante.getTipoDomicilio());
-		mov.setDomicilio(demandante.getDomicilio());
-		mov.setReferencia(demandante.getReferencia());
-		mov.setCorreo(demandante.getCorreo());
-		mov.setCelular(demandante.getCelular());
-		mov.setCasillaElectronica(demandante.getCasillaElectronica());
-		mov.setApoderadoComun("1".equals(demandante.getApoderadoComun()) ? "1" : "0");
-		mov.setArchivoUrl(demandante.getArchivoUrl());
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(demandante.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
+	private void updateDemandadoEntity(MovDemandado entity, Demandado model) {
+		demandadoEntityMapper.updateEntity(entity, model);
 	}
 
-	private MovDemandado mapDemandadoToMovDemandado(Demandado demandado) {
-		var mov = new MovDemandado();
-		mov.setTipoDocumento(demandado.getTipoDocumento());
-		mov.setNumeroDocumento(demandado.getNumeroDocumento());
-		mov.setRazonSocial(demandado.getRazonSocial());
-		mov.setDepartamento(demandado.getDepartamento());
-		mov.setProvincia(demandado.getProvincia());
-		mov.setDistrito(demandado.getDistrito());
-		mov.setTipoDomicilio(demandado.getTipoDomicilio());
-		mov.setDomicilio(demandado.getDomicilio());
-		mov.setReferencia(demandado.getReferencia());
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(demandado.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		return mov;
+	private void updatePetitorioEntity(MovPetitorio entity, Petitorio model) throws Exception {
+		petitorioEntityMapper.updateEntity(entity, model);
 	}
 
-	private void actualizarMovDemandado(MovDemandado mov, Demandado demandado) {
-		mov.setTipoDocumento(demandado.getTipoDocumento());
-		mov.setNumeroDocumento(demandado.getNumeroDocumento());
-		mov.setRazonSocial(demandado.getRazonSocial());
-		mov.setDepartamento(demandado.getDepartamento());
-		mov.setProvincia(demandado.getProvincia());
-		mov.setDistrito(demandado.getDistrito());
-		mov.setTipoDomicilio(demandado.getTipoDomicilio());
-		mov.setDomicilio(demandado.getDomicilio());
-		mov.setReferencia(demandado.getReferencia());
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(demandado.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
+	private void updateRelacionLaboralEntity(MovRelacionLaboral entity, RelacionLaboral model) throws Exception {
+		relacionLaboralEntityMapper.updateEntity(entity, model);
 	}
 
-	private MovPetitorio mapPetitorioToMov(Petitorio petitorio) throws Exception {
-		var mov = new MovPetitorio();
-		mov.setTipo(petitorio.getTipo());
-		mov.setPretensionPrincipal(petitorio.getPretensionPrincipal());
-		mov.setConcepto(petitorio.getConcepto());
-		mov.setPretensionAccesoria(petitorio.getPretensionAccesoria());
-		mov.setMonto(petitorio.getMonto());
-		mov.setJustificacion(petitorio.getJustificacion());
-		mov.setFechaInicio(
-				ProjectUtils.parseStringToDate(petitorio.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setFechaFin(
-				ProjectUtils.parseStringToDate(petitorio.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(petitorio.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		return mov;
+	private void updateFundamentacionEntity(MovFundamentacion entity, Fundamentacion model) {
+		fundamentacionEntityMapper.updateEntity(entity, model);
 	}
 
-	private void actualizarMovPetitorio(MovPetitorio mov, Petitorio petitorio) throws Exception {
-		mov.setTipo(petitorio.getTipo());
-		mov.setPretensionPrincipal(petitorio.getPretensionPrincipal());
-		mov.setConcepto(petitorio.getConcepto());
-		mov.setPretensionAccesoria(petitorio.getPretensionAccesoria());
-		mov.setMonto(petitorio.getMonto());
-		mov.setJustificacion(petitorio.getJustificacion());
-		mov.setFechaInicio(
-				ProjectUtils.parseStringToDate(petitorio.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setFechaFin(
-				ProjectUtils.parseStringToDate(petitorio.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(petitorio.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-	}
-
-	private MovRelacionLaboral mapRelacionLaboralToMov(RelacionLaboral relacion) throws Exception {
-		var mov = new MovRelacionLaboral();
-		mov.setRegimen(relacion.getRegimen());
-//		mov.setFechaInicio(
-//				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setFechaFin(
-//				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-
-		if (relacion.getFechaInicio() != null && !relacion.getFechaInicio().trim().isEmpty()) {
-			mov.setFechaInicio(ProjectUtils.parseStringToDate(relacion.getFechaInicio(),
-					ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		} else {
-			mov.setFechaInicio(null);
-		}
-
-		if (relacion.getFechaFin() != null && !relacion.getFechaFin().trim().isEmpty()) {
-			mov.setFechaFin(
-					ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		} else {
-			mov.setFechaFin(null);
-		}
-		mov.setAnios(relacion.getAnios());
-		mov.setMeses(relacion.getMeses());
-		mov.setDias(relacion.getDias());
-		mov.setRemuneracion(relacion.getRemuneracion());
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(relacion.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		return mov;
-	}
-
-	private void actualizarMovRelacionLaboral(MovRelacionLaboral mov, RelacionLaboral relacion) throws Exception {
-		mov.setRegimen(relacion.getRegimen());
-//		mov.setFechaInicio(
-//				ProjectUtils.parseStringToDate(relacion.getFechaInicio(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-//		mov.setFechaFin(
-//				ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		if (relacion.getFechaInicio() != null && !relacion.getFechaInicio().trim().isEmpty()) {
-			mov.setFechaInicio(ProjectUtils.parseStringToDate(relacion.getFechaInicio(),
-					ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		} else {
-			mov.setFechaInicio(null);
-		}
-		if (relacion.getFechaFin() != null && !relacion.getFechaFin().trim().isEmpty()) {
-			mov.setFechaFin(
-					ProjectUtils.parseStringToDate(relacion.getFechaFin(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		} else {
-			mov.setFechaFin(null);
-		}
-		mov.setAnios(relacion.getAnios());
-		mov.setMeses(relacion.getMeses());
-		mov.setDias(relacion.getDias());
-		mov.setRemuneracion(relacion.getRemuneracion());
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(relacion.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-	}
-
-	private MovFundamentacion mapFundamentacionToMov(Fundamentacion fundamentacion) {
-		var mov = new MovFundamentacion();
-		mov.setXContenido(fundamentacion.getContenido());
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(fundamentacion.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
-		return mov;
-	}
-
-	private void actualizarMovFundamentacion(MovFundamentacion mov, Fundamentacion fundamentacion) {
-		mov.setXContenido(fundamentacion.getContenido());
-		mov.setActivo(!Estado.INACTIVO_NUMERICO.getNombre().equals(fundamentacion.getActivo())
-				? Estado.ACTIVO_NUMERICO.getNombre()
-				: Estado.INACTIVO_NUMERICO.getNombre());
-	}
-
-	private MovFirma mapFirmaToMov(Firma firma) {
-		var mov = new MovFirma();
-		mov.setCTipo(firma.getTipo());
-		mov.setXArchivoUrl(firma.getArchivoUrl());
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(firma.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
-		return mov;
-	}
-
-	private void actualizarMovFirma(MovFirma mov, Firma firma) {
-		mov.setCTipo(firma.getTipo());
-		mov.setXArchivoUrl(firma.getArchivoUrl());
-		mov.setActivo(
-				!Estado.INACTIVO_NUMERICO.getNombre().equals(firma.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()
-						: Estado.INACTIVO_NUMERICO.getNombre());
+	private void updateFirmaEntity(MovFirma entity, Firma model) {
+		firmaEntityMapper.updateEntity(entity, model);
 	}
 }

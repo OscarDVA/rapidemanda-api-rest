@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.FilterDefs;
@@ -61,24 +62,29 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 	private String pdfUrl;
 
 	@OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 10)
 	private List<MovDemandante> demandantes;
 
 	@OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+	@BatchSize(size = 10)
 	private List<MovDemandado> demandados;
     
     @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10)
     private List<MovPetitorio> petitorios;
 	
 	@OneToOne(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 	private MovRelacionLaboral relacionLaboral;
     
     @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10)
     private List<MovFundamentacion> fundamentaciones;
    
 //    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private List<MovAnexo> anexos;
   
     @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10)
     private List<MovFirma> firmas;
 
 	@ManyToOne(fetch = FetchType.LAZY)
