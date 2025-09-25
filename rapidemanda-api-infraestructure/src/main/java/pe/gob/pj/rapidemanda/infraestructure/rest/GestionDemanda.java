@@ -3,6 +3,7 @@ package pe.gob.pj.rapidemanda.infraestructure.rest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -95,4 +96,16 @@ public interface GestionDemanda extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@Validated @RequestBody DemandaRequest demanda);
+	
+	 @DeleteMapping("/{id}")
+	    ResponseEntity<GlobalResponse> eliminarDemanda(
+	            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+	            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+	            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+	            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+	            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+	            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+	            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+	            @PathVariable("id") Integer id,
+	            @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta);
 }

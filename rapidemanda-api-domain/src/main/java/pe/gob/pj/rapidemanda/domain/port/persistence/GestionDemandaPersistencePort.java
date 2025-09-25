@@ -36,4 +36,6 @@ public interface GestionDemandaPersistencePort {
 	 * @throws Exception
 	 */
 	List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception;
+
+	public void eliminar(String cuo, Integer id) throws Exception;
 }

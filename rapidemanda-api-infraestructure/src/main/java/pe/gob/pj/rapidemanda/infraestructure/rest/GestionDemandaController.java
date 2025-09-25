@@ -43,14 +43,15 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 
 	@Override
 	public ResponseEntity<GlobalResponse> consultarDemandas(String cuo, String ips, String usuauth, String uri,
-			String params, String herramienta, String ip, String formatoRespuesta, Integer id, String bEstadoId, Integer idUsuario) {
+			String params, String herramienta, String ip, String formatoRespuesta, Integer id, String bEstadoId,
+			Integer idUsuario) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
 
 		try {
-			
+
 			Map<String, Object> filters = new HashMap<String, Object>();
-			
+
 			if (id != null) {
 				filters.put(Demanda.P_ID, id);
 			}
@@ -60,7 +61,7 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 			if (idUsuario != null) {
 				filters.put(Demanda.P_USUARIO, idUsuario);
 			}
-			
+
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
 			res.setData(gestionDemandaUseCasePort.buscarDemandas(cuo, filters));
@@ -152,6 +153,32 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 		headers.setContentType(MediaType
 				.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
 						? MediaType.APPLICATION_XML_VALUE
+						: MediaType.APPLICATION_JSON_VALUE));
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> eliminarDemanda(String cuo, String ips, String usuauth, String uri,
+			String params, String herramienta, String ip, Integer id, String formatoRespuesta) {
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+			gestionDemandaUseCasePort.eliminar(cuo, id);
+			res.setData("Demanda eliminada exitosamente");
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.DEMANDA_ELIMINAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(
+				FormatoRespuesta.XML.getNombre().equalsIgnoreCase(formatoRespuesta) ? MediaType.APPLICATION_XML_VALUE
 						: MediaType.APPLICATION_JSON_VALUE));
 		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}

@@ -9,6 +9,9 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import pe.gob.pj.rapidemanda.domain.enums.Errors;
+import pe.gob.pj.rapidemanda.domain.enums.Proceso;
+import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Anexo;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandado;
@@ -684,5 +687,25 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 
 	private void updateAnexoEntity(MovAnexo entity, Anexo model) {
 		anexoEntityMapper.updateEntity(entity, model);
+	}
+
+	@Override
+	public void eliminar(String cuo, Integer id) throws Exception {
+		MovDemanda ent = sf.getCurrentSession().get(MovDemanda.class, id);
+		
+		// Validar que la demanda existe
+		if (ent == null) {
+			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), Proceso.DEMANDA_ELIMINAR.getNombre()));
+		}
+		
+		// Validar que solo se puedan eliminar demandas en estado BORRADOR
+		if (!"B".equals(ent.getEstadoDemanda().getBEstadoDemanda())) {
+			throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getCodigo(),
+					String.format(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getNombre(), 
+							Proceso.DEMANDA_ELIMINAR.getNombre(), ent.getEstadoDemanda().getXEstado()));
+		}
+		
+		sf.getCurrentSession().remove(ent);
 	}
 }

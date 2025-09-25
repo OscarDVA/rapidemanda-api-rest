@@ -76,4 +76,11 @@ public class GestionDemandaUseCaseAdapter implements GestionDemandaUseCasePort {
 		gestionDemandaPersistencePort.actualizarDemanda(cuo, demanda);
 	}
 
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void eliminar(String cuo, Integer id) throws Exception {
+		gestionDemandaPersistencePort.eliminar(cuo, id);
+	}
+
 }

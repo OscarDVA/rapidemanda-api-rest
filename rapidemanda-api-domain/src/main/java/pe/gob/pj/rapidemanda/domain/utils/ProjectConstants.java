@@ -2,7 +2,7 @@ package pe.gob.pj.rapidemanda.domain.utils;
 
 public class ProjectConstants {
 
-	public static final String []  METHOD_CORTA_ULTIMA_BARRA_INVERTIDA = {"PUT", "PATCH"};
+	public static final String []  METHOD_CORTA_ULTIMA_BARRA_INVERTIDA = {"PUT", "PATCH", "DELETE"};
 	
 	public static final int DEFAULT_PAGINATION_PAGE_SIZE = 10;
 	
