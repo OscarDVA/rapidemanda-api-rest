@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.annotation.PostConstruct;
 
@@ -40,10 +41,13 @@ public class CmisAdapter implements CmisPort {
 	private String rootFolder = "default";
 	
     private Session session;
+    private final Object sessionLock = new Object();
+    private volatile long sessionCreationTime = 0;
+    private static final long SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
     
-    Map<String, String> credencialesConexion = new HashMap<String, String>();
+    private final Map<String, String> credencialesConexion = new ConcurrentHashMap<>();
     private String cuo = "default";
-    private boolean credencialesInicializadas = false;
+    private volatile boolean credencialesInicializadas = false;
 
     /**
      * Inicializa automáticamente las credenciales de Alfresco al crear el bean
@@ -85,6 +89,31 @@ public class CmisAdapter implements CmisPort {
             if (!isCredencialesInicializadas()) {
                 throw new Exception("Las credenciales de Alfresco no están inicializadas y no se pudieron inicializar automáticamente");
             }
+        }
+    }
+
+    /**
+     * Verifica si la sesión actual está activa y no ha expirado
+     */
+    private boolean isSessionActive() {
+        if (session == null) {
+            return false;
+        }
+        
+        // Verificar timeout
+        long currentTime = System.currentTimeMillis();
+        if (sessionCreationTime > 0 && (currentTime - sessionCreationTime) > SESSION_TIMEOUT_MS) {
+            log.warn("Sesión CMIS ha expirado después de {} ms", SESSION_TIMEOUT_MS);
+            return false;
+        }
+        
+        // Verificar si la sesión sigue siendo válida
+        try {
+            session.getRepositoryInfo(); // Test básico de conectividad
+            return true;
+        } catch (Exception e) {
+            log.warn("Sesión CMIS no está activa: {}", e.getMessage());
+            return false;
         }
     }
 
@@ -799,11 +828,29 @@ public class CmisAdapter implements CmisPort {
     public Session openSession() {
         try {
             asegurarCredencialesInicializadas();
-            if(null == this.session){
-                Map<String, String> parameter =  this.credencialesConexion;
-                SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
-                List<Repository> repositories = sessionFactory.getRepositories(parameter);
-                session = repositories.get(0).createSession();
+            
+            // Sincronización thread-safe para la creación de sesión
+            synchronized (sessionLock) {
+                // Verificar si necesitamos crear una nueva sesión
+                if (!isSessionActive()) {
+                    if (session != null) {
+                        log.debug("Sesión CMIS inactiva o expirada, creando nueva sesión...");
+                        try {
+                            session.clear();
+                        } catch (Exception e) {
+                            log.debug("Error al limpiar sesión anterior: {}", e.getMessage());
+                        }
+                        session = null;
+                    }
+                    
+                    log.debug("Creando nueva sesión CMIS...");
+                    Map<String, String> parameter = this.credencialesConexion;
+                    SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
+                    List<Repository> repositories = sessionFactory.getRepositories(parameter);
+                    session = repositories.get(0).createSession();
+                    sessionCreationTime = System.currentTimeMillis();
+                    log.debug("Sesión CMIS creada exitosamente");
+                }
             }
             return session;
         } catch (Exception e) {
@@ -813,9 +860,14 @@ public class CmisAdapter implements CmisPort {
     }
 
     public void finalizeSession(){
-        if(null != this.session){
-            this.session.clear();
-            this.session = null;
+        synchronized (sessionLock) {
+            if(null != this.session){
+                log.debug("Finalizando sesión CMIS...");
+                this.session.clear();
+                this.session = null;
+                this.sessionCreationTime = 0;
+                log.debug("Sesión CMIS finalizada exitosamente");
+            }
         }
     }
 
