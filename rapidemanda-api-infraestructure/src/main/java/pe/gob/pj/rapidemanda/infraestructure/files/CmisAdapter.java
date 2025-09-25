@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.rapidemanda.domain.port.files.CmisPort;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
+import pe.gob.pj.rapidemanda.domain.utils.ProjectProperties;
 import pe.gob.pj.rapidemanda.domain.utils.file.CMISFileProperties;
 
 import org.apache.chemistry.opencmis.client.api.Session;
@@ -27,6 +28,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import jakarta.annotation.PostConstruct;
 
 @Slf4j
 @Component("cmisPort")
@@ -40,6 +43,50 @@ public class CmisAdapter implements CmisPort {
     
     Map<String, String> credencialesConexion = new HashMap<String, String>();
     private String cuo = "default";
+    private boolean credencialesInicializadas = false;
+
+    /**
+     * Inicializa automáticamente las credenciales de Alfresco al crear el bean
+     */
+    @PostConstruct
+    private void autoInicializarCredenciales() {
+        try {
+            log.info("Inicializando credenciales de Alfresco automáticamente...");
+            inicializarCredenciales(
+                ProjectProperties.getAlfrescoHost(),
+                ProjectProperties.getAlfrescoPuerto(),
+                ProjectProperties.getAlfrescoUsuario(),
+                ProjectProperties.getAlfrescoClave(),
+                ProjectProperties.getAlfrescoPath(),
+                ProjectProperties.getAlfrescoVersion()
+            );
+            log.info("Credenciales de Alfresco inicializadas correctamente");
+        } catch (Exception e) {
+            log.error("Error al inicializar credenciales de Alfresco automáticamente: {}", e.getMessage());
+            // No lanzamos la excepción para permitir que el bean se cree
+            // Las credenciales se pueden inicializar manualmente si es necesario
+        }
+    }
+
+    /**
+     * Verifica si las credenciales ya están inicializadas
+     */
+    public boolean isCredencialesInicializadas() {
+        return credencialesInicializadas && !credencialesConexion.isEmpty();
+    }
+
+    /**
+     * Asegura que las credenciales estén inicializadas antes de realizar operaciones
+     */
+    private void asegurarCredencialesInicializadas() throws Exception {
+        if (!isCredencialesInicializadas()) {
+            log.warn("Credenciales no inicializadas, intentando inicialización automática...");
+            autoInicializarCredenciales();
+            if (!isCredencialesInicializadas()) {
+                throw new Exception("Las credenciales de Alfresco no están inicializadas y no se pudieron inicializar automáticamente");
+            }
+        }
+    }
 
 	@Override
 	public void inicializarCredenciales(String host, String puerto, String usuario, String clave, String path,
@@ -57,9 +104,11 @@ public class CmisAdapter implements CmisPort {
         credencialesConexion.put("org.apache.chemistry.opencmis.binding.spi.type", "atompub");
         credencialesConexion.put("org.apache.chemistry.opencmis.server.override", "true");
         credencialesConexion.put("org.apache.chemistry.opencmis.server.value", baseUrl);
-    	this.rootFolder=path;
+    	this.rootFolder = path;
+    	this.credencialesInicializadas = true;
+    	log.debug("Credenciales CMIS inicializadas para host: {}, puerto: {}, usuario: {}", host, puerto, usuario);
 	}
-    
+
     @Override
     public String cmisCreateFolder(String path, String newFolderName) throws Exception {
         Session session = null;
@@ -747,14 +796,20 @@ public class CmisAdapter implements CmisPort {
 //        return parameter;
 //    }
 
-    public Session openSession(){
-        if(null == this.session){
-            Map<String, String> parameter =  this.credencialesConexion;
-            SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
-            List<Repository> repositories = sessionFactory.getRepositories(parameter);
-            session = repositories.get(0).createSession();
+    public Session openSession() {
+        try {
+            asegurarCredencialesInicializadas();
+            if(null == this.session){
+                Map<String, String> parameter =  this.credencialesConexion;
+                SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
+                List<Repository> repositories = sessionFactory.getRepositories(parameter);
+                session = repositories.get(0).createSession();
+            }
+            return session;
+        } catch (Exception e) {
+            log.error("Error al abrir sesión CMIS: {}", e.getMessage());
+            throw new RuntimeException("Error al abrir sesión CMIS: " + e.getMessage(), e);
         }
-        return session;
     }
 
     public void finalizeSession(){

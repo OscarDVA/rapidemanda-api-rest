@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.rapidemanda.domain.port.files.CmisPort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDocumentoUseCasePort;
-import pe.gob.pj.rapidemanda.domain.utils.ProjectProperties;
 import pe.gob.pj.rapidemanda.domain.utils.file.CMISFileProperties;
 
 @Slf4j
@@ -26,16 +25,6 @@ public class GestionDocumentoUseCaseAdapter implements GestionDocumentoUseCasePo
         try {
             log.info("{} Iniciando subida de documento a Alfresco", cuo);
             
-            cmisPort.finalizeSession();
-            cmisPort.inicializarCredenciales(
-                ProjectProperties.getAlfrescoHost(),
-                ProjectProperties.getAlfrescoPuerto(),
-                ProjectProperties.getAlfrescoUsuario(),
-                ProjectProperties.getAlfrescoClave(),
-                "RAPIDEMANDA", 
-                ProjectProperties.getAlfrescoVersion()
-            );
-
             CMISFileProperties props = new CMISFileProperties();
             props.addProp("cmis:objectTypeId", "cmis:document");
             props.addProp("cmis:name", "documento.pdf");
@@ -57,16 +46,6 @@ public class GestionDocumentoUseCaseAdapter implements GestionDocumentoUseCasePo
         try {
             log.info("{} Iniciando subida de documento '{}' a Alfresco en ruta: {}", cuo, fileName, folderPath);
             
-            cmisPort.finalizeSession();
-            cmisPort.inicializarCredenciales(
-                ProjectProperties.getAlfrescoHost(),
-                ProjectProperties.getAlfrescoPuerto(),
-                ProjectProperties.getAlfrescoUsuario(),
-                ProjectProperties.getAlfrescoClave(),
-                "RAPIDEMANDA", 
-                ProjectProperties.getAlfrescoVersion()
-            );
-
             // Crear las carpetas indicadas si no existen
             String destPath = "/RAPIDEMANDA";
             if (folderPath != null && !folderPath.trim().isEmpty()) {
@@ -100,16 +79,6 @@ public class GestionDocumentoUseCaseAdapter implements GestionDocumentoUseCasePo
         try {
             log.info("{} Iniciando descarga de documento con ID: {}", cuo, uuid);
             
-            cmisPort.finalizeSession();
-            cmisPort.inicializarCredenciales(
-                ProjectProperties.getAlfrescoHost(),
-                ProjectProperties.getAlfrescoPuerto(),
-                ProjectProperties.getAlfrescoUsuario(),
-                ProjectProperties.getAlfrescoClave(),
-                "RAPIDEMANDA", 
-                ProjectProperties.getAlfrescoVersion()
-            );
-
             byte[] documentBytes = cmisPort.getFileByUuid(uuid);
             
             log.info("{} Documento descargado exitosamente con ID: {}", cuo, uuid);
