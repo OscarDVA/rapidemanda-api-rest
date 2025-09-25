@@ -701,8 +701,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		
 		// Validar que solo se puedan eliminar demandas en estado BORRADOR
 		if (!"B".equals(ent.getEstadoDemanda().getBEstadoDemanda())) {
-			throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getCodigo(),
-					String.format(Errors.NEGOCIO_DEMANDA_NO_EDITABLE.getNombre(), 
+			throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_ELIMINABLE.getCodigo(),
+					String.format(Errors.NEGOCIO_DEMANDA_NO_ELIMINABLE.getNombre(), 
 							Proceso.DEMANDA_ELIMINAR.getNombre(), ent.getEstadoDemanda().getXEstado()));
 		}
 		

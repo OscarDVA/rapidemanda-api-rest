@@ -34,6 +34,7 @@ public enum Errors {
 	NEGOCIO_CORREO_YA_REGISTRADO("N004"," Error al %s - El correo ingresado ya esta registrado."),
 	NEGOCIO_DEMANDA_YA_REGISTRADA("N003"," Error al %s - La demanda ingresada ya esta registrada."),
 	NEGOCIO_DEMANDA_NO_EDITABLE("N004"," Error al %s - La demanda no se puede editar porque no esta en estado BORRADOR, estado actual: %s."),
+	NEGOCIO_DEMANDA_NO_ELIMINABLE("N005"," Error al %s - La demanda no se puede eliminar, estado actual: %s."),
 	NEGOCIO_DEMANDA_NO_AUTORIZADA("N005"," Error al %s - No se puede modificar la demanda porque no es el usuario creador de la misma."),
 	NEGOCIO_USUARIO_YA_REGISTRADO("N006"," Error al %s - El usuario ingresado ya esta registrado."),
 	NEGOCIO_ESTADO_INVALIDO("N010"," Error al %s - El estado es no es válido."),
