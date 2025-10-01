@@ -38,7 +38,8 @@ public enum Errors {
 	NEGOCIO_DEMANDA_NO_AUTORIZADA("N005"," Error al %s - No se puede modificar la demanda porque no es el usuario creador de la misma."),
 	NEGOCIO_USUARIO_YA_REGISTRADO("N006"," Error al %s - El usuario ingresado ya esta registrado."),
 	NEGOCIO_ESTADO_INVALIDO("N010"," Error al %s - El estado es no es válido."),
-	NEGOCIO_PARAMETRO_REQUERIDO("N011"," Error al %s - El parámetro %s es requerido.");
+	NEGOCIO_PARAMETRO_REQUERIDO("N011"," Error al %s - El parámetro %s es requerido."),
+	DATOS_ENTRADA_INCORRECTOS("D001"," Error al %s - Los datos de entrada son incorrectos o incompletos.");
 	
 	String codigo;
 	String nombre;

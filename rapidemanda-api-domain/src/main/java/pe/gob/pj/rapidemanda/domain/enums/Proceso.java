@@ -24,6 +24,7 @@ public enum Proceso {
 	DEMANDA_REGISTRAR("Registrar Demanda"),
 	DEMANDA_ACTUALIZAR("Actualizar Demanda"),
 	DEMANDA_ELIMINAR("Eliminar Demanda"),
+	DEMANDA_REPORTE_PDF("Generar Reporte PDF de Demanda"),
 	USUARIO_CONSULTAR("Consultar Usuario"),
 	USUARIO_REGISTRAR("Registrar Usuario"),
 	USUARIO_ACTUALIZAR("Actualizar Usuario"),
