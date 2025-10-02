@@ -235,6 +235,15 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		bandaRojaTable.addCell(bandaRojaCell);
 		document.add(bandaRojaTable);
 
+		// Información de generación
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		Paragraph fechaGeneracion = new Paragraph("Generado el: " + sdf.format(new Date()))
+				.setFont(fontRegular)
+				.setFontSize(10)
+				.setTextAlignment(TextAlignment.RIGHT)
+				.setMarginBottom(20);
+		document.add(fechaGeneracion);
+		
 		// CÓDIGO ÚNICO DESTACADO (como en el modelo)
 		Table codigoTable = new Table(UnitValue.createPercentArray(new float[]{25, 50, 25}))
 				.setWidth(UnitValue.createPercentValue(100))
@@ -273,14 +282,6 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 
 		document.add(codigoTable);
 
-		// Información de generación
-		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-		Paragraph fechaGeneracion = new Paragraph("Generado el: " + sdf.format(new Date()))
-				.setFont(fontRegular)
-				.setFontSize(10)
-				.setTextAlignment(TextAlignment.RIGHT)
-				.setMarginBottom(20);
-		document.add(fechaGeneracion);
 	}
 
 	/**
@@ -355,7 +356,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	 */
 	private void generarLayoutCompactoDemandante(Document document, Demandante demandante, PdfFont fontBold, PdfFont fontRegular) {
 		// Fila 1: Datos de identificación (5 columnas)
-		Table fila1 = new Table(UnitValue.createPercentArray(new float[]{18, 18, 18, 18, 28}))
+		Table fila1 = new Table(UnitValue.createPercentArray(new float[]{20, 20, 20, 20, 20}))
 				.setWidth(UnitValue.createPercentValue(100))
 				.setMarginBottom(2);
 
@@ -389,22 +390,21 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		document.add(fila3);
 
 		// Fila 4: Domicilio y referencia (2 columnas)
-		Table fila4 = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
+		Table fila4 = new Table(UnitValue.createPercentArray(new float[]{40, 60}))
 				.setWidth(UnitValue.createPercentValue(100))
 				.setMarginBottom(2);
-
-		String domicilioCompleto = (demandante.getTipoDomicilio() != null ? demandante.getTipoDomicilio() + " " : "") + 
-								  (demandante.getDomicilio() != null ? demandante.getDomicilio() : "");
-		agregarCeldaFormulario(fila4, "DOMICILIO", domicilioCompleto.trim(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila4, "REFERENCIA", demandante.getReferencia(), fontBold, fontRegular);
+		
+		agregarCeldaFormulario(fila4, "TIPO DOMICILIO", demandante.getTipoDomicilio(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila4, "DOMICILIO", demandante.getDomicilio(), fontBold, fontRegular);
 
 		document.add(fila4);
 
 		// Fila 5: Casilla electrónica (1 columna)
-		Table fila5 = new Table(UnitValue.createPercentArray(new float[]{100}))
+		Table fila5 = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
 				.setWidth(UnitValue.createPercentValue(100))
 				.setMarginBottom(5);
-
+		
+		agregarCeldaFormulario(fila5, "REFERENCIA", demandante.getReferencia(), fontBold, fontRegular);
 		agregarCeldaFormulario(fila5, "CASILLA ELECTRÓNICA", demandante.getCasillaElectronica(), fontBold, fontRegular);
 
 		document.add(fila5);
@@ -422,7 +422,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		// Etiqueta en la parte superior
 		Paragraph labelParagraph = new Paragraph(etiqueta != null ? etiqueta : "")
 				.setFont(fontBold)
-				.setFontSize(8)
+				.setFontSize(7)
 				.setFontColor(COLOR_TEXT)
 				.setMarginBottom(1);
 
@@ -473,22 +473,61 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				document.add(subtitulo);
 			}
 
-			// Tabla de datos del demandado
-			Table tabla = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
-					.setWidth(UnitValue.createPercentValue(100));
-
-			agregarFilaTabla(tabla, "Tipo Documento:", demandado.getTipoDocumento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Número Documento:", demandado.getNumeroDocumento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Razón Social:", demandado.getRazonSocial(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Departamento:", demandado.getDepartamento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Provincia:", demandado.getProvincia(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Distrito:", demandado.getDistrito(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Domicilio:", demandado.getTipoDomicilio() + " " + demandado.getDomicilio(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Referencia:", demandado.getReferencia(), fontBold, fontRegular);
-
-			document.add(tabla);
+			// Layout compacto con múltiples columnas
+			generarLayoutCompactoDemandado(document, demandado, fontBold, fontRegular);
 			document.add(new Paragraph().setMarginBottom(10));
 		}
+	}
+	
+	private void generarLayoutCompactoDemandado(Document document, Demandado demandado, PdfFont fontBold, PdfFont fontRegular) {
+		// Fila 1: Datos de identificación (2 columnas)
+		Table fila1 = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", demandado.getTipoDocumento(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "NÚMERO DE DOCUMENTO", demandado.getNumeroDocumento(), fontBold, fontRegular);
+
+		document.add(fila1);
+
+		// Fila 2: Razon Social ( columnas)
+		Table fila2 = new Table(UnitValue.createPercentArray(new float[]{100}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila2, "RAZÓN SOCIAL", demandado.getRazonSocial(), fontBold, fontRegular);
+
+		document.add(fila2);
+
+		// Fila 3: Ubicación geográfica (3 columnas)
+		Table fila3 = new Table(UnitValue.createPercentArray(new float[]{33, 33, 34}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila3, "DEPARTAMENTO", demandado.getDepartamento(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "PROVINCIA", demandado.getProvincia(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "DISTRITO", demandado.getDistrito(), fontBold, fontRegular);
+
+		document.add(fila3);
+
+		// Fila 4: Domicilio y referencia (2 columnas)
+		Table fila4 = new Table(UnitValue.createPercentArray(new float[]{40, 60}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+		
+		agregarCeldaFormulario(fila4, "TIPO DOMICILIO", demandado.getTipoDomicilio(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila4, "DOMICILIO", demandado.getDomicilio(), fontBold, fontRegular);
+
+		document.add(fila4);
+
+		// Fila 5:Referencia (1 columna)
+		Table fila5 = new Table(UnitValue.createPercentArray(new float[]{100}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(5);
+		
+		agregarCeldaFormulario(fila5, "REFERENCIA", demandado.getReferencia(), fontBold, fontRegular);
+
+		document.add(fila5);
 	}
 
 	/**
@@ -931,7 +970,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("7. FIRMAS")
+		Paragraph tituloSeccion = new Paragraph("10. FIRMAS")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
@@ -942,7 +981,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			Firma firma = demanda.getFirmas().get(i);
 
 			// Subtítulo
-			Paragraph subtitulo = new Paragraph("7." + (i + 1) + " Firma " + (i + 1) + " - " + firma.getTipo())
+			Paragraph subtitulo = new Paragraph("10." + (i + 1) + " Firma " + (i + 1) + " - " + firma.getTipo())
 					.setFont(fontBold)
 					.setFontSize(12)
 					.setFontColor(COLOR_ACCENT)
