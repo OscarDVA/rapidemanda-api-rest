@@ -828,10 +828,13 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			List<String> firmasAbogado = (demanda.getFirmas() != null) ? demanda.getFirmas().stream()
 					.map(Firma::getArchivoUrl).filter(u -> u != null && !u.trim().isEmpty()).toList() : List.of();
 
-			List<String> firmasDemandantes = (demanda.getDemandantes() != null) ? demanda.getDemandantes().stream()
-					.map(Demandante::getArchivoUrl).filter(u -> u != null && !u.trim().isEmpty()).toList() : List.of();
+			List<Demandante> demandantesOrdenados = (demanda.getDemandantes() != null)
+					? demanda.getDemandantes().stream()
+							.sorted((d1, d2) -> Boolean.compare(!"1".equals(d1.getApoderadoComun()), !"1".equals(d2.getApoderadoComun())))
+							.toList()
+					: List.of();
 
-			int filas = Math.max(firmasAbogado.size(), firmasDemandantes.size());
+			int filas = Math.max(firmasAbogado.size(), demandantesOrdenados.size());
 			if (filas == 0) {
 				// Si no hay ninguna imagen disponible, mostrar estructura vacía para una fila
 				filas = 1;
@@ -860,21 +863,25 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				}
 				tablaImagenes.addCell(celdaAbogado);
 
-				// Celda derecha: DEMANDANTE/APODERADO
+				// Celda derecha: DEMANDANTE/APODERADO (con razón social)
 				Cell celdaDemandante = new Cell().setMinHeight(110).setTextAlignment(TextAlignment.CENTER)
 						.setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 0.5f));
-				if (i < firmasDemandantes.size()) {
-					try {
-						byte[] bytes = obtenerImagenAlfresco(cuo, firmasDemandantes.get(i));
-						if (bytes != null && bytes.length > 0) {
-							Image imagen = new Image(ImageDataFactory.create(bytes));
-							imagen.setAutoScale(true);
-							imagen.setMaxWidth(200);
-							imagen.setMaxHeight(100);
-							celdaDemandante.add(imagen);
+				if (i < demandantesOrdenados.size()) {
+					Demandante dem = demandantesOrdenados.get(i);
+					String url = dem.getArchivoUrl();
+					if (url != null && !url.trim().isEmpty()) {
+						try {
+							byte[] bytes = obtenerImagenAlfresco(cuo, url);
+							if (bytes != null && bytes.length > 0) {
+								Image imagen = new Image(ImageDataFactory.create(bytes));
+								imagen.setAutoScale(true);
+								imagen.setMaxWidth(200);
+								imagen.setMaxHeight(100);
+								celdaDemandante.add(imagen);
+							}
+						} catch (Exception e) {
+							log.warn("{} Error al obtener firma de demandante/apoderado: {}", cuo, e.getMessage());
 						}
-					} catch (Exception e) {
-						log.warn("{} Error al obtener firma de demandante/apoderado: {}", cuo, e.getMessage());
 					}
 				}
 				tablaImagenes.addCell(celdaDemandante);
@@ -887,8 +894,15 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				tablaLeyendas.addCell(new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER)
 						.add(new Paragraph("FIRMA DEL ABOGADO").setFont(fontRegular).setFontSize(10)
 								.setFontColor(COLOR_TEXT)));
+				String leyendaDerecha = "FIRMA DEL DEMANDANTE/APODERADO";
+				if (i < demandantesOrdenados.size()) {
+					String rs = demandantesOrdenados.get(i).getRazonSocial();
+					if (rs != null && !rs.trim().isEmpty()) {
+						leyendaDerecha = rs.trim();
+					}
+				}
 				tablaLeyendas.addCell(new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER)
-						.add(new Paragraph("FIRMA DEL DEMANDANTE/APODERADO").setFont(fontRegular).setFontSize(10)
+						.add(new Paragraph(leyendaDerecha).setFont(fontRegular).setFontSize(10)
 								.setFontColor(COLOR_TEXT)));
 				document.add(tablaLeyendas);
 			}
