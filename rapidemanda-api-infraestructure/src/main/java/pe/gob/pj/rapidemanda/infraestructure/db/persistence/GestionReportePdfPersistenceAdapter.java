@@ -827,7 +827,6 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
         float[] columnas = new float[] {50, 50};
 
         if ("M".equalsIgnoreCase(tipoPresentacion)) {
-            // Firmas digitales: obtener imágenes de abogado (demanda.firmas) y demandantes (archivoUrl)
             List<String> firmasAbogado = (demanda.getFirmas() != null)
                     ? demanda.getFirmas().stream()
                         .map(Firma::getArchivoUrl)
@@ -942,16 +941,6 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 
         document.add(new Paragraph().setMarginBottom(15));
     }
-
-	/**
-	 * Método auxiliar para agregar filas a las tablas
-	 */
-	private void agregarFilaTabla(Table tabla, String etiqueta, String valor, PdfFont fontBold, PdfFont fontRegular) {
-		tabla.addCell(new Cell().add(new Paragraph(etiqueta).setFont(fontBold).setFontSize(10))
-				.setBorder(Border.NO_BORDER).setPaddingBottom(5));
-		tabla.addCell(new Cell().add(new Paragraph(valor != null ? valor : "").setFont(fontRegular).setFontSize(10))
-				.setBorder(Border.NO_BORDER).setPaddingBottom(5));
-	}
 
 	/**
 	 * Manejador de eventos para marca de agua y paginación
