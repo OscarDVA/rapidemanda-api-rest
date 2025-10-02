@@ -806,60 +806,142 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		document.add(new Paragraph().setMarginBottom(15));
 	}
 
-	/**
-	 * Genera la sección de firmas con imágenes de Alfresco
-	 */
-	private void generarFirmas(Document document, Demanda demanda, String cuo) throws IOException {
-		if (demanda.getFirmas() == null || demanda.getFirmas().isEmpty()) {
-			return;
-		}
+    /**
+     * Genera la sección de firmas con imágenes de Alfresco
+     */
+    private void generarFirmas(Document document, Demanda demanda, String cuo) throws IOException {
+        PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+        PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
-		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+        // Título de sección
+        Paragraph tituloSeccion = new Paragraph("10. FIRMAS")
+                .setFont(fontBold)
+                .setFontSize(14)
+                .setFontColor(COLOR_HEADER)
+                .setMarginBottom(10);
+        document.add(tituloSeccion);
 
-		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("10. FIRMAS").setFont(fontBold).setFontSize(14)
-				.setFontColor(COLOR_HEADER).setMarginBottom(10);
-		document.add(tituloSeccion);
+        String tipoPresentacion = demanda.getIdTipoPresentacion();
 
-		for (int i = 0; i < demanda.getFirmas().size(); i++) {
-			Firma firma = demanda.getFirmas().get(i);
+        // Tabla base para dos columnas (Abogado / Demandante)
+        float[] columnas = new float[] {50, 50};
 
-			// Subtítulo
-			Paragraph subtitulo = new Paragraph("10." + (i + 1) + " Firma " + (i + 1) + " - " + firma.getTipo())
-					.setFont(fontBold).setFontSize(12).setFontColor(COLOR_ACCENT).setMarginBottom(5);
-			document.add(subtitulo);
+        if ("M".equalsIgnoreCase(tipoPresentacion)) {
+            // Firmas digitales: obtener imágenes de abogado (demanda.firmas) y demandantes (archivoUrl)
+            List<String> firmasAbogado = (demanda.getFirmas() != null)
+                    ? demanda.getFirmas().stream()
+                        .map(Firma::getArchivoUrl)
+                        .filter(u -> u != null && !u.trim().isEmpty())
+                        .toList()
+                    : List.of();
 
-			// Intentar obtener y mostrar la imagen de la firma
-			try {
-				byte[] imagenBytes = obtenerImagenAlfresco(cuo, firma.getArchivoUrl());
-				if (imagenBytes != null && imagenBytes.length > 0) {
-					ImageData imageData = ImageDataFactory.create(imagenBytes);
-					Image imagen = new Image(imageData);
+            List<String> firmasDemandantes = (demanda.getDemandantes() != null)
+                    ? demanda.getDemandantes().stream()
+                        .map(Demandante::getArchivoUrl)
+                        .filter(u -> u != null && !u.trim().isEmpty())
+                        .toList()
+                    : List.of();
 
-					// Redimensionar imagen si es necesario
-					imagen.setMaxWidth(200);
-					imagen.setMaxHeight(100);
-					imagen.setMarginBottom(10);
+            int filas = Math.max(firmasAbogado.size(), firmasDemandantes.size());
+            if (filas == 0) {
+                // Si no hay ninguna imagen disponible, mostrar estructura vacía para una fila
+                filas = 1;
+            }
 
-					document.add(imagen);
-				} else {
-					// Si no se puede obtener la imagen, mostrar texto alternativo
-					Paragraph textoAlternativo = new Paragraph("Firma digital (ID: " + firma.getArchivoUrl() + ")")
-							.setFont(fontRegular).setFontSize(10).setFontColor(ColorConstants.GRAY).setMarginBottom(10);
-					document.add(textoAlternativo);
-				}
-			} catch (Exception e) {
-				log.warn("{} Error al obtener imagen de firma con ID: {}", cuo, firma.getArchivoUrl(), e);
-				// Mostrar texto alternativo en caso de error
-				Paragraph textoAlternativo = new Paragraph("Firma digital (ID: " + firma.getArchivoUrl() + ")")
-						.setFont(fontRegular).setFontSize(10).setFontColor(ColorConstants.GRAY).setMarginBottom(10);
-				document.add(textoAlternativo);
-			}
-		}
+            for (int i = 0; i < filas; i++) {
+                Table tablaImagenes = new Table(UnitValue.createPercentArray(columnas))
+                        .setWidth(UnitValue.createPercentValue(100));
 
-		document.add(new Paragraph().setMarginBottom(15));
-	}
+                // Celda izquierda: ABOGADO
+                Cell celdaAbogado = new Cell()
+                        .setMinHeight(110)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 0.5f));
+                if (i < firmasAbogado.size()) {
+                    try {
+                        byte[] bytes = obtenerImagenAlfresco(cuo, firmasAbogado.get(i));
+                        if (bytes != null && bytes.length > 0) {
+                            Image imagen = new Image(ImageDataFactory.create(bytes));
+                            imagen.setAutoScale(true);
+                            imagen.setMaxWidth(200);
+                            imagen.setMaxHeight(100);
+                            celdaAbogado.add(imagen);
+                        }
+                    } catch (Exception e) {
+                        log.warn("{} Error al obtener firma de abogado: {}", cuo, e.getMessage());
+                    }
+                }
+                tablaImagenes.addCell(celdaAbogado);
+
+                // Celda derecha: DEMANDANTE/APODERADO
+                Cell celdaDemandante = new Cell()
+                        .setMinHeight(110)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 0.5f));
+                if (i < firmasDemandantes.size()) {
+                    try {
+                        byte[] bytes = obtenerImagenAlfresco(cuo, firmasDemandantes.get(i));
+                        if (bytes != null && bytes.length > 0) {
+                            Image imagen = new Image(ImageDataFactory.create(bytes));
+                            imagen.setAutoScale(true);
+                            imagen.setMaxWidth(200);
+                            imagen.setMaxHeight(100);
+                            celdaDemandante.add(imagen);
+                        }
+                    } catch (Exception e) {
+                        log.warn("{} Error al obtener firma de demandante/apoderado: {}", cuo, e.getMessage());
+                    }
+                }
+                tablaImagenes.addCell(celdaDemandante);
+
+                document.add(tablaImagenes);
+
+                // Fila de leyendas
+                Table tablaLeyendas = new Table(UnitValue.createPercentArray(columnas))
+                        .setWidth(UnitValue.createPercentValue(100))
+                        .setMarginBottom(10);
+                tablaLeyendas.addCell(new Cell()
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .add(new Paragraph("FIRMA DEL ABOGADO").setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)));
+                tablaLeyendas.addCell(new Cell()
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .add(new Paragraph("FIRMA DEL DEMANDANTE/APODERADO").setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)));
+                document.add(tablaLeyendas);
+            }
+
+        } else { // Físico (F) u otro valor: cuadros vacíos
+            Table tablaImagenes = new Table(UnitValue.createPercentArray(columnas))
+                    .setWidth(UnitValue.createPercentValue(100));
+
+            Cell celdaAbogado = new Cell()
+                    .setMinHeight(110)
+                    .setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 0.5f));
+            Cell celdaDemandante = new Cell()
+                    .setMinHeight(110)
+                    .setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 0.5f));
+
+            tablaImagenes.addCell(celdaAbogado);
+            tablaImagenes.addCell(celdaDemandante);
+            document.add(tablaImagenes);
+
+            Table tablaLeyendas = new Table(UnitValue.createPercentArray(columnas))
+                    .setWidth(UnitValue.createPercentValue(100))
+                    .setMarginBottom(10);
+            tablaLeyendas.addCell(new Cell()
+                    .setBorder(Border.NO_BORDER)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .add(new Paragraph("FIRMA DEL ABOGADO").setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)));
+            tablaLeyendas.addCell(new Cell()
+                    .setBorder(Border.NO_BORDER)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .add(new Paragraph("FIRMA DEL DEMANDANTE/APODERADO").setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)));
+            document.add(tablaLeyendas);
+        }
+
+        document.add(new Paragraph().setMarginBottom(15));
+    }
 
 	/**
 	 * Método auxiliar para agregar filas a las tablas
