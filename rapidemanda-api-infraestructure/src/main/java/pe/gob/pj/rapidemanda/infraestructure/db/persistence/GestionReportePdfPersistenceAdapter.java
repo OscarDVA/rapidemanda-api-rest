@@ -2,6 +2,7 @@ package pe.gob.pj.rapidemanda.infraestructure.db.persistence;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -36,6 +37,8 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
+
 import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
@@ -98,7 +101,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			pdfDoc.addEventHandler(PdfDocumentEvent.END_PAGE, new WatermarkEventHandler());
 
 			Document document = new Document(pdfDoc);
-			document.setMargins(50, 50, 80, 50); // top, right, bottom, left
+			document.setMargins(30, 30, 60, 30); // top, right, bottom, left
 
 			// Generar contenido del PDF
 			generarEncabezado(document, demanda);
@@ -107,7 +110,10 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			generarDemandados(document, demanda);
 			generarPetitorios(document, demanda);
 			generarRelacionLaboral(document, demanda);
+			generarJustificacionPetitorios(document, demanda);
 			generarFundamentaciones(document, demanda);
+			generarViaProcedimental(document, demanda);
+			generarMediosProbatorios(document, demanda);
 			generarAnexos(document, demanda);
 			generarFirmas(document, demanda, cuo);
 
@@ -139,85 +145,70 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	}
 
 	/**
-	 * Genera el encabezado del documento con logos laterales y título centrado
+	 * Genera el encabezado del reporte con logos y títulos institucionales
 	 */
 	private void generarEncabezado(Document document, Demanda demanda) throws IOException {
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
-		// Tabla principal del encabezado con 3 columnas: Logo izq, Título centro, Logo der
-		Table encabezadoTable = new Table(UnitValue.createPercentArray(new float[]{15, 70, 15}))
+		// Tabla principal del encabezado con 3 columnas: logo izq, título central, logo der
+		Table encabezadoTable = new Table(UnitValue.createPercentArray(new float[]{20, 60, 20}))
 				.setWidth(UnitValue.createPercentValue(100))
-				.setMarginBottom(0);
+				.setMarginBottom(2);
 
-		// Celda del logo izquierdo (Poder Judicial)
-		Cell logoIzqCell = new Cell();
+		// Logo izquierdo (Poder Judicial)
 		try {
-			byte[] logoIzqBytes = getClass().getClassLoader()
-					.getResourceAsStream("images/logopj.png").readAllBytes();
+			byte[] logoIzqBytes = getClass().getResourceAsStream("/images/logopj.png").readAllBytes();
 			ImageData logoIzqData = ImageDataFactory.create(logoIzqBytes);
-			Image logoIzq = new Image(logoIzqData)
-					.setWidth(60)
-					.setHeight(60);
-			logoIzqCell.add(logoIzq);
+			Image logoIzq = new Image(logoIzqData).setWidth(80).setHeight(80);
+			Cell logoIzqCell = new Cell().add(logoIzq).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER).setVerticalAlignment(VerticalAlignment.MIDDLE);
+			encabezadoTable.addCell(logoIzqCell);
 		} catch (Exception e) {
-			log.warn("No se pudo cargar el logo del Poder Judicial: {}", e.getMessage());
-			logoIzqCell.add(new Paragraph("PJ").setFont(fontBold).setFontSize(12).setTextAlignment(TextAlignment.CENTER));
+			log.warn("No se pudo cargar el logo izquierdo: {}", e.getMessage());
+			Cell logoIzqCell = new Cell().add(new Paragraph("LOGO PJ")).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER);
+			encabezadoTable.addCell(logoIzqCell);
 		}
-		logoIzqCell.setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER);
 
-		// Celda del título central
-		Cell tituloCentralCell = new Cell();
-		
-		// Título principal centrado
+		// Título central
 		Paragraph titulo1 = new Paragraph("Corte Superior de Justicia de Junín")
 				.setFont(fontBold)
 				.setFontSize(14)
-				.setFontColor(COLOR_TEXT)
 				.setTextAlignment(TextAlignment.CENTER)
 				.setMarginBottom(2);
-		
+
 		Paragraph titulo2 = new Paragraph("Comisión de Gestión de Despacho")
 				.setFont(fontBold)
 				.setFontSize(12)
-				.setFontColor(COLOR_TEXT)
 				.setTextAlignment(TextAlignment.CENTER)
 				.setMarginBottom(0);
-		
-		tituloCentralCell.add(titulo1);
-		tituloCentralCell.add(titulo2);
-		tituloCentralCell.setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER);
 
-		// Celda del logo derecho (ETIINLPT)
-		Cell logoDeCell = new Cell();
+		Cell tituloCell = new Cell()
+				.add(titulo1)
+				.add(titulo2)
+				.setBorder(Border.NO_BORDER)
+				.setTextAlignment(TextAlignment.CENTER).setVerticalAlignment(VerticalAlignment.MIDDLE);
+		encabezadoTable.addCell(tituloCell);
+
+		// Logo derecho (ETIINLPT)
 		try {
-			byte[] logoDeBytes = getClass().getClassLoader()
-					.getResourceAsStream("images/logo-etiinlpt.jpg").readAllBytes();
-			ImageData logoDeData = ImageDataFactory.create(logoDeBytes);
-			Image logoDer = new Image(logoDeData)
-					.setWidth(60)
-					.setHeight(60);
-			logoDeCell.add(logoDer);
+			byte[] logoderBytes = getClass().getResourceAsStream("/images/logo-etiinlpt.jpg").readAllBytes();
+			ImageData logoderData = ImageDataFactory.create(logoderBytes);
+			Image logoDer = new Image(logoderData).setWidth(80).setHeight(80);
+			Cell logoderCell = new Cell().add(logoDer).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER).setVerticalAlignment(VerticalAlignment.MIDDLE);
+			encabezadoTable.addCell(logoderCell);
 		} catch (Exception e) {
-			log.warn("No se pudo cargar el logo ETIINLPT: {}", e.getMessage());
-			logoDeCell.add(new Paragraph("ETIINLPT").setFont(fontBold).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+			log.warn("No se pudo cargar el logo derecho: {}", e.getMessage());
+			Cell logoderCell = new Cell().add(new Paragraph("ETIINLPT")).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER);
+			encabezadoTable.addCell(logoderCell);
 		}
-		logoDeCell.setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER);
-
-		// Agregar celdas a la tabla
-		encabezadoTable.addCell(logoIzqCell);
-		encabezadoTable.addCell(tituloCentralCell);
-		encabezadoTable.addCell(logoDeCell);
 
 		document.add(encabezadoTable);
 
-		// Banda roja con el título de la demanda
+		// Banda roja con título de la demanda
 		Table bandaRojaTable = new Table(UnitValue.createPercentArray(new float[]{100}))
 				.setWidth(UnitValue.createPercentValue(100))
-				.setMarginTop(10)
 				.setMarginBottom(15);
 
-		Cell bandaRojaCell = new Cell();
 		Paragraph tituloDemanda = new Paragraph("DEMANDA LABORAL ANTE EL JUZGADO DE PAZ LETRADO")
 				.setFont(fontBold)
 				.setFontSize(14)
@@ -225,14 +216,16 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				.setTextAlignment(TextAlignment.CENTER)
 				.setMarginTop(4)
 				.setMarginBottom(2);
+
 		Paragraph tituloDemanda2 = new Paragraph("(HASTA 70 URP)")
-				.setFont(fontBold)
+				.setFont(fontRegular)
 				.setFontSize(14)
 				.setFontColor(ColorConstants.WHITE)
 				.setTextAlignment(TextAlignment.CENTER)
 				.setMarginTop(2)
 				.setMarginBottom(4);
 		
+		Cell bandaRojaCell = new Cell();
 		bandaRojaCell.add(tituloDemanda);
 		bandaRojaCell.add(tituloDemanda2);
 		bandaRojaCell.setBackgroundColor(COLOR_HEADER)
@@ -241,6 +234,44 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 
 		bandaRojaTable.addCell(bandaRojaCell);
 		document.add(bandaRojaTable);
+
+		// CÓDIGO ÚNICO DESTACADO (como en el modelo)
+		Table codigoTable = new Table(UnitValue.createPercentArray(new float[]{25, 50, 25}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(15);
+
+		// Celda izquierda vacía
+		Cell celdaIzq = new Cell().setBorder(Border.NO_BORDER);
+		codigoTable.addCell(celdaIzq);
+
+		// Celda central con código único
+		Paragraph codigoLabel = new Paragraph("CÓDIGO ÚNICO")
+				.setFont(fontBold)
+				.setFontSize(10)
+				.setTextAlignment(TextAlignment.CENTER)
+				.setMarginBottom(2);
+
+		Paragraph codigoValor = new Paragraph(String.valueOf(demanda.getId()))
+				.setFont(fontBold)
+				.setFontSize(24)
+				.setTextAlignment(TextAlignment.CENTER)
+				.setFontColor(COLOR_HEADER)
+				.setMarginTop(0)
+				.setMarginBottom(2);
+
+		Cell codigoCentral = new Cell()
+				.add(codigoLabel)
+				.add(codigoValor)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_HEADER, 2))
+				.setTextAlignment(TextAlignment.CENTER)
+				.setPadding(8);
+		codigoTable.addCell(codigoCentral);
+
+		// Celda derecha vacía
+		Cell celdaDer = new Cell().setBorder(Border.NO_BORDER);
+		codigoTable.addCell(celdaDer);
+
+		document.add(codigoTable);
 
 		// Información de generación
 		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -259,7 +290,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
-		// Título de sección
+		// Título de sección con numeración
 		Paragraph tituloSeccion = new Paragraph("DATOS GENERALES DE LA DEMANDA")
 				.setFont(fontBold)
 				.setFontSize(14)
@@ -282,7 +313,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	}
 
 	/**
-	 * Genera la sección de demandantes
+	 * Genera la sección de demandantes con layout compacto
 	 */
 	private void generarDemandantes(Document document, Demanda demanda) throws IOException {
 		if (demanda.getDemandantes() == null || demanda.getDemandantes().isEmpty()) {
@@ -292,8 +323,8 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
-		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("DEMANDANTES")
+		// Título de sección con numeración
+		Paragraph tituloSeccion = new Paragraph("1. DATOS DEL DEMANDANTE")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
@@ -303,36 +334,111 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		for (int i = 0; i < demanda.getDemandantes().size(); i++) {
 			Demandante demandante = demanda.getDemandantes().get(i);
 
-			// Subtítulo
-			Paragraph subtitulo = new Paragraph("Demandante " + (i + 1))
-					.setFont(fontBold)
-					.setFontSize(12)
-					.setFontColor(COLOR_ACCENT)
-					.setMarginBottom(5);
-			document.add(subtitulo);
+			// Subtítulo solo si hay múltiples demandantes
+			if (demanda.getDemandantes().size() > 1) {
+				Paragraph subtitulo = new Paragraph("1." + (i + 1) + " Demandante " + (i + 1))
+						.setFont(fontBold)
+						.setFontSize(12)
+						.setFontColor(COLOR_ACCENT)
+						.setMarginBottom(5);
+				document.add(subtitulo);
+			}
 
-			// Tabla de datos del demandante
-			Table tabla = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
-					.setWidth(UnitValue.createPercentValue(100));
-
-			agregarFilaTabla(tabla, "Tipo Documento:", demandante.getTipoDocumento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Número Documento:", demandante.getNumeroDocumento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Razón Social:", demandante.getRazonSocial(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Género:", demandante.getGenero(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Fecha Nacimiento:", demandante.getFechaNacimiento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Departamento:", demandante.getDepartamento(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Provincia:", demandante.getProvincia(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Distrito:", demandante.getDistrito(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Domicilio:", demandante.getTipoDomicilio() + " " + demandante.getDomicilio(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Referencia:", demandante.getReferencia(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Correo:", demandante.getCorreo(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Celular:", demandante.getCelular(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Casilla Electrónica:", demandante.getCasillaElectronica(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Apoderado Común:", "1".equals(demandante.getApoderadoComun()) ? "Sí" : "No", fontBold, fontRegular);
-
-			document.add(tabla);
+			// Layout compacto con múltiples columnas
+			generarLayoutCompactoDemandante(document, demandante, fontBold, fontRegular);
 			document.add(new Paragraph().setMarginBottom(10));
 		}
+	}
+
+	/**
+	 * Genera un layout compacto para los datos del demandante
+	 */
+	private void generarLayoutCompactoDemandante(Document document, Demandante demandante, PdfFont fontBold, PdfFont fontRegular) {
+		// Fila 1: Datos de identificación (5 columnas)
+		Table fila1 = new Table(UnitValue.createPercentArray(new float[]{18, 18, 18, 18, 28}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", demandante.getTipoDocumento(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "NÚMERO DE DOCUMENTO", demandante.getNumeroDocumento(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "GÉNERO", demandante.getGenero(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "FECHA DE NACIMIENTO", demandante.getFechaNacimiento(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "NÚMERO DE CELULAR", demandante.getCelular(), fontBold, fontRegular);
+
+		document.add(fila1);
+
+		// Fila 2: Nombres y correo (2 columnas)
+		Table fila2 = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila2, "NOMBRES Y APELLIDOS", demandante.getRazonSocial(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila2, "CORREO ELECTRÓNICO", demandante.getCorreo(), fontBold, fontRegular);
+
+		document.add(fila2);
+
+		// Fila 3: Ubicación geográfica (3 columnas)
+		Table fila3 = new Table(UnitValue.createPercentArray(new float[]{33, 33, 34}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila3, "DEPARTAMENTO", demandante.getDepartamento(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "PROVINCIA", demandante.getProvincia(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "DISTRITO", demandante.getDistrito(), fontBold, fontRegular);
+
+		document.add(fila3);
+
+		// Fila 4: Domicilio y referencia (2 columnas)
+		Table fila4 = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		String domicilioCompleto = (demandante.getTipoDomicilio() != null ? demandante.getTipoDomicilio() + " " : "") + 
+								  (demandante.getDomicilio() != null ? demandante.getDomicilio() : "");
+		agregarCeldaFormulario(fila4, "DOMICILIO", domicilioCompleto.trim(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila4, "REFERENCIA", demandante.getReferencia(), fontBold, fontRegular);
+
+		document.add(fila4);
+
+		// Fila 5: Casilla electrónica (1 columna)
+		Table fila5 = new Table(UnitValue.createPercentArray(new float[]{100}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(5);
+
+		agregarCeldaFormulario(fila5, "CASILLA ELECTRÓNICA", demandante.getCasillaElectronica(), fontBold, fontRegular);
+
+		document.add(fila5);
+	}
+
+	/**
+	 * Agrega una celda con formato de formulario (etiqueta arriba, valor abajo)
+	 */
+	private void agregarCeldaFormulario(Table tabla, String etiqueta, String valor, PdfFont fontBold, PdfFont fontRegular) {
+		// Crear celda contenedora
+		Cell celda = new Cell();
+		celda.setBorder(Border.NO_BORDER);
+		celda.setPadding(3);
+
+		// Etiqueta en la parte superior
+		Paragraph labelParagraph = new Paragraph(etiqueta != null ? etiqueta : "")
+				.setFont(fontBold)
+				.setFontSize(8)
+				.setFontColor(COLOR_TEXT)
+				.setMarginBottom(1);
+
+		// Valor en la parte inferior con borde
+		Paragraph valorParagraph = new Paragraph(valor != null ? valor : "")
+				.setFont(fontRegular)
+				.setFontSize(9)
+				.setFontColor(COLOR_TEXT)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f))
+				.setPadding(3)
+				.setMinHeight(15);
+
+		celda.add(labelParagraph);
+		celda.add(valorParagraph);
+
+		tabla.addCell(celda);
 	}
 
 	/**
@@ -347,7 +453,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("DEMANDADOS")
+		Paragraph tituloSeccion = new Paragraph("2. DATOS DE LA PARTE DEMANDADA")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
@@ -357,13 +463,15 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		for (int i = 0; i < demanda.getDemandados().size(); i++) {
 			Demandado demandado = demanda.getDemandados().get(i);
 
-			// Subtítulo
-			Paragraph subtitulo = new Paragraph("Demandado " + (i + 1))
-					.setFont(fontBold)
-					.setFontSize(12)
-					.setFontColor(COLOR_ACCENT)
-					.setMarginBottom(5);
-			document.add(subtitulo);
+			// Subtítulo solo si hay múltiples demandados
+			if (demanda.getDemandados().size() > 1) {
+				Paragraph subtitulo = new Paragraph("2." + (i + 1) + " Demandado " + (i + 1))
+						.setFont(fontBold)
+						.setFontSize(12)
+						.setFontColor(COLOR_ACCENT)
+						.setMarginBottom(5);
+				document.add(subtitulo);
+			}
 
 			// Tabla de datos del demandado
 			Table tabla = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
@@ -384,7 +492,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	}
 
 	/**
-	 * Genera la sección de petitorios
+	 * Genera la sección de petitorios con layout compacto tipo tabla
 	 */
 	private void generarPetitorios(Document document, Demanda demanda) throws IOException {
 		if (demanda.getPetitorios() == null || demanda.getPetitorios().isEmpty()) {
@@ -394,45 +502,148 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
-		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("PETITORIOS")
+		// Título de sección con numeración
+		Paragraph tituloSeccion = new Paragraph("3. PETITORIOS")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
 				.setMarginBottom(10);
 		document.add(tituloSeccion);
 
-		for (int i = 0; i < demanda.getPetitorios().size(); i++) {
-			Petitorio petitorio = demanda.getPetitorios().get(i);
+		// Tabla compacta de petitorios con columnas: Tipo, Pretensión Principal, Conceptos, Monto
+		Table tabla = new Table(UnitValue.createPercentArray(new float[]{15, 35, 30, 20}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.BLACK, 1));
 
-			// Subtítulo
-			Paragraph subtitulo = new Paragraph("Petitorio " + (i + 1))
-					.setFont(fontBold)
-					.setFontSize(12)
-					.setFontColor(COLOR_ACCENT)
-					.setMarginBottom(5);
-			document.add(subtitulo);
+		// Encabezados de la tabla
+		Cell headerTipo = new Cell()
+				.add(new Paragraph("TIPO").setFont(fontBold).setFontSize(9).setFontColor(ColorConstants.WHITE))
+				.setBackgroundColor(COLOR_HEADER)
+				.setTextAlignment(TextAlignment.CENTER)
+				.setPadding(5)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.WHITE, 1));
+		tabla.addHeaderCell(headerTipo);
 
-			// Tabla de datos del petitorio
-			Table tabla = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
-					.setWidth(UnitValue.createPercentValue(100));
+		Cell headerPretension = new Cell()
+				.add(new Paragraph("PRETENSIÓN PRINCIPAL").setFont(fontBold).setFontSize(9).setFontColor(ColorConstants.WHITE))
+				.setBackgroundColor(COLOR_HEADER)
+				.setTextAlignment(TextAlignment.CENTER)
+				.setPadding(5)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.WHITE, 1));
+		tabla.addHeaderCell(headerPretension);
 
-			agregarFilaTabla(tabla, "Tipo:", petitorio.getTipo(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Pretensión Principal:", petitorio.getPretensionPrincipal(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Concepto:", petitorio.getConcepto(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Pretensión Accesoria:", petitorio.getPretensionAccesoria(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Monto:", petitorio.getMonto() != null ? "S/ " + petitorio.getMonto().toString() : "", fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Justificación:", petitorio.getJustificacion(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Fecha Inicio:", petitorio.getFechaInicio(), fontBold, fontRegular);
-			agregarFilaTabla(tabla, "Fecha Fin:", petitorio.getFechaFin(), fontBold, fontRegular);
+		Cell headerConceptos = new Cell()
+				.add(new Paragraph("CONCEPTOS").setFont(fontBold).setFontSize(9).setFontColor(ColorConstants.WHITE))
+				.setBackgroundColor(COLOR_HEADER)
+				.setTextAlignment(TextAlignment.CENTER)
+				.setPadding(5)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.WHITE, 1));
+		tabla.addHeaderCell(headerConceptos);
 
-			document.add(tabla);
-			document.add(new Paragraph().setMarginBottom(10));
+		Cell headerMonto = new Cell()
+				.add(new Paragraph("MONTO").setFont(fontBold).setFontSize(9).setFontColor(ColorConstants.WHITE))
+				.setBackgroundColor(COLOR_HEADER)
+				.setTextAlignment(TextAlignment.CENTER)
+				.setPadding(5)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.WHITE, 1));
+		tabla.addHeaderCell(headerMonto);
+
+		// Variable para calcular el total
+		double totalBeneficios = 0.0;
+
+		// Filas de datos
+		for (Petitorio petitorio : demanda.getPetitorios()) {
+			// Celda Tipo
+			Cell celdaTipo = new Cell()
+					.add(new Paragraph(petitorio.getTipo() != null ? petitorio.getTipo() : "").setFont(fontRegular).setFontSize(8))
+					.setTextAlignment(TextAlignment.CENTER)
+					.setPadding(4)
+					.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f));
+			tabla.addCell(celdaTipo);
+
+			// Celda Pretensión Principal
+			String pretension = "";
+			if (petitorio.getPretensionPrincipal() != null) {
+				pretension = petitorio.getPretensionPrincipal();
+				// Agregar pretensión accesoria si existe
+				if (petitorio.getPretensionAccesoria() != null && !petitorio.getPretensionAccesoria().trim().isEmpty()) {
+					pretension += "\n" + petitorio.getPretensionAccesoria();
+				}
+			}
+			Cell celdaPretension = new Cell()
+					.add(new Paragraph(pretension).setFont(fontRegular).setFontSize(8))
+					.setTextAlignment(TextAlignment.LEFT)
+					.setPadding(4)
+					.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f));
+			tabla.addCell(celdaPretension);
+
+			// Celda Conceptos
+			String conceptos = "";
+			if (petitorio.getConcepto() != null) {
+				conceptos = petitorio.getConcepto();
+			}
+			// Agregar fechas si existen
+			if (petitorio.getFechaInicio() != null || petitorio.getFechaFin() != null) {
+				String fechas = "";
+				if (petitorio.getFechaInicio() != null) {
+					fechas += "Desde: " + petitorio.getFechaInicio();
+				}
+				if (petitorio.getFechaFin() != null) {
+					if (!fechas.isEmpty()) fechas += "\n";
+					fechas += "Hasta: " + petitorio.getFechaFin();
+				}
+				if (!conceptos.isEmpty() && !fechas.isEmpty()) {
+					conceptos += "\n" + fechas;
+				} else if (!fechas.isEmpty()) {
+					conceptos = fechas;
+				}
+			}
+			Cell celdaConceptos = new Cell()
+					.add(new Paragraph(conceptos).setFont(fontRegular).setFontSize(8))
+					.setTextAlignment(TextAlignment.LEFT)
+					.setPadding(4)
+					.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f));
+			tabla.addCell(celdaConceptos);
+
+			// Celda Monto
+			BigDecimal totalBeneficios1 = BigDecimal.ZERO;
+			String montoTexto = "";
+			if (petitorio.getMonto() != null) {
+				montoTexto = "S/ " + String.format("%.2f", petitorio.getMonto());
+				totalBeneficios1 = totalBeneficios1.add(petitorio.getMonto());
+
+			}
+			Cell celdaMonto = new Cell()
+					.add(new Paragraph(montoTexto).setFont(fontRegular).setFontSize(8))
+					.setTextAlignment(TextAlignment.RIGHT)
+					.setPadding(4)
+					.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f));
+			tabla.addCell(celdaMonto);
 		}
+
+		// Fila del total
+		Cell totalLabel = new Cell(1, 3)
+				.add(new Paragraph("TOTAL DE BENEFICIOS RECLAMADOS").setFont(fontBold).setFontSize(9))
+				.setBackgroundColor(new DeviceRgb(240, 240, 240))
+				.setTextAlignment(TextAlignment.RIGHT)
+				.setPadding(5)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.BLACK, 1));
+		tabla.addCell(totalLabel);
+
+		Cell totalMonto = new Cell()
+				.add(new Paragraph("S/ " + String.format("%.2f", totalBeneficios)).setFont(fontBold).setFontSize(10).setFontColor(COLOR_HEADER))
+				.setBackgroundColor(new DeviceRgb(240, 240, 240))
+				.setTextAlignment(TextAlignment.RIGHT)
+				.setPadding(5)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.BLACK, 1));
+		tabla.addCell(totalMonto);
+
+		document.add(tabla);
+		document.add(new Paragraph().setMarginBottom(15));
 	}
 
 	/**
-	 * Genera la sección de relación laboral
+	 * Genera la sección de relación laboral con formato compacto
 	 */
 	private void generarRelacionLaboral(Document document, Demanda demanda) throws IOException {
 		if (demanda.getRelacionLaboral() == null) {
@@ -443,7 +654,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("RELACIÓN LABORAL")
+		Paragraph tituloSeccion = new Paragraph("4. DATOS DE LA RELACIÓN LABORAL")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
@@ -452,34 +663,94 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 
 		RelacionLaboral relacion = demanda.getRelacionLaboral();
 
-		// Tabla de datos de la relación laboral
-		Table tabla = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
-				.setWidth(UnitValue.createPercentValue(100));
-
-		agregarFilaTabla(tabla, "Régimen:", relacion.getRegimen(), fontBold, fontRegular);
-		agregarFilaTabla(tabla, "Fecha Inicio:", relacion.getFechaInicio(), fontBold, fontRegular);
-		agregarFilaTabla(tabla, "Fecha Fin:", relacion.getFechaFin(), fontBold, fontRegular);
-		
-		String tiempo = "";
-		if (relacion.getAnios() != null && relacion.getAnios() > 0) {
-			tiempo += relacion.getAnios() + " años ";
-		}
-		if (relacion.getMeses() != null && relacion.getMeses() > 0) {
-			tiempo += relacion.getMeses() + " meses ";
-		}
-		if (relacion.getDias() != null && relacion.getDias() > 0) {
-			tiempo += relacion.getDias() + " días";
-		}
-		agregarFilaTabla(tabla, "Tiempo de Servicio:", tiempo.trim(), fontBold, fontRegular);
-		
-		agregarFilaTabla(tabla, "Remuneración:", relacion.getRemuneracion() != null ? "S/ " + relacion.getRemuneracion().toString() : "", fontBold, fontRegular);
-
-		document.add(tabla);
+		// Layout compacto para relación laboral
+		generarLayoutCompactoRelacionLaboral(document, relacion, fontBold, fontRegular);
 		document.add(new Paragraph().setMarginBottom(15));
 	}
 
 	/**
-	 * Genera la sección de fundamentaciones
+	 * Genera un layout compacto para los datos de relación laboral
+	 */
+	private void generarLayoutCompactoRelacionLaboral(Document document, RelacionLaboral relacion, PdfFont fontBold, PdfFont fontRegular) {
+		// Fila 1: Régimen laboral, fechas de inicio y fin (3 columnas)
+		Table fila1 = new Table(UnitValue.createPercentArray(new float[]{33, 33, 34}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(2);
+
+		agregarCeldaFormulario(fila1, "RÉGIMEN LABORAL", relacion.getRegimen(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "FECHA DE INICIO", relacion.getFechaInicio(), fontBold, fontRegular);
+		agregarCeldaFormulario(fila1, "FECHA FIN", relacion.getFechaFin(), fontBold, fontRegular);
+
+		document.add(fila1);
+
+		// Fila 2: Tiempo de servicio desglosado y monto de remuneración (4 columnas)
+		Table fila2 = new Table(UnitValue.createPercentArray(new float[]{20, 20, 20, 40}))
+				.setWidth(UnitValue.createPercentValue(100))
+				.setMarginBottom(5);
+
+		String anios = relacion.getAnios() != null ? relacion.getAnios().toString() : "0";
+		String meses = relacion.getMeses() != null ? relacion.getMeses().toString() : "0";
+		String dias = relacion.getDias() != null ? relacion.getDias().toString() : "0";
+		String remuneracion = relacion.getRemuneracion() != null ? "S/. " + String.format("%.2f", relacion.getRemuneracion()) : "";
+
+		agregarCeldaFormulario(fila2, "AÑOS", anios, fontBold, fontRegular);
+		agregarCeldaFormulario(fila2, "MESES", meses, fontBold, fontRegular);
+		agregarCeldaFormulario(fila2, "DÍAS", dias, fontBold, fontRegular);
+		agregarCeldaFormulario(fila2, "MONTO - ÚLTIMA REMUNERACIÓN", remuneracion, fontBold, fontRegular);
+
+		document.add(fila2);
+	}
+
+	/**
+	 * Genera la sección de justificación de petitorios ordenada
+	 */
+	private void generarJustificacionPetitorios(Document document, Demanda demanda) throws IOException {
+		if (demanda.getPetitorios() == null || demanda.getPetitorios().isEmpty()) {
+			return;
+		}
+
+		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+
+		// Título de sección
+		Paragraph tituloSeccion = new Paragraph("5. JUSTIFICACIÓN DE PETITORIOS (HECHOS QUE FUNDAMENTAN EL PETITORIO)")
+				.setFont(fontBold)
+				.setFontSize(14)
+				.setFontColor(COLOR_HEADER)
+				.setMarginBottom(10);
+		document.add(tituloSeccion);
+
+		// Generar justificaciones ordenadas por petitorio
+		char letra = 'A';
+		for (Petitorio petitorio : demanda.getPetitorios()) {
+			if (petitorio.getJustificacion() != null && !petitorio.getJustificacion().trim().isEmpty()) {
+				// Crear párrafo con letra identificadora
+				Paragraph justificacion = new Paragraph()
+						.setFont(fontRegular)
+						.setFontSize(11)
+						.setTextAlignment(TextAlignment.JUSTIFIED)
+						.setMarginBottom(8);
+
+				// Agregar letra en negrita
+				justificacion.add(new com.itextpdf.layout.element.Text(String.valueOf(letra) + ". ")
+						.setFont(fontBold)
+						.setFontSize(11));
+
+				// Agregar texto de justificación
+				justificacion.add(new com.itextpdf.layout.element.Text(petitorio.getJustificacion())
+						.setFont(fontRegular)
+						.setFontSize(11));
+
+				document.add(justificacion);
+				letra++;
+			}
+		}
+
+		document.add(new Paragraph().setMarginBottom(15));
+	}
+
+	/**
+	 * Genera la sección de fundamentaciones con formato numerado
 	 */
 	private void generarFundamentaciones(Document document, Demanda demanda) throws IOException {
 		if (demanda.getFundamentaciones() == null || demanda.getFundamentaciones().isEmpty()) {
@@ -490,31 +761,117 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("FUNDAMENTACIONES")
+		Paragraph tituloSeccion = new Paragraph("6. FUNDAMENTACIONES")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
 				.setMarginBottom(10);
 		document.add(tituloSeccion);
 
+		// Generar fundamentaciones con numeración
 		for (int i = 0; i < demanda.getFundamentaciones().size(); i++) {
 			Fundamentacion fundamentacion = demanda.getFundamentaciones().get(i);
 
-			// Subtítulo
-			Paragraph subtitulo = new Paragraph("Fundamentación " + (i + 1))
-					.setFont(fontBold)
-					.setFontSize(12)
-					.setFontColor(COLOR_ACCENT)
-					.setMarginBottom(5);
-			document.add(subtitulo);
-
-			// Contenido de la fundamentación
-			Paragraph contenido = new Paragraph(fundamentacion.getContenido())
+			// Crear párrafo con numeración
+			Paragraph contenido = new Paragraph()
 					.setFont(fontRegular)
 					.setFontSize(11)
 					.setTextAlignment(TextAlignment.JUSTIFIED)
-					.setMarginBottom(10);
+					.setMarginBottom(8);
+
+			// Agregar número en negrita
+			contenido.add(new com.itextpdf.layout.element.Text((i + 1) + ". ")
+					.setFont(fontBold)
+					.setFontSize(11));
+
+			// Agregar contenido de la fundamentación
+			contenido.add(new com.itextpdf.layout.element.Text(fundamentacion.getContenido())
+					.setFont(fontRegular)
+					.setFontSize(11));
+
 			document.add(contenido);
+		}
+
+		document.add(new Paragraph().setMarginBottom(15));
+	}
+
+	/**
+	 * Genera la sección de vía procedimental como campo estático
+	 */
+	private void generarViaProcedimental(Document document, Demanda demanda) throws IOException {
+		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+
+		// Título de sección
+		Paragraph tituloSeccion = new Paragraph("7. VÍA PROCEDIMENTAL (CAMPO ESTÁTICO)")
+				.setFont(fontBold)
+				.setFontSize(14)
+				.setFontColor(COLOR_HEADER)
+				.setMarginBottom(10);
+		document.add(tituloSeccion);
+
+		// Contenido estático
+		Paragraph contenido = new Paragraph("ABREVIADO LABORAL")
+				.setFont(fontRegular)
+				.setFontSize(11)
+				.setTextAlignment(TextAlignment.LEFT)
+				.setMarginBottom(15);
+		document.add(contenido);
+	}
+
+	/**
+	 * Genera la sección de medios probatorios concatenando justificaciones de petitorios
+	 */
+	private void generarMediosProbatorios(Document document, Demanda demanda) throws IOException {
+		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+
+		// Título de sección
+		Paragraph tituloSeccion = new Paragraph("8. MEDIOS PROBATORIOS (ART. 21° DE LA LEY 29497)")
+				.setFont(fontBold)
+				.setFontSize(14)
+				.setFontColor(COLOR_HEADER)
+				.setMarginBottom(10);
+		document.add(tituloSeccion);
+
+		// Medios probatorios estáticos
+		String[] mediosProbatorios = {
+			"1. DOCUMENTOS QUE SUSTENTAN LA PRETENSIÓN DE BENEFICIOS SOCIALES POR NORMA CTS TRUNCO",
+			"2. CUMPLIMIENTO DE CONVENIO COLECTIVO POR IDENTIFICACIÓN INSTITUCIONAL",
+			"3. DERECHOS LABORALES POR INDEMNIZACIÓN"
+		};
+
+		for (String medio : mediosProbatorios) {
+			Paragraph medioParrafo = new Paragraph(medio)
+					.setFont(fontRegular)
+					.setFontSize(11)
+					.setTextAlignment(TextAlignment.LEFT)
+					.setMarginBottom(5);
+			document.add(medioParrafo);
+		}
+
+		// Agregar justificaciones de petitorios como medios probatorios adicionales
+		if (demanda.getPetitorios() != null && !demanda.getPetitorios().isEmpty()) {
+			// Concatenar todas las justificaciones
+			StringBuilder justificacionesConcatenadas = new StringBuilder();
+			for (Petitorio petitorio : demanda.getPetitorios()) {
+				if (petitorio.getJustificacion() != null && !petitorio.getJustificacion().trim().isEmpty()) {
+					if (justificacionesConcatenadas.length() > 0) {
+						justificacionesConcatenadas.append(" ");
+					}
+					justificacionesConcatenadas.append(petitorio.getJustificacion());
+				}
+			}
+
+			// Agregar como medio probatorio adicional si hay justificaciones
+			if (justificacionesConcatenadas.length() > 0) {
+				Paragraph medioAdicional = new Paragraph("TIPO PETITORIO + JUSTIFICACIÓN: " + justificacionesConcatenadas.toString())
+						.setFont(fontRegular)
+						.setFontSize(11)
+						.setTextAlignment(TextAlignment.JUSTIFIED)
+						.setMarginBottom(5);
+				document.add(medioAdicional);
+			}
 		}
 
 		document.add(new Paragraph().setMarginBottom(15));
@@ -532,7 +889,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("ANEXOS")
+		Paragraph tituloSeccion = new Paragraph("9. ANEXOS")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
@@ -574,7 +931,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Título de sección
-		Paragraph tituloSeccion = new Paragraph("FIRMAS")
+		Paragraph tituloSeccion = new Paragraph("7. FIRMAS")
 				.setFont(fontBold)
 				.setFontSize(14)
 				.setFontColor(COLOR_HEADER)
@@ -585,7 +942,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			Firma firma = demanda.getFirmas().get(i);
 
 			// Subtítulo
-			Paragraph subtitulo = new Paragraph("Firma " + (i + 1) + " - " + firma.getTipo())
+			Paragraph subtitulo = new Paragraph("7." + (i + 1) + " Firma " + (i + 1) + " - " + firma.getTipo())
 					.setFont(fontBold)
 					.setFontSize(12)
 					.setFontColor(COLOR_ACCENT)
