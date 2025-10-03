@@ -80,9 +80,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		log.info("{} Iniciando generación de reporte PDF para demanda ID: {}", cuo, idDemanda);
 
 		try {
-			// Obtener datos de la demanda
-			Map<String, Object> filters = Map.of("id", idDemanda);
-			List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
+            // Obtener datos de la demanda (usar clave correcta del dominio)
+            Map<String, Object> filters = Map.of(Demanda.P_ID, idDemanda);
+            List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
 
 			if (demandas.isEmpty()) {
 				throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(), String
