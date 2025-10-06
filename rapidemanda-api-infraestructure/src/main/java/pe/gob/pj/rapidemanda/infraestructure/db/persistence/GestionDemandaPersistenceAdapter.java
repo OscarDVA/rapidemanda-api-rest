@@ -98,8 +98,9 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		session.beginTransaction();
 		try {
 			// Crear entidades de referencia
-			MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
-			estadoDemanda.setBEstadoDemanda(demanda.getIdEstadoDemanda());
+            MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
+            // Estado inicial controlado por backend: siempre BORRADOR ('B')
+            estadoDemanda.setBEstadoDemanda("B");
 
 			MaeTipoPresentacion tipoPresentacion = new MaeTipoPresentacion();
 			tipoPresentacion.setBTipoPresentacion(demanda.getIdTipoPresentacion());

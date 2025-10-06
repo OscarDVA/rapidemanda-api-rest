@@ -28,12 +28,7 @@ public class DemandaRequest {
 	@JsonProperty("sumilla")
 	String sumilla;
 
-	@Length(min = 1, max = 1, message = "El parámetro estadoDemanda tiene un tamaño no válido (min=1,max=1).")
-	@NotBlank(message = "El parámetro estadoDemanda no puede ser vacío.")
-	@NotNull(message = "El parámetro estadoDemanda no puede ser nulo.")
-	@Pattern(regexp = "[BCP]", message = "El parámetro estadoDemanda solo permite valores B, C o P.")
-	@JsonProperty("idEstadoDemanda")
-	String idEstadoDemanda;
+	// Campo eliminado: el estado se controla exclusivamente en backend
 
 	@Length(min = 1, max = 1, message = "El parámetro tipoPresentacion tiene un tamaño no válido (min=1,max=1).")
 	@NotBlank(message = "El parámetro tipoPresentacion no puede ser vacío.")

@@ -74,6 +74,7 @@ public interface DemandaMapper {
 	
 	// Método principal para convertir DemandaRequest a Demanda
 	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "idEstadoDemanda", ignore = true)
 	@Mapping(target = "estadoDemanda", ignore = true)
 	@Mapping(target = "tipoPresentacion", ignore = true)
 	@Mapping(target = "usuarioDemanda", ignore = true)
