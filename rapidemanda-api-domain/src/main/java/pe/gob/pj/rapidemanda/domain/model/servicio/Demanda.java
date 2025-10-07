@@ -15,6 +15,11 @@ public class Demanda implements Serializable {
 	public static final String P_ID = "idDemanda";
 	public static final String P_ESTADO_ID = "idEstadoDemanda";
 	public static final String P_USUARIO = "usuarioDemanda";
+	//Nuevos Filtros
+    public static final String P_TIPO_PRESENTACION = "idTipoPresentacion";
+    public static final String P_TIPO_RECEPCION = "tipoRecepcion";
+    public static final String P_USUARIO_RECEPCION = "idUsuarioRecepcion";
+	
 
 	Integer id;
 	String sumilla;
@@ -23,6 +28,9 @@ public class Demanda implements Serializable {
 	String idTipoPresentacion; // 'M', 'F'
 	String tipoPresentacion; // 'MPE', 'FISICA'
 	Integer idUsuario;
+	String tipoRecepcion; // 'VIRTUAL', 'PRESENCIAL'
+	String fechaRecepcion;
+	Integer idUsuarioRecepcion;
 	String usuarioDemanda;
 	String pdfUrl;
 	String activo;

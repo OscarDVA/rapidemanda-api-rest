@@ -15,6 +15,7 @@ import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -55,11 +56,20 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 	@Column(name = "N_DEMANDA", nullable = false)
 	private Integer id;
 
-	@Column(name = "X_SUMILLA", nullable = false)
+	@Column(name = "X_SUMILLA")
 	private String sumilla;
 
 	@Column(name = "X_PDF_URL")
 	private String pdfUrl;
+	
+	@Column(name = "C_TIPO_RECEPCION")
+	private String tipoRecepcion;
+	
+	@Column(name = "F_RECEPCION")
+	private Date fechaRecepcion;
+	
+	@Column(name = "N_USUARIO_RECEPCION")
+	private Integer idUsuarioRecepcion;
 
 	@OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 	@BatchSize(size = 10)

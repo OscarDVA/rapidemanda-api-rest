@@ -2,6 +2,7 @@ package pe.gob.pj.rapidemanda.usecase;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -114,6 +115,38 @@ public class GestionDemandaUseCaseAdapter implements GestionDemandaUseCasePort {
                 gestionDemandaPersistencePort.actualizarDemanda(cuo, demandaActualizada);
             }
         }
+    }
+
+    @Override
+    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+            Exception.class, SQLException.class })
+    public void actualizarCamposDemanda(String cuo, Integer idDemanda, String nuevoEstadoDemanda, String TipoRecepcion,
+                                        Date fechaRecepcion, Integer idUsuarioRecepcion) throws Exception {
+
+        if (nuevoEstadoDemanda == null || !"P".equals(nuevoEstadoDemanda)) {
+            throw new ErrorException(Errors.NEGOCIO_ESTADO_INVALIDO.getCodigo(),
+                    String.format(Errors.NEGOCIO_ESTADO_INVALIDO.getNombre(), Proceso.ESTADO_ACTUALIZAR.getNombre()));
+        }
+
+        Map<String, Object> filters = new HashMap<>();
+        filters.put(Demanda.P_ID, idDemanda);
+
+        List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
+        if (demandas.isEmpty()) {
+            throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+                    String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), Proceso.DEMANDA_ACTUALIZAR.getNombre()));
+        }
+
+        Demanda demandaActual = demandas.get(0);
+        if (!"C".equals(demandaActual.getIdEstadoDemanda())) {
+            throw new ErrorException(Errors.NEGOCIO_ESTADO_INVALIDO.getCodigo(),
+                    String.format(Errors.NEGOCIO_ESTADO_INVALIDO.getNombre(), Proceso.ESTADO_ACTUALIZAR.getNombre()));
+        }
+
+        // Ignorar cualquier fecha recibida y usar la fecha actual del servidor
+        Date fechaServidor = new Date();
+        gestionDemandaPersistencePort.actualizarCamposDemanda(cuo, idDemanda, nuevoEstadoDemanda, TipoRecepcion,
+                fechaServidor, idUsuarioRecepcion);
     }
 
 	@Override

@@ -6,6 +6,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.DemandaRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.DemandaRecepcionRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
 @RestController
@@ -96,6 +98,32 @@ public interface GestionDemanda extends Base {
 			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip, @PathVariable(name = "id") Integer id,
 			@Validated @RequestBody DemandaRequest demanda);
+
+	/***
+	 * PATCH /demandas/actualizar/estado-recepcion/{id} : Cambiar estado a 'P' y actualizar campos de recepción
+	 *
+	 * @param cuo
+	 * @param ips
+	 * @param usuauth
+	 * @param uri
+	 * @param params
+	 * @param herramienta
+	 * @param ip
+	 * @param id
+	 * @param request
+	 * @return
+	 */
+	@PatchMapping(value = "actualizar/estado-recepcion/{id}")
+	public ResponseEntity<GlobalResponse> actualizarEstadoRecepcionDemanda(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+			@RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+			@PathVariable(name = "id") Integer id,
+			@RequestBody DemandaRecepcionRequest request);
 	
 	 @DeleteMapping("/{id}")
 	    ResponseEntity<GlobalResponse> eliminarDemanda(

@@ -3,6 +3,7 @@ package pe.gob.pj.rapidemanda.infraestructure.db.persistence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 import jakarta.persistence.TypedQuery;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -21,6 +22,7 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.Fundamentacion;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Petitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.RelacionLaboral;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDemandaPersistencePort;
+import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeEstadoDemanda;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeTipoPresentacion;
@@ -167,6 +169,30 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		session.merge(movDemanda);
 	}
 
+    @Override
+    public void actualizarCamposDemanda(String cuo, Integer idDemanda, String nuevoEstadoDemanda, String TipoRecepcion,
+                                        Date fechaRecepcion, Integer idUsuarioRecepcion) throws Exception {
+        var session = sf.getCurrentSession();
+
+        // Cargar demanda por ID usando filtro de Hibernate
+        session.enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, idDemanda);
+        TypedQuery<MovDemanda> query = sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
+        MovDemanda movDemanda = query.getSingleResult();
+
+        // Actualizar estado de demanda a nuevo valor
+        MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
+        estadoDemanda.setBEstadoDemanda(nuevoEstadoDemanda);
+        movDemanda.setEstadoDemanda(estadoDemanda);
+
+        // Actualizar campos de recepción
+        movDemanda.setTipoRecepcion(TipoRecepcion);
+        movDemanda.setFechaRecepcion(fechaRecepcion);
+        movDemanda.setIdUsuarioRecepcion(idUsuarioRecepcion);
+
+        // Persistir cambios
+        session.merge(movDemanda);
+    }
+
 	// ========================================================================
 	// MÉTODOS PRIVADOS - MAPEO PRINCIPAL DE ENTIDAD A MODELO
 	// ========================================================================
@@ -181,6 +207,9 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		demanda.setId(entity.getId());
 		demanda.setSumilla(entity.getSumilla());
 		demanda.setPdfUrl(entity.getPdfUrl());
+		demanda.setTipoRecepcion(entity.getTipoRecepcion());
+		demanda.setFechaRecepcion(ProjectUtils.convertDateToString(entity.getFechaRecepcion(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
 		demanda.setActivo(entity.getActivo());
 
 		// Mapear referencias con validación de nulos

@@ -1,5 +1,6 @@
 package pe.gob.pj.rapidemanda.domain.port.usecase;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,9 @@ public interface GestionDemandaUseCasePort {
 	 * @throws Exception
 	 */
 	public List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception;
+	
+	
+	public void actualizarCamposDemanda(String cuo, Integer idDemanda, String nuevoEstadoDemanda, String TipoRecepcion, Date fechaRecepcion, Integer idUsuarioRecepcion  ) throws Exception;
 
 	public void eliminar(String cuo, Integer id) throws Exception;
 }
