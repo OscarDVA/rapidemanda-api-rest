@@ -48,7 +48,7 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 	@Override
 	public ResponseEntity<GlobalResponse> consultarDemandas(String cuo, String ips, String usuauth, String uri,
 			String params, String herramienta, String ip, String formatoRespuesta, Integer id, String bEstadoId,
-			Integer idUsuario) {
+			Integer idUsuario, String idTipoPresentacion, String tipoRecepcion, Integer idUsuarioRecepcion) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
 
@@ -64,6 +64,16 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 			}
 			if (idUsuario != null) {
 				filters.put(Demanda.P_USUARIO, idUsuario);
+			}
+
+			if (idTipoPresentacion != null && !idTipoPresentacion.trim().isEmpty()) {
+				filters.put(Demanda.P_TIPO_PRESENTACION, idTipoPresentacion);
+			}
+			if (tipoRecepcion != null && !tipoRecepcion.trim().isEmpty()) {
+				filters.put(Demanda.P_TIPO_RECEPCION, tipoRecepcion);
+			}
+			if (idUsuarioRecepcion != null) {
+				filters.put(Demanda.P_USUARIO_RECEPCION, idUsuarioRecepcion);
 			}
 
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
@@ -188,43 +198,44 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 	}
 
 	@Override
-	public ResponseEntity<GlobalResponse> actualizarEstadoRecepcionDemanda(String cuo, String ips, String usuauth, String uri,
-	        String params, String herramienta, String ip, Integer id, DemandaRecepcionRequest request) {
-	    GlobalResponse res = new GlobalResponse();
-	    res.setCodigoOperacion(cuo);
-	    try {
-	        // Validación simple de estado solicitado
-	        if (request.getNuevoEstadoDemanda() == null || !"P".equals(request.getNuevoEstadoDemanda())) {
-	            throw new ErrorException(Errors.NEGOCIO_ESTADO_INVALIDO.getCodigo(),
-	                    String.format(Errors.NEGOCIO_ESTADO_INVALIDO.getNombre(), Proceso.ESTADO_ACTUALIZAR.getNombre()));
-	        }
+	public ResponseEntity<GlobalResponse> actualizarEstadoRecepcionDemanda(String cuo, String ips, String usuauth,
+			String uri, String params, String herramienta, String ip, Integer id, DemandaRecepcionRequest request) {
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			// Validación simple de estado solicitado
+			if (request.getNuevoEstadoDemanda() == null || !"P".equals(request.getNuevoEstadoDemanda())) {
+				throw new ErrorException(Errors.NEGOCIO_ESTADO_INVALIDO.getCodigo(), String
+						.format(Errors.NEGOCIO_ESTADO_INVALIDO.getNombre(), Proceso.ESTADO_ACTUALIZAR.getNombre()));
+			}
 
-	        // Usar siempre la fecha actual del servidor
-	        Date fecha = new Date();
+			// Usar siempre la fecha actual del servidor
+			Date fecha = new Date();
 
-	        gestionDemandaUseCasePort.actualizarCamposDemanda(cuo, id, request.getNuevoEstadoDemanda(),
-	                request.getTipoRecepcion(), fecha, request.getIdUsuarioRecepcion());
+			gestionDemandaUseCasePort.actualizarCamposDemanda(cuo, id, request.getNuevoEstadoDemanda(),
+					request.getTipoRecepcion(), fecha, request.getIdUsuarioRecepcion());
 
-	        res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
-	        res.setDescripcion("Demanda actualizada correctamente");
-	        Map<String, Object> data = new HashMap<>();
-	        data.put("idDemanda", id);
-	        data.put("estadoDemanda", request.getNuevoEstadoDemanda());
-	        data.put("tipoRecepcion", request.getTipoRecepcion());
-	        data.put("fechaRecepcion", ProjectUtils.convertDateToString(fecha, ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-	        data.put("idUsuarioRecepcion", request.getIdUsuarioRecepcion());
-	        res.setData(data);
-	    } catch (ErrorException e) {
-	        handleException(cuo, e, res);
-	    } catch (Exception e) {
-	        handleException(cuo,
-	                new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
-	                        String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.DEMANDA_ACTUALIZAR.getNombre()),
-	                        e.getMessage(), e.getCause()),
-	                res);
-	    }
-	    HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.parseMediaType(MediaType.APPLICATION_JSON_VALUE));
-	    return new ResponseEntity<>(res, headers, HttpStatus.OK);
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion("Demanda actualizada correctamente");
+			Map<String, Object> data = new HashMap<>();
+			data.put("idDemanda", id);
+			data.put("estadoDemanda", request.getNuevoEstadoDemanda());
+			data.put("tipoRecepcion", request.getTipoRecepcion());
+			data.put("fechaRecepcion",
+					ProjectUtils.convertDateToString(fecha, ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+			data.put("idUsuarioRecepcion", request.getIdUsuarioRecepcion());
+			res.setData(data);
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.DEMANDA_ACTUALIZAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(MediaType.APPLICATION_JSON_VALUE));
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 }

@@ -90,6 +90,21 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 					filters.get(Demanda.P_USUARIO));
 		}
 
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_TIPO_PRESENTACION))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_TIPO_PRESENTACION)
+					.setParameter(MovDemanda.P_TIPO_PRESENTACION, filters.get(Demanda.P_TIPO_PRESENTACION));
+		}
+
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_TIPO_RECEPCION))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_TIPO_RECEPCION).setParameter(MovDemanda.P_TIPO_RECEPCION,
+					filters.get(Demanda.P_TIPO_RECEPCION));
+		}
+
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_USUARIO_RECEPCION))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_USUARIO_RECEPCION)
+					.setParameter(MovDemanda.P_USUARIO_RECEPCION, filters.get(Demanda.P_USUARIO_RECEPCION));
+		}
+
 		TypedQuery<MovDemanda> query = this.sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
 		return query.getResultStream().map(this::mapToModel).toList();
 	}
@@ -100,9 +115,9 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		session.beginTransaction();
 		try {
 			// Crear entidades de referencia
-            MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
-            // Estado inicial controlado por backend: siempre BORRADOR ('B')
-            estadoDemanda.setBEstadoDemanda("B");
+			MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
+			// Estado inicial controlado por backend: siempre BORRADOR ('B')
+			estadoDemanda.setBEstadoDemanda("B");
 
 			MaeTipoPresentacion tipoPresentacion = new MaeTipoPresentacion();
 			tipoPresentacion.setBTipoPresentacion(demanda.getIdTipoPresentacion());
@@ -169,29 +184,29 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		session.merge(movDemanda);
 	}
 
-    @Override
-    public void actualizarCamposDemanda(String cuo, Integer idDemanda, String nuevoEstadoDemanda, String TipoRecepcion,
-                                        Date fechaRecepcion, Integer idUsuarioRecepcion) throws Exception {
-        var session = sf.getCurrentSession();
+	@Override
+	public void actualizarCamposDemanda(String cuo, Integer idDemanda, String nuevoEstadoDemanda, String TipoRecepcion,
+			Date fechaRecepcion, Integer idUsuarioRecepcion) throws Exception {
+		var session = sf.getCurrentSession();
 
-        // Cargar demanda por ID usando filtro de Hibernate
-        session.enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, idDemanda);
-        TypedQuery<MovDemanda> query = sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
-        MovDemanda movDemanda = query.getSingleResult();
+		// Cargar demanda por ID usando filtro de Hibernate
+		session.enableFilter(MovDemanda.F_ID).setParameter(MovDemanda.P_ID, idDemanda);
+		TypedQuery<MovDemanda> query = sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);
+		MovDemanda movDemanda = query.getSingleResult();
 
-        // Actualizar estado de demanda a nuevo valor
-        MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
-        estadoDemanda.setBEstadoDemanda(nuevoEstadoDemanda);
-        movDemanda.setEstadoDemanda(estadoDemanda);
+		// Actualizar estado de demanda a nuevo valor
+		MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
+		estadoDemanda.setBEstadoDemanda(nuevoEstadoDemanda);
+		movDemanda.setEstadoDemanda(estadoDemanda);
 
-        // Actualizar campos de recepción
-        movDemanda.setTipoRecepcion(TipoRecepcion);
-        movDemanda.setFechaRecepcion(fechaRecepcion);
-        movDemanda.setIdUsuarioRecepcion(idUsuarioRecepcion);
+		// Actualizar campos de recepción
+		movDemanda.setTipoRecepcion(TipoRecepcion);
+		movDemanda.setFechaRecepcion(fechaRecepcion);
+		movDemanda.setIdUsuarioRecepcion(idUsuarioRecepcion);
 
-        // Persistir cambios
-        session.merge(movDemanda);
-    }
+		// Persistir cambios
+		session.merge(movDemanda);
+	}
 
 	// ========================================================================
 	// MÉTODOS PRIVADOS - MAPEO PRINCIPAL DE ENTIDAD A MODELO
@@ -208,7 +223,8 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		demanda.setSumilla(entity.getSumilla());
 		demanda.setPdfUrl(entity.getPdfUrl());
 		demanda.setTipoRecepcion(entity.getTipoRecepcion());
-		demanda.setFechaRecepcion(ProjectUtils.convertDateToString(entity.getFechaRecepcion(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		demanda.setFechaRecepcion(ProjectUtils.convertDateToString(entity.getFechaRecepcion(),
+				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
 		demanda.setActivo(entity.getActivo());
 
@@ -722,20 +738,20 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 	@Override
 	public void eliminar(String cuo, Integer id) throws Exception {
 		MovDemanda ent = sf.getCurrentSession().get(MovDemanda.class, id);
-		
+
 		// Validar que la demanda existe
 		if (ent == null) {
 			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
 					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), Proceso.DEMANDA_ELIMINAR.getNombre()));
 		}
-		
+
 		// Validar que solo se puedan eliminar demandas en estado BORRADOR
 		if (!"B".equals(ent.getEstadoDemanda().getBEstadoDemanda())) {
 			throw new ErrorException(Errors.NEGOCIO_DEMANDA_NO_ELIMINABLE.getCodigo(),
-					String.format(Errors.NEGOCIO_DEMANDA_NO_ELIMINABLE.getNombre(), 
+					String.format(Errors.NEGOCIO_DEMANDA_NO_ELIMINABLE.getNombre(),
 							Proceso.DEMANDA_ELIMINAR.getNombre(), ent.getEstadoDemanda().getXEstado()));
 		}
-		
+
 		sf.getCurrentSession().remove(ent);
 	}
 }

@@ -37,19 +37,22 @@ public interface GestionDemanda extends Base {
 	 * @param id
 	 * @return ResponseEntity
 	 */
-	@GetMapping
-	public ResponseEntity<GlobalResponse> consultarDemandas(
-			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
-			@RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
-			@RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
-			@RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
-			@RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
-			@RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-			@RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta,
-			@RequestParam(name = "id", required = false) Integer id,
-			@RequestParam(name = "idEstadoDemanda", required = false) String bEstadoId,
-			@RequestParam(name = "idUsuario", required = false) Integer idUsuario);
+    @GetMapping
+    public ResponseEntity<GlobalResponse> consultarDemandas(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta,
+            @RequestParam(name = "id", required = false) Integer id,
+            @RequestParam(name = "idEstadoDemanda", required = false) String bEstadoId,
+            @RequestParam(name = "idUsuario", required = false) Integer idUsuario,
+            @RequestParam(name = "idTipoPresentacion", required = false) String idTipoPresentacion,
+            @RequestParam(name = "tipoRecepcion", required = false) String tipoRecepcion,
+            @RequestParam(name = "idUsuarioRecepcion", required = false) Integer idUsuarioRecepcion);
 
 	/***
 	 * 
