@@ -32,6 +32,7 @@ public class Demanda implements Serializable {
 	String fechaRecepcion;
 	Integer idUsuarioRecepcion;
 	String usuarioDemanda;
+	String usuarioRecepcion;
 	String pdfUrl;
 	String activo;
 

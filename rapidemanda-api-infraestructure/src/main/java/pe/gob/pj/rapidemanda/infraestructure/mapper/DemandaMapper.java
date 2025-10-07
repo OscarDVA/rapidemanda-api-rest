@@ -78,6 +78,7 @@ public interface DemandaMapper {
 	@Mapping(target = "estadoDemanda", ignore = true)
 	@Mapping(target = "tipoPresentacion", ignore = true)
 	@Mapping(target = "usuarioDemanda", ignore = true)
+	@Mapping(target = "usuarioRecepcion", ignore = true)
 	@Mapping(target = "demandantes", source = "demandantes")
 	@Mapping(target = "demandados", source = "demandados")
 	@Mapping(target = "petitorios", source = "petitorios")

@@ -86,8 +86,8 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 	@Column(name = "F_RECEPCION")
 	private Date fechaRecepcion;
 	
-	@Column(name = "N_USUARIO_RECEPCION")
-	private Integer idUsuarioRecepcion;
+//	@Column(name = "N_USUARIO_RECEPCION")
+//	private Integer idUsuarioRecepcion;
 
 	@OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
 	@BatchSize(size = 10)
@@ -119,6 +119,12 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "N_USUARIO", referencedColumnName = "N_USUARIO", insertable = true, updatable = true)
 	private MovUsuario usuarioDemanda;
+	
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "N_USUARIO_RECEPCION", referencedColumnName = "N_USUARIO", insertable = true, updatable = true)
+	private MovUsuario usuarioRecepcion;
+	
 
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "B_ESTADO_DEMANDA")

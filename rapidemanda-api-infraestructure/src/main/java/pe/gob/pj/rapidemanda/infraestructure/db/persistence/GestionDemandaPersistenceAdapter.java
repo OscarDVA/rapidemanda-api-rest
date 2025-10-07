@@ -202,7 +202,10 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		// Actualizar campos de recepción
 		movDemanda.setTipoRecepcion(TipoRecepcion);
 		movDemanda.setFechaRecepcion(fechaRecepcion);
-		movDemanda.setIdUsuarioRecepcion(idUsuarioRecepcion);
+		
+		MovUsuario usuarioRecepcion = new MovUsuario();
+		usuarioRecepcion.setId(idUsuarioRecepcion);
+		movDemanda.setUsuarioRecepcion(usuarioRecepcion);
 
 		// Persistir cambios
 		session.merge(movDemanda);
@@ -225,7 +228,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		demanda.setTipoRecepcion(entity.getTipoRecepcion());
 		demanda.setFechaRecepcion(ProjectUtils.convertDateToString(entity.getFechaRecepcion(),
 				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
+		//demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
 		demanda.setActivo(entity.getActivo());
 
 		// Mapear referencias con validación de nulos
@@ -251,6 +254,11 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		if (entity.getUsuarioDemanda() != null) {
 			demanda.setIdUsuario(entity.getUsuarioDemanda().getId());
 			demanda.setUsuarioDemanda(entity.getUsuarioDemanda().getUsuario());
+		}
+		
+		if (entity.getUsuarioRecepcion() != null) {
+			demanda.setIdUsuarioRecepcion(entity.getUsuarioRecepcion().getId());
+			demanda.setUsuarioRecepcion(entity.getUsuarioRecepcion().getUsuario());
 		}
 	}
 
