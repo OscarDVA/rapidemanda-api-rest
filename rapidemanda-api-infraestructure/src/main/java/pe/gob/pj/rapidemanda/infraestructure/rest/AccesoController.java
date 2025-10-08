@@ -48,6 +48,7 @@ import pe.gob.pj.rapidemanda.infraestructure.mapper.RegistroMapper;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.LoginRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ObtenerOpcionesRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.RegistroRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.CambiarClaveRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -263,6 +264,47 @@ public class AccesoController implements Acceso, Serializable {
 						? MediaType.APPLICATION_XML_VALUE
 						: MediaType.APPLICATION_JSON_VALUE));
 		return ResponseEntity.ok(res);
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> cambiarClave(String cuo, String ip, String jwt,
+			@Valid CambiarClaveRequest request) {
+
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			String usuarioJwt = null;
+			try {
+				byte[] signingKey = SecurityConstants.JWT_SECRET.getBytes();
+				Jws<Claims> parsedToken = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(jwt);
+				usuarioJwt = parsedToken.getBody().get(Claim.USUARIO_REALIZA_PETICION.getNombre(), String.class);
+			} catch (ExpiredJwtException e) {
+				usuarioJwt = e.getClaims().get(Claim.USUARIO_REALIZA_PETICION.getNombre()).toString();
+			}
+
+			if (ProjectUtils.isNullOrEmpty(usuarioJwt)) {
+				res.setCodigo(Errors.ERROR_TOKEN_NO_VALIDO.getCodigo());
+				res.setDescripcion(Errors.ERROR_TOKEN_NO_VALIDO.getNombre());
+			} else {
+				accesoUC.cambiarClave(cuo, usuarioJwt, request.getClaveActual(), request.getNuevaClave());
+				res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+				res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+			}
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(
+							Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+				? MediaType.APPLICATION_XML_VALUE
+				: MediaType.APPLICATION_JSON_VALUE));
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
 	}
 
 }

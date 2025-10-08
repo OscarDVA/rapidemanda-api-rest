@@ -173,4 +173,22 @@ public class AccesoPersistenceAdapter implements AccesoPersistencePort {
 		return usuario;
 	}
 
+	@Override
+	public void actualizarClaveUsuario(String cuo, String usuario, String nuevaClave) throws Exception {
+		// Buscar usuario activo por nombre de usuario
+		this.sf.getCurrentSession().enableFilter(MovUsuario.F_ACCESO)
+				.setParameter(MovUsuario.P_ACTIVO, Estado.ACTIVO_NUMERICO.getNombre())
+				.setParameter(MovUsuario.P_USUARIO, usuario);
+
+		TypedQuery<MovUsuario> query = this.sf.getCurrentSession().createNamedQuery(MovUsuario.Q_ALL, MovUsuario.class);
+		MovUsuario movUser = query.getResultStream().findFirst().orElse(null);
+
+		if (movUser != null) {
+			String claveEncriptada = EncryptUtils.cryptBase64u(nuevaClave, Cipher.ENCRYPT_MODE);
+			movUser.setClave(claveEncriptada);
+			this.sf.getCurrentSession().merge(movUser);
+		}
+		// Si no se encontró, no se hace nada aquí; el caso de uso ya validó existencia
+	}
+
 }

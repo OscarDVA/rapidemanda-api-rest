@@ -38,4 +38,15 @@ public interface AccesoPersistencePort {
 	 * @throws Exception
 	 */
 	public PerfilOpcions obtenerOpciones(String cuo, Integer idPerfil) throws Exception;
+
+	/**
+	 * Método que permite actualizar la clave de un usuario identificado por nombre de usuario.
+	 * La nueva clave debe ser persistida en forma encriptada según la política del sistema.
+	 *
+	 * @param cuo Código único de operación
+	 * @param usuario Nombre de usuario
+	 * @param nuevaClave Nueva clave en texto plano (se encripta en persistencia)
+	 * @throws Exception
+	 */
+	public void actualizarClaveUsuario(String cuo, String usuario, String nuevaClave) throws Exception;
 }

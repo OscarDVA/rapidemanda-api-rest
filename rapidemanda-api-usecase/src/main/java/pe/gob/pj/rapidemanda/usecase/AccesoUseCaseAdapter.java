@@ -58,6 +58,56 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 	}
 
 	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void cambiarClave(String cuo, String usuario, String claveActual, String nuevaClave) throws Exception {
+		// Validaciones básicas
+		if (ProjectUtils.isNullOrEmpty(claveActual)) {
+			throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "claveActual"));
+		}
+		if (ProjectUtils.isNullOrEmpty(nuevaClave)) {
+			throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "nuevaClave"));
+		}
+
+		// Recuperar usuario actual y validar su existencia
+		Usuario user = accesoPersistencePort.iniciarSesion(cuo, usuario);
+		if (user == null || user.getIdUsuario() == null || ProjectUtils.isNullOrEmpty(user.getClave())) {
+			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Usuario"));
+		}
+
+		// Validar clave actual
+		String actualEncriptada = EncryptUtils.cryptBase64u(claveActual, Cipher.ENCRYPT_MODE);
+		if (!actualEncriptada.equals(user.getClave())) {
+			throw new ErrorException(Errors.NEGOCIO_CREDENCIALES_INCORRECTAS.getCodigo(),
+					String.format(Errors.NEGOCIO_CREDENCIALES_INCORRECTAS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+		}
+
+		// Regla: nueva clave distinta a la actual
+		String nuevaEncriptada = EncryptUtils.cryptBase64u(nuevaClave, Cipher.ENCRYPT_MODE);
+		if (nuevaEncriptada.equals(user.getClave())) {
+			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
+					String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+		}
+
+		// Política de complejidad mínima: 8+ caracteres, mayúscula, minúscula, dígito y símbolo
+		boolean longitudValida = nuevaClave.length() >= 8;
+		boolean tieneMayuscula = nuevaClave.matches(".*[A-Z].*");
+		boolean tieneMinuscula = nuevaClave.matches(".*[a-z].*");
+		boolean tieneDigito = nuevaClave.matches(".*\\d.*");
+		boolean tieneEspecial = nuevaClave.matches(".*[^A-Za-z0-9].*");
+		if (!(longitudValida && tieneMayuscula && tieneMinuscula && tieneDigito && tieneEspecial)) {
+			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
+					String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+		}
+
+		// Actualizar la clave en persistencia (se encripta en el adaptador de persistencia)
+		accesoPersistencePort.actualizarClaveUsuario(cuo, usuario, nuevaClave);
+	}
+
+	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
 			Exception.class, SQLException.class })
 	public PerfilOpcions obtenerOpciones(String cuo, Integer idPerfil) throws Exception {

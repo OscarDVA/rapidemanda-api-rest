@@ -30,6 +30,19 @@ public interface AccesoUseCasePort {
 	 * @throws Exception Si el usuario ya existe o hay errores de validación
 	 */
 	public Usuario registrarUsuario(String cuo, Usuario usuario) throws Exception;
+
+	/**
+	 *
+	 * Método que permite cambiar la clave del usuario autenticado
+	 * validando la clave actual y aplicando reglas de complejidad.
+	 *
+	 * @param cuo Código unico de operación
+	 * @param usuario Nombre de usuario autenticado
+	 * @param claveActual Clave actual del usuario
+	 * @param nuevaClave Nueva clave a establecer
+	 * @throws Exception
+	 */
+	public void cambiarClave(String cuo, String usuario, String claveActual, String nuevaClave) throws Exception;
 	
 	/**
 	 * 
