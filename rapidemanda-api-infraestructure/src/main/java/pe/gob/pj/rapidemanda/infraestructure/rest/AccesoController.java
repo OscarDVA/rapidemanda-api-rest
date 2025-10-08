@@ -49,6 +49,8 @@ import pe.gob.pj.rapidemanda.infraestructure.rest.request.LoginRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ObtenerOpcionesRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.RegistroRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.CambiarClaveRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ForgotPasswordRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ResetPasswordRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -296,6 +298,71 @@ public class AccesoController implements Acceso, Serializable {
 			handleException(cuo,
 					new ErrorException(
 							Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+				? MediaType.APPLICATION_XML_VALUE
+				: MediaType.APPLICATION_JSON_VALUE));
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> solicitarReset(String cuo, String ip, String jwt,
+			@Valid ForgotPasswordRequest request) {
+
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			if (!Estado.ACTIVO_LETRA.getNombre().equalsIgnoreCase(request.getAplicaCaptcha())
+					|| (Estado.ACTIVO_LETRA.getNombre().equalsIgnoreCase(request.getAplicaCaptcha())
+							&& !ProjectUtils.isNullOrEmpty(request.getTokenCaptcha()))) {
+				if (!Estado.ACTIVO_LETRA.getNombre().equalsIgnoreCase(request.getAplicaCaptcha())
+						|| CaptchaUtils.validCaptcha(request.getTokenCaptcha(), ip, cuo)) {
+					accesoUC.solicitarReset(cuo, request.getUsuario());
+					res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+					res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+				} else {
+					throw new ErrorException(Errors.ERROR_TOKEN_CAPTCHA.getCodigo(),
+							String.format(Errors.ERROR_TOKEN_CAPTCHA.getNombre(), Proceso.USUARIO_RECUPERAR_CLAVE.getNombre()));
+				}
+			} else {
+				throw new ErrorException(Errors.ERROR_TOKEN_CAPTCHA.getCodigo(),
+						String.format(Errors.ERROR_TOKEN_CAPTCHA.getNombre(), Proceso.USUARIO_RECUPERAR_CLAVE.getNombre()));
+			}
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_RECUPERAR_CLAVE.getNombre()),
+							e.getMessage(), e.getCause()),
+					res);
+		}
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType(FormatoRespuesta.XML.getNombre().equalsIgnoreCase(request.getFormatoRespuesta())
+				? MediaType.APPLICATION_XML_VALUE
+				: MediaType.APPLICATION_JSON_VALUE));
+		return new ResponseEntity<>(res, headers, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<GlobalResponse> restablecerClave(String cuo, String ip, String jwt,
+			@Valid ResetPasswordRequest request) {
+
+		GlobalResponse res = new GlobalResponse();
+		res.setCodigoOperacion(cuo);
+		try {
+			accesoUC.restablecerClave(cuo, request.getToken(), request.getNuevaClave());
+			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+		} catch (ErrorException e) {
+			handleException(cuo, e, res);
+		} catch (Exception e) {
+			handleException(cuo,
+					new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
 							String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()),
 							e.getMessage(), e.getCause()),
 					res);

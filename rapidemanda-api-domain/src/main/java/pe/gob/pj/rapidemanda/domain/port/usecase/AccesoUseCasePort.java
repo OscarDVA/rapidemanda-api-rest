@@ -43,6 +43,25 @@ public interface AccesoUseCasePort {
 	 * @throws Exception
 	 */
 	public void cambiarClave(String cuo, String usuario, String claveActual, String nuevaClave) throws Exception;
+
+	/**
+	 * Inicia el proceso de recuperación de contraseña enviando un correo con enlace.
+	 *
+	 * @param cuo Código unico de operación
+	 * @param usuario Nombre de usuario
+	 * @throws Exception
+	 */
+	public void solicitarReset(String cuo, String usuario) throws Exception;
+
+	/**
+	 * Completa el proceso de recuperación estableciendo una nueva clave.
+	 *
+	 * @param cuo Código unico de operación
+	 * @param token Token recibido por correo
+	 * @param nuevaClave Nueva clave a establecer
+	 * @throws Exception
+	 */
+	public void restablecerClave(String cuo, String token, String nuevaClave) throws Exception;
 	
 	/**
 	 * 

@@ -34,6 +34,16 @@ public class ProjectProperties implements Serializable {
     private static String alfrescoPath;
     private static String alfrescoVersion;
 
+    // Parámetros de correo y URL base
+    private static String mailHost;
+    private static int mailPort;
+    private static String mailUsername;
+    private static String mailPassword;
+    private static String mailFrom;
+    private static boolean mailAuth;
+    private static boolean mailStartTls;
+    private static String appBaseUrl;
+
     @Autowired
     public ProjectProperties(
             @Value("${configuracion.seguridad.secretToken:null}") String seguridadSecretToken,
@@ -45,12 +55,22 @@ public class ProjectProperties implements Serializable {
             @Value("${timeout.client.api.read.segundos:60}") int timeoutClientApiReadSegundos,
         	@Value("${captcha.url:null}") String captchaUrl,
         	@Value("${captcha.token:null}") String captchaToken,
+        	//ALFRESCO
         	@Value("${alfresco.rapidemanda.host:localhost}") String alfrescoHost,
         	@Value("${alfresco.rapidemanda.puerto:8080}") String alfrescoPuerto,
         	@Value("${alfresco.rapidemanda.usuario:admin}") String alfrescoUsuario,
         	@Value("${alfresco.rapidemanda.clave:admin}") String alfrescoClave,
         	@Value("${alfresco.rapidemanda.path:/app:company_home/cm:RAPIDEMANDA}") String alfrescoPath,
-        	@Value("${alfresco.rapidemanda.version:4.2}") String alfrescoVersion) {
+            @Value("${alfresco.rapidemanda.version:4.2}") String alfrescoVersion,
+            //EMAIL
+            @Value("${mail.smtp.host:localhost}") String mailHost,
+            @Value("${mail.smtp.port:25}") int mailPort,
+            @Value("${mail.smtp.username:}") String mailUsername,
+            @Value("${mail.smtp.password:}") String mailPassword,
+            @Value("${mail.smtp.from:noreply@rapidemanda.gob.pe}") String mailFrom,
+            @Value("${mail.smtp.auth:true}") boolean mailAuth,
+            @Value("${mail.smtp.starttls.enable:true}") boolean mailStartTls,
+            @Value("${configuracion.app.baseUrl:http://localhost:8083}") String appBaseUrl) {
 
         ProjectProperties.seguridadSecretToken = seguridadSecretToken;
         ProjectProperties.seguridadIdAplicativo = seguridadIdAplicativo;
@@ -61,12 +81,24 @@ public class ProjectProperties implements Serializable {
         ProjectProperties.timeoutClientApiReadSegundos = timeoutClientApiReadSegundos;
         ProjectProperties.captchaUrl = captchaUrl;
         ProjectProperties.captchaToken = captchaToken;
+        
+        //ALFRESCO
         ProjectProperties.alfrescoHost = alfrescoHost;
         ProjectProperties.alfrescoPuerto = alfrescoPuerto;
         ProjectProperties.alfrescoUsuario = alfrescoUsuario;
         ProjectProperties.alfrescoClave = alfrescoClave;
         ProjectProperties.alfrescoPath = alfrescoPath;
         ProjectProperties.alfrescoVersion = alfrescoVersion;
+        
+        //EMAIL
+        ProjectProperties.mailHost = mailHost;
+        ProjectProperties.mailPort = mailPort;
+        ProjectProperties.mailUsername = mailUsername;
+        ProjectProperties.mailPassword = mailPassword;
+        ProjectProperties.mailFrom = mailFrom;
+        ProjectProperties.mailAuth = mailAuth;
+        ProjectProperties.mailStartTls = mailStartTls;
+        ProjectProperties.appBaseUrl = appBaseUrl;
     }
 
 	public static String getSeguridadSecretToken() {
@@ -125,8 +157,40 @@ public class ProjectProperties implements Serializable {
 		return alfrescoPath;
 	}
 
-	public static String getAlfrescoVersion() {
-		return alfrescoVersion;
-	}
+    public static String getAlfrescoVersion() {
+        return alfrescoVersion;
+    }
+
+    public static String getMailHost() {
+        return mailHost;
+    }
+
+    public static int getMailPort() {
+        return mailPort;
+    }
+
+    public static String getMailUsername() {
+        return mailUsername;
+    }
+
+    public static String getMailPassword() {
+        return mailPassword;
+    }
+
+    public static String getMailFrom() {
+        return mailFrom;
+    }
+
+    public static boolean isMailAuth() {
+        return mailAuth;
+    }
+
+    public static boolean isMailStartTls() {
+        return mailStartTls;
+    }
+
+    public static String getAppBaseUrl() {
+        return appBaseUrl;
+    }
 
 }

@@ -15,6 +15,8 @@ import pe.gob.pj.rapidemanda.infraestructure.rest.request.LoginRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ObtenerOpcionesRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.RegistroRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.CambiarClaveRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ForgotPasswordRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ResetPasswordRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
 @RestController
@@ -88,5 +90,39 @@ public interface Acceso extends Base{
 			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
 			@RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt,
 			@Valid @RequestBody CambiarClaveRequest request);
+
+	/***
+	 * 
+	 * POST /authenticate/solicitar-reset : Solicita envío de enlace de restablecimiento de clave
+	 * 
+	 * @param cuo
+	 * @param ip
+	 * @param jwt
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = "solicitar-reset")
+	public ResponseEntity<GlobalResponse> solicitarReset(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+			@RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt,
+			@Valid @RequestBody ForgotPasswordRequest request);
+
+	/***
+	 * 
+	 * POST /authenticate/restablecer-clave : Restablece la clave usando el token recibido
+	 * 
+	 * @param cuo
+	 * @param ip
+	 * @param jwt
+	 * @param request
+	 * @return
+	 */
+	@PostMapping(value = "restablecer-clave")
+	public ResponseEntity<GlobalResponse> restablecerClave(
+			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+			@RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt,
+			@Valid @RequestBody ResetPasswordRequest request);
 
 }

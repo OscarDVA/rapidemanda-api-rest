@@ -18,7 +18,9 @@ import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
 import pe.gob.pj.rapidemanda.domain.model.servicio.PerfilOpcions;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Persona;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Usuario;
+import pe.gob.pj.rapidemanda.domain.port.files.CorreoPort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.AccesoPersistencePort;
+import pe.gob.pj.rapidemanda.domain.port.persistence.RecuperacionClavePersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionPersonaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionUsuarioPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.AccesoUseCasePort;
@@ -29,16 +31,22 @@ import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 
 	final AccesoPersistencePort accesoPersistencePort;
-	private final GestionUsuarioPersistencePort gestionUsuarioPersistencePort;
-	private final GestionPersonaPersistencePort gestionPersonaPersistencePort;
+    private final GestionUsuarioPersistencePort gestionUsuarioPersistencePort;
+    private final GestionPersonaPersistencePort gestionPersonaPersistencePort;
+    private final RecuperacionClavePersistencePort recuperacionClavePersistencePort;
+    private final CorreoPort correoPort;
 
-	public AccesoUseCaseAdapter(@Qualifier("accesoPersistencePort") AccesoPersistencePort accesoPersistencePort,
-			@Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort,
-			@Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort) {
-		this.accesoPersistencePort = accesoPersistencePort;
-		this.gestionUsuarioPersistencePort = gestionUsuarioPersistencePort;
-		this.gestionPersonaPersistencePort = gestionPersonaPersistencePort;
-	}
+    public AccesoUseCaseAdapter(@Qualifier("accesoPersistencePort") AccesoPersistencePort accesoPersistencePort,
+            @Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort,
+            @Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort,
+            @Qualifier("recuperacionClavePersistencePort") RecuperacionClavePersistencePort recuperacionClavePersistencePort,
+            @Qualifier("correoPort") CorreoPort correoPort) {
+        this.accesoPersistencePort = accesoPersistencePort;
+        this.gestionUsuarioPersistencePort = gestionUsuarioPersistencePort;
+        this.gestionPersonaPersistencePort = gestionPersonaPersistencePort;
+        this.recuperacionClavePersistencePort = recuperacionClavePersistencePort;
+        this.correoPort = correoPort;
+    }
 
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
@@ -110,13 +118,82 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
 			Exception.class, SQLException.class })
-	public PerfilOpcions obtenerOpciones(String cuo, Integer idPerfil) throws Exception {
+    public PerfilOpcions obtenerOpciones(String cuo, Integer idPerfil) throws Exception {
 		PerfilOpcions perfilOpciones = accesoPersistencePort.obtenerOpciones(cuo, idPerfil);
 		if (perfilOpciones.getOpciones().size() < 1)
 			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(), String
 					.format(Errors.NEGOCIO_PERFIL_NO_ENCONTRADO.getNombre(), Proceso.OBTENER_OPCIONES.getNombre()));
 		return perfilOpciones;
-	}
+    }
+
+    @Override
+    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+            Exception.class, SQLException.class })
+    public void solicitarReset(String cuo, String usuario) throws Exception {
+        if (ProjectUtils.isNullOrEmpty(usuario)) {
+            throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+                    String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "usuario"));
+        }
+
+        Usuario user = accesoPersistencePort.iniciarSesion(cuo, usuario);
+        if (user == null || user.getIdUsuario() == null) {
+            throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+                    String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Usuario"));
+        }
+
+        String correo = user.getPersona() != null ? user.getPersona().getCorreo() : null;
+        if (ProjectUtils.isNullOrEmpty(correo)) {
+            throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
+                    String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), "Correo del usuario"));
+        }
+
+        String token = ProjectUtils.obtenerCodigoUnico();
+        String tokenHash = EncryptUtils.encryptSHA512Hash(token);
+        java.util.Date expiraEn = ProjectUtils.sumarRestarSegundos(new java.util.Date(), 3600);
+
+        recuperacionClavePersistencePort.crearSolicitud(cuo, usuario, tokenHash, expiraEn);
+
+        String asunto = "Recuperación de contraseña";
+        String cuerpoHtml = "<p>Hola " + usuario
+                + ",</p><p>Usa el siguiente token para restablecer tu contraseña:</p><p><b>" + token
+                + "</b></p><p>Este token expira en 1 hora.</p>";
+
+        correoPort.enviar(cuo, correo, asunto, cuerpoHtml);
+    }
+
+    @Override
+    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+            Exception.class, SQLException.class })
+    public void restablecerClave(String cuo, String token, String nuevaClave) throws Exception {
+        if (ProjectUtils.isNullOrEmpty(token)) {
+            throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+                    String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "token"));
+        }
+        if (ProjectUtils.isNullOrEmpty(nuevaClave)) {
+            throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+                    String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "nuevaClave"));
+        }
+
+        boolean longitudValida = nuevaClave.length() >= 8;
+        boolean tieneMayuscula = nuevaClave.matches(".*[A-Z].*");
+        boolean tieneMinuscula = nuevaClave.matches(".*[a-z].*");
+        boolean tieneDigito = nuevaClave.matches(".*\\d.*");
+        boolean tieneEspecial = nuevaClave.matches(".*[^A-Za-z0-9].*");
+        if (!(longitudValida && tieneMayuscula && tieneMinuscula && tieneDigito && tieneEspecial)) {
+            throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
+                    String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+        }
+
+        String tokenHash = EncryptUtils.encryptSHA512Hash(token);
+        String usuario = recuperacionClavePersistencePort.obtenerUsuarioPorTokenActivo(cuo, tokenHash);
+        if (ProjectUtils.isNullOrEmpty(usuario)) {
+            throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+                    String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Token válido"));
+        }
+
+        accesoPersistencePort.actualizarClaveUsuario(cuo, usuario, nuevaClave);
+        recuperacionClavePersistencePort.marcarUsado(cuo, tokenHash);
+    }
 
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
