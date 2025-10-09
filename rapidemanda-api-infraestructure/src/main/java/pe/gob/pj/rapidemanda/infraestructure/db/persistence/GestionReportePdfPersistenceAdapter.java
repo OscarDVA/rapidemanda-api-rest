@@ -39,6 +39,7 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
+import com.itextpdf.barcodes.Barcode128;
 
 import lombok.extern.slf4j.Slf4j;
 import pe.gob.pj.rapidemanda.domain.enums.Errors;
@@ -72,7 +73,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	private static final DeviceRgb COLOR_HEADER = WebColors.getRGBColor("#d70007"); // Rojo corporativo oficial #d70007
 	private static final DeviceRgb COLOR_ACCENT = WebColors.getRGBColor("#d70007"); // new DeviceRgb(220, 53, 69); //
 																					// Rojo claro
-	private static final DeviceRgb COLOR_TEXT = new DeviceRgb(33, 37, 41); // Gris oscuro profesional
+	private static final DeviceRgb COLOR_TEXT = new DeviceRgb(33, 33, 33); // Gris oscuro profesional
 	private static final DeviceRgb COLOR_WATERMARK = WebColors.getRGBColor("#DDDDDD"); // Gris claro para marca de agua
 
 	@Override
@@ -150,9 +151,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	/**
 	 * Genera el encabezado del reporte con logos y títulos institucionales
 	 */
-	private void generarEncabezado(Document document, Demanda demanda) throws IOException {
-		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+    private void generarEncabezado(Document document, Demanda demanda) throws IOException {
+        PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+        PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Tabla principal del encabezado con 3 columnas: logo izq, título central, logo
 		// der
@@ -223,31 +224,6 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		bandaRojaTable.addCell(bandaRojaCell);
 		document.add(bandaRojaTable);
 
-		// CÓDIGO ÚNICO DESTACADO (como en el modelo)
-		Table codigoTable = new Table(UnitValue.createPercentArray(new float[] { 25, 50, 25 }))
-				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(15);
-
-		// Celda izquierda vacía
-		Cell celdaIzq = new Cell().setBorder(Border.NO_BORDER);
-		codigoTable.addCell(celdaIzq);
-
-		// Celda central con código único
-		Paragraph codigoLabel = new Paragraph("CÓDIGO ÚNICO").setFont(fontBold).setFontSize(10)
-				.setTextAlignment(TextAlignment.CENTER).setMarginBottom(2);
-
-		Paragraph codigoValor = new Paragraph(String.valueOf(demanda.getId())).setFont(fontBold).setFontSize(24)
-				.setTextAlignment(TextAlignment.CENTER).setFontColor(COLOR_HEADER).setMarginTop(0).setMarginBottom(2);
-
-		Cell codigoCentral = new Cell().add(codigoLabel).add(codigoValor)
-				.setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_HEADER, 2))
-				.setTextAlignment(TextAlignment.CENTER).setPadding(8);
-		codigoTable.addCell(codigoCentral);
-
-		// Celda derecha vacía
-		Cell celdaDer = new Cell().setBorder(Border.NO_BORDER);
-		codigoTable.addCell(celdaDer);
-
-		document.add(codigoTable);
 
 	}
 
@@ -257,25 +233,68 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	private void generarDatosGenerales(Document document, Demanda demanda) throws IOException {
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-
-		// Fila 1: Código, Sumilla (2 columnas)
-		Table fila1 = new Table(UnitValue.createPercentArray(new float[] { 20, 60 }))
-				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
-
-		agregarCeldaFormulario(fila1, "CÓDIGO", String.valueOf(demanda.getId()), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "SUMILLA", demanda.getSumilla(), fontBold, fontRegular);
-
-		document.add(fila1);
-
-		// Fila 2: otros datos (3 columnas)
-		Table fila2 = new Table(UnitValue.createPercentArray(new float[] { 30, 30, 30 }))
+	
+		Table codigoTable = new Table(UnitValue.createPercentArray(new float[] { 60, 10, 30 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(10);
+		// Sumilla
+		Paragraph sumillaLabel = new Paragraph("SUMILLA:").setFont(fontRegular).setFontSize(10)
+				.setTextAlignment(TextAlignment.LEFT).setMarginBottom(0);
 
-		agregarCeldaFormulario(fila2, "ESTADO", demanda.getEstadoDemanda(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila2, "TIPO PRESENTACIÓN", demanda.getTipoPresentacion(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila2, "USUARIO", demanda.getUsuarioDemanda(), fontBold, fontRegular);
-		document.add(fila2);
+		Paragraph sumillaValor = new Paragraph(String.valueOf(demanda.getSumilla())).setFont(fontBold).setFontSize(11)
+				.setTextAlignment(TextAlignment.LEFT).setFontColor(COLOR_TEXT).setMarginTop(0).setMarginBottom(0);
 
+		Cell textoSumilla = new Cell().add(sumillaLabel).add(sumillaValor)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 1))
+				.setTextAlignment(TextAlignment.LEFT).setPadding(6);
+		codigoTable.addCell(textoSumilla);
+		
+		// Celda central vacía
+		Cell celdaIzq = new Cell().setBorder(Border.NO_BORDER);
+		codigoTable.addCell(celdaIzq);
+		
+		// Código de barras del ID de demanda
+        try {
+            String codigoUnico = demanda.getId() == null ? "" : String.valueOf(demanda.getId());
+            String codeText = codigoUnico;
+            // Pad a longitud fija (10) para tamaño uniforme si es numérico
+            if (codeText.matches("\\d+") && codeText.length() < 10) {
+                codeText = String.format("%010d", Integer.parseInt(codeText));
+            }
+
+            PdfDocument pdfDoc = document.getPdfDocument(); 
+            Barcode128 barcode = new Barcode128(pdfDoc);
+            barcode.setCode(codeText);
+            // Ajustes profesionales de legibilidad: ancho de módulo y altura
+            barcode.setX(1.0f); // ~0.35 mm por módulo
+            // Reducir altura para un símbolo más compacto manteniendo legibilidad
+            barcode.setBarHeight(26f); // ~9.1 mm
+
+            Image barcodeImg = new Image(
+                    barcode.createFormXObject(ColorConstants.BLACK, ColorConstants.WHITE, pdfDoc));
+            // Fijar un ancho razonable y centrar; iText mantiene proporciones
+            barcodeImg.setWidth(180);
+            barcodeImg.setAutoScaleHeight(true);
+
+            Paragraph barcodeLabel = new Paragraph("CÓDIGO ÚNICO: " + codeText)
+                    .setFont(fontBold)
+                    .setFontSize(9)
+                    .setFontColor(COLOR_TEXT)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(2)
+                    .setMarginBottom(0);
+
+            Cell celdaDer = new Cell().setBorder(Border.NO_BORDER)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .add(barcodeImg)
+                    .add(barcodeLabel);
+            codigoTable.addCell(celdaDer);
+        } catch (Exception e) {
+            Cell celdaDer = new Cell().setBorder(Border.NO_BORDER);
+            codigoTable.addCell(celdaDer);
+            log.warn("No se pudo generar el código de barras del Código Único: {}", e.getMessage());
+        }
+		document.add(codigoTable);
+		
 		// texto introductorio
 		Paragraph textoSeccion = new Paragraph("AL JUZGADO DE PAZ LETRADO LABORAL DE LA PROVINCIA DE HUANCAYO")
 				.setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT).setMarginBottom(10);
@@ -384,10 +403,10 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				.setFontColor(COLOR_TEXT).setMarginBottom(1);
 
 		// Valor en la parte inferior con borde
-		Paragraph valorParagraph = new Paragraph(valor != null ? valor : "").setFont(fontRegular).setFontSize(9)
-				.setFontColor(COLOR_TEXT)
-				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f)).setPadding(3)
-				.setMinHeight(15);
+        Paragraph valorParagraph = new Paragraph(valor != null ? valor : "").setFont(fontRegular).setFontSize(9)
+                .setFontColor(COLOR_TEXT)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f)).setPadding(3)
+                .setMinHeight("SUMILLA".equalsIgnoreCase(etiqueta) ? 46 : 15);
 
 		celda.add(labelParagraph);
 		celda.add(valorParagraph);

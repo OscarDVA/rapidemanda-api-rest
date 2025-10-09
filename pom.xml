@@ -147,6 +147,12 @@
 			  <version>8.0.2</version>
 		</dependency>
 		<dependency>
+		    <groupId>com.itextpdf</groupId>
+		    <artifactId>barcodes</artifactId>
+		    <version>8.0.2</version>
+		</dependency>
+ 		<!-- Fin diseño de documentos PDF -->
+		<dependency>
 		  <groupId>org.springframework.boot</groupId>
 		  <artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
