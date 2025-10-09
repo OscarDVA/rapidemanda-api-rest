@@ -155,7 +155,7 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
         recuperacionClavePersistencePort.crearSolicitud(cuo, usuario, tokenHash, expiraEn);
 
         String asunto = "Restablecer contraseña";
-        String resetUrl = ProjectProperties.getAppBaseUrl() + "/restablecer-clave?token=" + token;
+        String resetUrl = ProjectProperties.getAppBaseUrl() + "/autenticacion/restablecer-password?token=" + token;
         java.util.Date ahora = new java.util.Date();
         String cuerpoHtml = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate
                 .buildHtml(usuario, ip, ahora, expiraEn, resetUrl);

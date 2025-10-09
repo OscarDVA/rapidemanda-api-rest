@@ -70,7 +70,7 @@ public class ProjectProperties implements Serializable {
             @Value("${mail.smtp.from:noreply@rapidemanda.gob.pe}") String mailFrom,
             @Value("${mail.smtp.auth:true}") boolean mailAuth,
             @Value("${mail.smtp.starttls.enable:true}") boolean mailStartTls,
-            @Value("${configuracion.app.baseUrl:http://localhost:8083}") String appBaseUrl) {
+            @Value("${configuracion.app.baseUrl:http://localhost:4200}") String appBaseUrl) {
 
         ProjectProperties.seguridadSecretToken = seguridadSecretToken;
         ProjectProperties.seguridadIdAplicativo = seguridadIdAplicativo;
