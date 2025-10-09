@@ -17,6 +17,7 @@ import pe.gob.pj.rapidemanda.infraestructure.rest.request.RegistroRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.CambiarClaveRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ForgotPasswordRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.request.ResetPasswordRequest;
+import pe.gob.pj.rapidemanda.infraestructure.rest.request.ActivateAccountRequest;
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 
 @RestController
@@ -67,12 +68,29 @@ public interface Acceso extends Base{
 	 * @param registro
 	 * @return
 	 */
-	@PostMapping(value = "registrar")
-	public ResponseEntity<GlobalResponse> registrarUsuario(
-			@RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
-			@RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-			@RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt, 
-			@Valid @RequestBody RegistroRequest registro);
+    @PostMapping(value = "registrar")
+    public ResponseEntity<GlobalResponse> registrarUsuario(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt, 
+            @Valid @RequestBody RegistroRequest registro);
+
+    /***
+     * 
+     * POST /authenticate/activar-cuenta : Activar cuenta con enlace firmado
+     * 
+     * @param cuo
+     * @param ip
+     * @param jwt
+     * @param request
+     * @return
+     */
+    @PostMapping(value = "activar-cuenta")
+    public ResponseEntity<GlobalResponse> activarCuenta(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestAttribute(name = ProjectConstants.AUD_JWT) String jwt,
+            @Valid @RequestBody ActivateAccountRequest request);
 
 	/***
 	 * 

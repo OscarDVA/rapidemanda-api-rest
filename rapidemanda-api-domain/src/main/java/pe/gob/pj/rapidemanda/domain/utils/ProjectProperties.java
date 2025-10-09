@@ -43,6 +43,9 @@ public class ProjectProperties implements Serializable {
     private static boolean mailAuth;
     private static boolean mailStartTls;
     private static String appBaseUrl;
+    // Activación de cuenta (HMAC)
+    private static String activationHmacSecret;
+    private static Integer activationTtlSeconds;
 
     @Autowired
     public ProjectProperties(
@@ -70,7 +73,10 @@ public class ProjectProperties implements Serializable {
             @Value("${mail.smtp.from:noreply@rapidemanda.gob.pe}") String mailFrom,
             @Value("${mail.smtp.auth:true}") boolean mailAuth,
             @Value("${mail.smtp.starttls.enable:true}") boolean mailStartTls,
-            @Value("${configuracion.app.baseUrl:http://localhost:4200}") String appBaseUrl) {
+            @Value("${configuracion.app.baseUrl:http://localhost:4200}") String appBaseUrl,
+            // ACTIVATION CUENTA HMAC
+            @Value("${configuracion.activate.hmac.secret:activation-secret}") String activationHmacSecret,
+            @Value("${configuracion.activate.ttl.seconds:86400}") Integer activationTtlSeconds) {
 
         ProjectProperties.seguridadSecretToken = seguridadSecretToken;
         ProjectProperties.seguridadIdAplicativo = seguridadIdAplicativo;
@@ -99,6 +105,8 @@ public class ProjectProperties implements Serializable {
         ProjectProperties.mailAuth = mailAuth;
         ProjectProperties.mailStartTls = mailStartTls;
         ProjectProperties.appBaseUrl = appBaseUrl;
+        ProjectProperties.activationHmacSecret = activationHmacSecret;
+        ProjectProperties.activationTtlSeconds = activationTtlSeconds;
     }
 
 	public static String getSeguridadSecretToken() {
@@ -191,6 +199,14 @@ public class ProjectProperties implements Serializable {
 
     public static String getAppBaseUrl() {
         return appBaseUrl;
+    }
+
+    public static String getActivationHmacSecret() {
+        return activationHmacSecret;
+    }
+
+    public static Integer getActivationTtlSeconds() {
+        return activationTtlSeconds;
     }
 
 }

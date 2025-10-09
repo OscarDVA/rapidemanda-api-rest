@@ -7,6 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyGenerator;
@@ -141,6 +143,29 @@ public class EncryptUtils {
     Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
     pbeCipher.init(Cipher.ENCRYPT_MODE, key, new PBEParameterSpec(SALT, 20));
     return base64Encode(pbeCipher.doFinal(property.getBytes("UTF-8")));
+  }
+
+  /**
+   * Calcula HMAC-SHA256 del texto con el secreto indicado y retorna en formato hex.
+   *
+   * @param data Texto a firmar
+   * @param secret Secreto HMAC
+   * @return Firma en hex
+   */
+  public static String hmacSha256Hex(String data, String secret) {
+    try {
+      Mac mac = Mac.getInstance("HmacSHA256");
+      SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256");
+      mac.init(keySpec);
+      byte[] raw = mac.doFinal(data.getBytes("UTF-8"));
+      StringBuilder sb = new StringBuilder(raw.length * 2);
+      for (byte b : raw) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (Exception e) {
+      throw new RuntimeException("Error calculando HMAC-SHA256", e);
+    }
   }
 
   public static String decryptPastFrass(String property, char[] KEY)

@@ -88,12 +88,12 @@ public class RegistroRequest {
 	@JsonProperty("usuario")
 	String usuario;
 
-	@Size(min = 8, max = 50, message = "El parámetro clave debe tener entre 8 y 50 caracteres.")
-	@NotBlank(message = "El parámetro clave no puede ser vacío.")
-	@NotNull(message = "El parámetro clave no puede ser nulo.")
-	@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$", message = "La clave debe contener al menos: una letra minúscula, una mayúscula, un número y un carácter especial.")
-	@JsonProperty("clave")
-	String clave;
+    @Size(min = 8, max = 50, message = "El parámetro clave debe tener entre 8 y 50 caracteres.")
+    @NotBlank(message = "El parámetro clave no puede ser vacío.")
+    @NotNull(message = "El parámetro clave no puede ser nulo.")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]+$", message = "La clave debe contener al menos: una letra minúscula, una mayúscula, un número y un carácter especial.")
+    @JsonProperty("clave")
+    String clave;
 
 	// Validación de captcha
 	@JsonProperty("aplicaCaptcha")

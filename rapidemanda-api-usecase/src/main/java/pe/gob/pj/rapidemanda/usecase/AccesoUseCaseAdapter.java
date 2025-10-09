@@ -27,27 +27,28 @@ import pe.gob.pj.rapidemanda.domain.port.usecase.AccesoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.utils.EncryptUtils;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectProperties;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
+import pe.gob.pj.rapidemanda.domain.utils.ActivationEmailTemplate;
 
 @Service("accesoUseCasePort")
 public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 
 	final AccesoPersistencePort accesoPersistencePort;
-    private final GestionUsuarioPersistencePort gestionUsuarioPersistencePort;
-    private final GestionPersonaPersistencePort gestionPersonaPersistencePort;
-    private final RecuperacionClavePersistencePort recuperacionClavePersistencePort;
-    private final CorreoPort correoPort;
+	private final GestionUsuarioPersistencePort gestionUsuarioPersistencePort;
+	private final GestionPersonaPersistencePort gestionPersonaPersistencePort;
+	private final RecuperacionClavePersistencePort recuperacionClavePersistencePort;
+	private final CorreoPort correoPort;
 
-    public AccesoUseCaseAdapter(@Qualifier("accesoPersistencePort") AccesoPersistencePort accesoPersistencePort,
-            @Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort,
-            @Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort,
-            @Qualifier("recuperacionClavePersistencePort") RecuperacionClavePersistencePort recuperacionClavePersistencePort,
-            @Qualifier("correoPort") CorreoPort correoPort) {
-        this.accesoPersistencePort = accesoPersistencePort;
-        this.gestionUsuarioPersistencePort = gestionUsuarioPersistencePort;
-        this.gestionPersonaPersistencePort = gestionPersonaPersistencePort;
-        this.recuperacionClavePersistencePort = recuperacionClavePersistencePort;
-        this.correoPort = correoPort;
-    }
+	public AccesoUseCaseAdapter(@Qualifier("accesoPersistencePort") AccesoPersistencePort accesoPersistencePort,
+			@Qualifier("gestionUsuarioPersistencePort") GestionUsuarioPersistencePort gestionUsuarioPersistencePort,
+			@Qualifier("gestionPersonaPersistencePort") GestionPersonaPersistencePort gestionPersonaPersistencePort,
+			@Qualifier("recuperacionClavePersistencePort") RecuperacionClavePersistencePort recuperacionClavePersistencePort,
+			@Qualifier("correoPort") CorreoPort correoPort) {
+		this.accesoPersistencePort = accesoPersistencePort;
+		this.gestionUsuarioPersistencePort = gestionUsuarioPersistencePort;
+		this.gestionPersonaPersistencePort = gestionPersonaPersistencePort;
+		this.recuperacionClavePersistencePort = recuperacionClavePersistencePort;
+		this.correoPort = correoPort;
+	}
 
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
@@ -90,114 +91,116 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 		// Validar clave actual
 		String actualEncriptada = EncryptUtils.cryptBase64u(claveActual, Cipher.ENCRYPT_MODE);
 		if (!actualEncriptada.equals(user.getClave())) {
-			throw new ErrorException(Errors.NEGOCIO_CREDENCIALES_INCORRECTAS.getCodigo(),
-					String.format(Errors.NEGOCIO_CREDENCIALES_INCORRECTAS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+			throw new ErrorException(Errors.NEGOCIO_CREDENCIALES_INCORRECTAS.getCodigo(), String.format(
+					Errors.NEGOCIO_CREDENCIALES_INCORRECTAS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
 		}
 
 		// Regla: nueva clave distinta a la actual
 		String nuevaEncriptada = EncryptUtils.cryptBase64u(nuevaClave, Cipher.ENCRYPT_MODE);
 		if (nuevaEncriptada.equals(user.getClave())) {
-			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
-					String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(), String
+					.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
 		}
 
-		// Política de complejidad mínima: 8+ caracteres, mayúscula, minúscula, dígito y símbolo
+		// Política de complejidad mínima: 8+ caracteres, mayúscula, minúscula, dígito y
+		// símbolo
 		boolean longitudValida = nuevaClave.length() >= 8;
 		boolean tieneMayuscula = nuevaClave.matches(".*[A-Z].*");
 		boolean tieneMinuscula = nuevaClave.matches(".*[a-z].*");
 		boolean tieneDigito = nuevaClave.matches(".*\\d.*");
 		boolean tieneEspecial = nuevaClave.matches(".*[^A-Za-z0-9].*");
 		if (!(longitudValida && tieneMayuscula && tieneMinuscula && tieneDigito && tieneEspecial)) {
-			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
-					String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(), String
+					.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
 		}
 
-		// Actualizar la clave en persistencia (se encripta en el adaptador de persistencia)
+		// Actualizar la clave en persistencia (se encripta en el adaptador de
+		// persistencia)
 		accesoPersistencePort.actualizarClaveUsuario(cuo, usuario, nuevaClave);
 	}
 
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = {
 			Exception.class, SQLException.class })
-    public PerfilOpcions obtenerOpciones(String cuo, Integer idPerfil) throws Exception {
+	public PerfilOpcions obtenerOpciones(String cuo, Integer idPerfil) throws Exception {
 		PerfilOpcions perfilOpciones = accesoPersistencePort.obtenerOpciones(cuo, idPerfil);
 		if (perfilOpciones.getOpciones().size() < 1)
 			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(), String
 					.format(Errors.NEGOCIO_PERFIL_NO_ENCONTRADO.getNombre(), Proceso.OBTENER_OPCIONES.getNombre()));
 		return perfilOpciones;
-    }
+	}
 
-    @Override
-    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
-            Exception.class, SQLException.class })
-    public void solicitarReset(String cuo, String usuario, String ip) throws Exception {
-        if (ProjectUtils.isNullOrEmpty(usuario)) {
-            throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
-                    String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "usuario"));
-        }
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void solicitarReset(String cuo, String usuario, String ip) throws Exception {
+		if (ProjectUtils.isNullOrEmpty(usuario)) {
+			throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "usuario"));
+		}
 
-        Usuario user = accesoPersistencePort.iniciarSesion(cuo, usuario);
-        if (user == null || user.getIdUsuario() == null) {
-            throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
-                    String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Usuario"));
-        }
+		Usuario user = accesoPersistencePort.iniciarSesion(cuo, usuario);
+		if (user == null || user.getIdUsuario() == null) {
+			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Usuario"));
+		}
 
-        String correo = user.getPersona() != null ? user.getPersona().getCorreo() : null;
-        if (ProjectUtils.isNullOrEmpty(correo)) {
-            throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
-                    String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), "Correo del usuario"));
-        }
+		String correo = user.getPersona() != null ? user.getPersona().getCorreo() : null;
+		if (ProjectUtils.isNullOrEmpty(correo)) {
+			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
+					String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), "Correo del usuario"));
+		}
 
-        String token = ProjectUtils.obtenerCodigoUnico();
-        String tokenHash = EncryptUtils.encryptSHA512Hash(token);
-        java.util.Date expiraEn = ProjectUtils.sumarRestarSegundos(new java.util.Date(), 3600);
+		String token = ProjectUtils.obtenerCodigoUnico();
+		String tokenHash = EncryptUtils.encryptSHA512Hash(token);
+		java.util.Date expiraEn = ProjectUtils.sumarRestarSegundos(new java.util.Date(), 3600);
 
-        recuperacionClavePersistencePort.crearSolicitud(cuo, usuario, tokenHash, expiraEn);
+		recuperacionClavePersistencePort.crearSolicitud(cuo, usuario, tokenHash, expiraEn);
 
-        String asunto = "Restablecer contraseña";
-        String resetUrl = ProjectProperties.getAppBaseUrl() + "/autenticacion/restablecer-password?token=" + token;
-        java.util.Date ahora = new java.util.Date();
-        String cuerpoHtml = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate
-                .buildHtml(usuario, ip, ahora, expiraEn, resetUrl);
-        String cuerpoTexto = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate
-                .buildText(usuario, ip, ahora, expiraEn, resetUrl);
+		String asunto = "Restablecer contraseña";
+		String resetUrl = ProjectProperties.getAppBaseUrl() + "/autenticacion/restablecer-password?token=" + token;
+		java.util.Date ahora = new java.util.Date();
+		String cuerpoHtml = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate.buildHtml(usuario, ip, ahora,
+				expiraEn, resetUrl);
+		String cuerpoTexto = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate.buildText(usuario, ip, ahora,
+				expiraEn, resetUrl);
 
-        correoPort.enviar(cuo, correo, asunto, cuerpoHtml, cuerpoTexto);
-    }
+		correoPort.enviar(cuo, correo, asunto, cuerpoHtml, cuerpoTexto);
+	}
 
-    @Override
-    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
-            Exception.class, SQLException.class })
-    public void restablecerClave(String cuo, String token, String nuevaClave) throws Exception {
-        if (ProjectUtils.isNullOrEmpty(token)) {
-            throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
-                    String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "token"));
-        }
-        if (ProjectUtils.isNullOrEmpty(nuevaClave)) {
-            throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
-                    String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "nuevaClave"));
-        }
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void restablecerClave(String cuo, String token, String nuevaClave) throws Exception {
+		if (ProjectUtils.isNullOrEmpty(token)) {
+			throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "token"));
+		}
+		if (ProjectUtils.isNullOrEmpty(nuevaClave)) {
+			throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+					String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "nuevaClave"));
+		}
 
-        boolean longitudValida = nuevaClave.length() >= 8;
-        boolean tieneMayuscula = nuevaClave.matches(".*[A-Z].*");
-        boolean tieneMinuscula = nuevaClave.matches(".*[a-z].*");
-        boolean tieneDigito = nuevaClave.matches(".*\\d.*");
-        boolean tieneEspecial = nuevaClave.matches(".*[^A-Za-z0-9].*");
-        if (!(longitudValida && tieneMayuscula && tieneMinuscula && tieneDigito && tieneEspecial)) {
-            throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(),
-                    String.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
-        }
+		boolean longitudValida = nuevaClave.length() >= 8;
+		boolean tieneMayuscula = nuevaClave.matches(".*[A-Z].*");
+		boolean tieneMinuscula = nuevaClave.matches(".*[a-z].*");
+		boolean tieneDigito = nuevaClave.matches(".*\\d.*");
+		boolean tieneEspecial = nuevaClave.matches(".*[^A-Za-z0-9].*");
+		if (!(longitudValida && tieneMayuscula && tieneMinuscula && tieneDigito && tieneEspecial)) {
+			throw new ErrorException(Errors.DATOS_ENTRADA_INCORRECTOS.getCodigo(), String
+					.format(Errors.DATOS_ENTRADA_INCORRECTOS.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+		}
 
-        String tokenHash = EncryptUtils.encryptSHA512Hash(token);
-        String usuario = recuperacionClavePersistencePort.obtenerUsuarioPorTokenActivo(cuo, tokenHash);
-        if (ProjectUtils.isNullOrEmpty(usuario)) {
-            throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
-                    String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Token válido"));
-        }
+		String tokenHash = EncryptUtils.encryptSHA512Hash(token);
+		String usuario = recuperacionClavePersistencePort.obtenerUsuarioPorTokenActivo(cuo, tokenHash);
+		if (ProjectUtils.isNullOrEmpty(usuario)) {
+			throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(),
+					String.format(Errors.DATOS_NO_ENCONTRADOS.getNombre(), "Token válido"));
+		}
 
-        accesoPersistencePort.actualizarClaveUsuario(cuo, usuario, nuevaClave);
-        recuperacionClavePersistencePort.marcarUsado(cuo, tokenHash);
-    }
+		accesoPersistencePort.actualizarClaveUsuario(cuo, usuario, nuevaClave);
+		recuperacionClavePersistencePort.marcarUsado(cuo, tokenHash);
+	}
 
 	@Override
 	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
@@ -224,20 +227,45 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 				throw new ErrorException(Errors.NEGOCIO_PERSONA_DNI_EXISTE.getCodigo(),
 						String.format(Errors.NEGOCIO_PERSONA_DNI_EXISTE.getNombre(), numeroDocumento));
 			}
-			
+
 			// Validar que el correo no exista
 			String correo = usuario.getPersona().getCorreo();
 			Map<String, Object> filtersCorreo = new HashMap<>();
 			filtersCorreo.put(Persona.P_CORREO, correo);
-			
+
 			List<Persona> personasC = gestionPersonaPersistencePort.buscarPersona(cuo, filtersCorreo);
 			if (!personasC.isEmpty()) {
 				throw new ErrorException(Errors.NEGOCIO_CORREO_YA_REGISTRADO.getCodigo(),
 						String.format(Errors.NEGOCIO_CORREO_YA_REGISTRADO.getNombre(), correo));
 			}
-			
+
 			// Registrar el usuario
 			Usuario usuarioRegistrado = accesoPersistencePort.registrarUsuario(cuo, usuario);
+			// Enviar correo de activación
+			try {
+				int ttl = ProjectProperties.getActivationTtlSeconds();
+				java.util.Date ahora = new java.util.Date();
+				java.util.Date expiraEn = ProjectUtils.sumarRestarSegundos(ahora, ttl);
+				long exp = expiraEn.getTime();
+				String payload = usuarioRegistrado.getIdUsuario() + ":" + exp;
+				String sig = EncryptUtils.hmacSha256Hex(payload, ProjectProperties.getActivationHmacSecret());
+
+				String activationUrl = ProjectProperties.getAppBaseUrl() + "/autenticacion/activar-cuenta?uid="
+						+ usuarioRegistrado.getIdUsuario() + "&exp=" + exp + "&sig=" + sig;
+
+				String asunto = "Activa tu cuenta";
+				String cuerpoHtml = ActivationEmailTemplate.buildHtml(usuarioRegistrado.getUsuario(), ahora,
+						expiraEn, activationUrl);
+				String cuerpoTexto = ActivationEmailTemplate.buildText(usuarioRegistrado.getUsuario(), ahora,
+						expiraEn, activationUrl);
+
+				String email = usuarioRegistrado.getPersona() != null ? usuarioRegistrado.getPersona().getCorreo()
+						: null;
+				if (!ProjectUtils.isNullOrEmpty(email)) {
+					correoPort.enviar(cuo, email, asunto, cuerpoHtml, cuerpoTexto);
+				}
+			} catch (Exception e) {
+			}
 			return usuarioRegistrado;
 
 		} catch (ErrorException ee) {
@@ -249,6 +277,46 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 					e.getMessage(), e.getCause());
 
 		}
+	}
+
+	@Override
+	@Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
+			Exception.class, SQLException.class })
+	public void activarCuenta(String cuo, Integer idUsuario, Long exp, String sig) throws Exception {
+		   try {
+	            if (idUsuario == null) {
+	                throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+	                        String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "idUsuario"));
+	            }
+	            if (exp == null) {
+	                throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+	                        String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "exp"));
+	            }
+	            if (ProjectUtils.isNullOrEmpty(sig)) {
+	                throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
+	                        String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "sig"));
+	            }
+
+	            long ahora = new java.util.Date().getTime();
+	            if (ahora > exp) {
+	                throw new ErrorException(Errors.ERROR_SESSION_EXPIERADO.getCodigo(), Errors.ERROR_SESSION_EXPIERADO.getNombre());
+	            }
+
+	            String payload = idUsuario + ":" + exp;
+	            String esperado = EncryptUtils.hmacSha256Hex(payload, ProjectProperties.getActivationHmacSecret());
+	            if (!esperado.equalsIgnoreCase(sig)) {
+	                throw new ErrorException(Errors.ERROR_TOKEN_NO_VALIDO.getCodigo(),
+	                        String.format(Errors.ERROR_TOKEN_NO_VALIDO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()));
+	            }
+
+            gestionUsuarioPersistencePort.actualizarEstadoUsuario(cuo, idUsuario, "1");
+	        } catch (ErrorException ee) {
+	            throw ee;
+	        } catch (Exception e) {
+	            throw new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+	                    String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.USUARIO_ACTUALIZAR.getNombre()),
+	                    e.getMessage(), e.getCause());
+	        }
 
 	}
 

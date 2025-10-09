@@ -62,6 +62,17 @@ public interface AccesoUseCasePort {
 	 * @throws Exception
 	 */
 	public void restablecerClave(String cuo, String token, String nuevaClave) throws Exception;
+
+	/**
+	 * Activa una cuenta verificando firma HMAC y vigencia.
+	 *
+	 * @param cuo Código único de operación
+	 * @param idUsuario Identificador del usuario a activar
+	 * @param exp Epoch en milisegundos de expiración del enlace
+	 * @param sig Firma HMAC del payload
+	 * @throws Exception
+	 */
+	public void activarCuenta(String cuo, Integer idUsuario, Long exp, String sig) throws Exception;
 	
 	/**
 	 * 

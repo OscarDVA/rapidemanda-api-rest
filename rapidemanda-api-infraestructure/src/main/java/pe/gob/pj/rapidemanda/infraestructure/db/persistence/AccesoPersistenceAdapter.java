@@ -144,7 +144,8 @@ public class AccesoPersistenceAdapter implements AccesoPersistencePort {
 		movUsuario.setUsuario(usuario.getUsuario());
 		movUsuario.setClave(usuario.getClave());
 		movUsuario.setPersona(movPersona);
-		movUsuario.setActivo(Estado.ACTIVO_NUMERICO.getNombre());
+		// Registrar usuario en estado INACTIVO por defecto para activación por correo
+		movUsuario.setActivo(Estado.INACTIVO_NUMERICO.getNombre());
 
 		sf.getCurrentSession().persist(movUsuario);
 		usuario.setIdUsuario(movUsuario.getId());
