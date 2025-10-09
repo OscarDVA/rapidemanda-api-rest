@@ -234,19 +234,21 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 	
-		Table codigoTable = new Table(UnitValue.createPercentArray(new float[] { 60, 10, 30 }))
-				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(10);
+    Table codigoTable = new Table(UnitValue.createPercentArray(new float[] { 60, 10, 30 }))
+            .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
 		// Sumilla
-		Paragraph sumillaLabel = new Paragraph("SUMILLA:").setFont(fontRegular).setFontSize(10)
-				.setTextAlignment(TextAlignment.LEFT).setMarginBottom(0);
+    Paragraph sumillaLabel = new Paragraph("SUMILLA:").setFont(fontBold).setFontSize(9)
+            .setTextAlignment(TextAlignment.LEFT).setMarginBottom(2).setMultipliedLeading(1.0f);
 
-		Paragraph sumillaValor = new Paragraph(String.valueOf(demanda.getSumilla())).setFont(fontBold).setFontSize(11)
-				.setTextAlignment(TextAlignment.LEFT).setFontColor(COLOR_TEXT).setMarginTop(0).setMarginBottom(0);
+    Paragraph sumillaValor = new Paragraph(String.valueOf(demanda.getSumilla())).setFont(fontRegular).setFontSize(11)
+            .setTextAlignment(TextAlignment.LEFT).setFontColor(COLOR_TEXT).setMarginTop(0).setMarginBottom(0)
+            .setMultipliedLeading(1.05f);
 
-		Cell textoSumilla = new Cell().add(sumillaLabel).add(sumillaValor)
-				.setBorder(new com.itextpdf.layout.borders.SolidBorder(COLOR_TEXT, 1))
-				.setTextAlignment(TextAlignment.LEFT).setPadding(6);
-		codigoTable.addCell(textoSumilla);
+    Cell cajaSumilla = new Cell().add(sumillaLabel).add(sumillaValor)
+            .setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f))
+            .setTextAlignment(TextAlignment.LEFT).setPadding(6)
+            .setVerticalAlignment(VerticalAlignment.MIDDLE);
+		codigoTable.addCell(cajaSumilla);
 		
 		// Celda central vacía
 		Cell celdaIzq = new Cell().setBorder(Border.NO_BORDER);
@@ -268,20 +270,22 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
             barcode.setX(1.0f); // ~0.35 mm por módulo
             // Reducir altura para un símbolo más compacto manteniendo legibilidad
             barcode.setBarHeight(26f); // ~9.1 mm
+            barcode.setFont(null);
 
             Image barcodeImg = new Image(
                     barcode.createFormXObject(ColorConstants.BLACK, ColorConstants.WHITE, pdfDoc));
             // Fijar un ancho razonable y centrar; iText mantiene proporciones
             barcodeImg.setWidth(180);
             barcodeImg.setAutoScaleHeight(true);
+            barcodeImg.setMarginBottom(0);
 
             Paragraph barcodeLabel = new Paragraph("CÓDIGO ÚNICO: " + codeText)
-                    .setFont(fontBold)
-                    .setFontSize(9)
-                    .setFontColor(COLOR_TEXT)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginTop(2)
-                    .setMarginBottom(0);
+                .setFont(fontBold)
+                .setFontSize(9)
+                .setFontColor(COLOR_TEXT)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginTop(1)
+                .setMarginBottom(0);
 
             Cell celdaDer = new Cell().setBorder(Border.NO_BORDER)
                     .setTextAlignment(TextAlignment.CENTER)
@@ -296,8 +300,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		document.add(codigoTable);
 		
 		// texto introductorio
-		Paragraph textoSeccion = new Paragraph("AL JUZGADO DE PAZ LETRADO LABORAL DE LA PROVINCIA DE HUANCAYO")
-				.setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT).setMarginBottom(10);
+    Paragraph textoSeccion = new Paragraph("AL JUZGADO DE PAZ LETRADO LABORAL DE LA PROVINCIA DE HUANCAYO")
+            .setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)
+            .setMarginTop(4).setMarginBottom(6);
 		document.add(textoSeccion);
 	}
 
@@ -329,7 +334,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 
 			// Layout compacto con múltiples columnas
 			generarLayoutCompactoDemandante(document, demandante, fontBold, fontRegular);
-			document.add(new Paragraph().setMarginBottom(10));
+			document.add(new Paragraph().setMarginBottom(5));
 		}
 	}
 
