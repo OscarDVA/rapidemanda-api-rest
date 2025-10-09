@@ -25,6 +25,7 @@ import pe.gob.pj.rapidemanda.domain.port.persistence.GestionPersonaPersistencePo
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionUsuarioPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.AccesoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.utils.EncryptUtils;
+import pe.gob.pj.rapidemanda.domain.utils.ProjectProperties;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 
 @Service("accesoUseCasePort")
@@ -129,7 +130,7 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
     @Override
     @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = false, rollbackFor = {
             Exception.class, SQLException.class })
-    public void solicitarReset(String cuo, String usuario) throws Exception {
+    public void solicitarReset(String cuo, String usuario, String ip) throws Exception {
         if (ProjectUtils.isNullOrEmpty(usuario)) {
             throw new ErrorException(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getCodigo(),
                     String.format(Errors.NEGOCIO_PARAMETRO_REQUERIDO.getNombre(), "usuario"));
@@ -153,12 +154,15 @@ public class AccesoUseCaseAdapter implements AccesoUseCasePort {
 
         recuperacionClavePersistencePort.crearSolicitud(cuo, usuario, tokenHash, expiraEn);
 
-        String asunto = "Recuperación de contraseña";
-        String cuerpoHtml = "<p>Hola " + usuario
-                + ",</p><p>Usa el siguiente token para restablecer tu contraseña:</p><p><b>" + token
-                + "</b></p><p>Este token expira en 1 hora.</p>";
+        String asunto = "Restablecer contraseña";
+        String resetUrl = ProjectProperties.getAppBaseUrl() + "/restablecer-clave?token=" + token;
+        java.util.Date ahora = new java.util.Date();
+        String cuerpoHtml = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate
+                .buildHtml(usuario, ip, ahora, expiraEn, resetUrl);
+        String cuerpoTexto = pe.gob.pj.rapidemanda.domain.utils.PasswordResetEmailTemplate
+                .buildText(usuario, ip, ahora, expiraEn, resetUrl);
 
-        correoPort.enviar(cuo, correo, asunto, cuerpoHtml);
+        correoPort.enviar(cuo, correo, asunto, cuerpoHtml, cuerpoTexto);
     }
 
     @Override

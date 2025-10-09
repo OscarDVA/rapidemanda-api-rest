@@ -321,7 +321,7 @@ public class AccesoController implements Acceso, Serializable {
 							&& !ProjectUtils.isNullOrEmpty(request.getTokenCaptcha()))) {
 				if (!Estado.ACTIVO_LETRA.getNombre().equalsIgnoreCase(request.getAplicaCaptcha())
 						|| CaptchaUtils.validCaptcha(request.getTokenCaptcha(), ip, cuo)) {
-					accesoUC.solicitarReset(cuo, request.getUsuario());
+                    accesoUC.solicitarReset(cuo, request.getUsuario(), ip);
 					res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 					res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
 				} else {

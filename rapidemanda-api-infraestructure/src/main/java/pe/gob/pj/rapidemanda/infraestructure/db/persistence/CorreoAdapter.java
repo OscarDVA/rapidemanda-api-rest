@@ -19,13 +19,15 @@ public class CorreoAdapter implements CorreoPort {
     }
 
     @Override
-    public void enviar(String cuo, String destino, String asunto, String contenidoHtml) throws Exception {
+    public void enviar(String cuo, String destino, String asunto, String contenidoHtml, String contenidoTexto) throws Exception {
         MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+        // habilitar multipart para incluir versión alternativa en texto plano
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(ProjectProperties.getMailFrom());
         helper.setTo(destino);
         helper.setSubject(asunto);
-        helper.setText(contenidoHtml, true);
+        // setText(plainText, htmlText) usa multipart/alternative
+        helper.setText(contenidoTexto, contenidoHtml);
         mailSender.send(message);
     }
 }

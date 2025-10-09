@@ -51,7 +51,7 @@ public interface AccesoUseCasePort {
 	 * @param usuario Nombre de usuario
 	 * @throws Exception
 	 */
-	public void solicitarReset(String cuo, String usuario) throws Exception;
+    public void solicitarReset(String cuo, String usuario, String ip) throws Exception;
 
 	/**
 	 * Completa el proceso de recuperación estableciendo una nueva clave.
