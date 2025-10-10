@@ -32,6 +32,7 @@ public enum Proceso {
 	DEPARTAMENTO_CONSULTAR("Consultar Departamento"),
 	PROVINCIA_CONSULTAR("Consultar Provincia"),
 	DISTRITO_CONSULTAR("Consultar Distrito"),
+	DASHBOARD_CONSULTAR("Consultar Dashboard"),
 	ESTADO_ACTUALIZAR("Actualizar Estado"),
 	USUARIO_RECUPERAR_CLAVE("Recuperar Clave");
 	String nombre;
