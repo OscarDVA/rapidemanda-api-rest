@@ -49,13 +49,27 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.Anexo;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandado;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandante;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Departamento;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Provincia;
+import pe.gob.pj.rapidemanda.domain.model.servicio.Distrito;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Firma;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Fundamentacion;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Petitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.RelacionLaboral;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPetitorio;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionPrincipal;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoConcepto;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionAccesoria;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDemandaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionReportePdfPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDocumentoUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDepartamentoUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionProvinciaUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDistritoUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPetitorioUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionPrincipalUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionConceptoUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionAccesoriaUseCasePort;
 
 @Slf4j
 @Component("gestionReportePdfPersistencePort")
@@ -69,6 +83,45 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	@Qualifier("gestionDocumentoUseCasePort")
 	private GestionDocumentoUseCasePort gestionDocumentoUseCasePort;
 
+	@Autowired
+	@Qualifier("gestionDepartamentoUseCasePort")
+	private GestionDepartamentoUseCasePort gestionDepartamentoUseCasePort;
+
+	@Autowired
+	@Qualifier("gestionProvinciaUseCasePort")
+	private GestionProvinciaUseCasePort gestionProvinciaUseCasePort;
+
+	@Autowired
+	@Qualifier("gestionDistritoUseCasePort")
+	private GestionDistritoUseCasePort gestionDistritoUseCasePort;
+
+	@Autowired
+	@Qualifier("gestionPetitorioUseCasePort")
+	private GestionPetitorioUseCasePort gestionPetitorioUseCasePort;
+
+	@Autowired
+	@Qualifier("gestionPretensionPrincipalUseCasePort")
+	private GestionPretensionPrincipalUseCasePort gestionPretensionPrincipalUseCasePort;
+
+	@Autowired
+	@Qualifier("gestionConceptoUseCasePort")
+	private GestionConceptoUseCasePort gestionConceptoUseCasePort;
+
+	@Autowired
+	@Qualifier("gestionPretensionAccesoriaUseCasePort")
+	private GestionPretensionAccesoriaUseCasePort gestionPretensionAccesoriaUseCasePort;
+
+	// Cachés en memoria para ubigeo (catálogos estables)
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheDepartamentos = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheProvincias = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheDistritos = new java.util.concurrent.ConcurrentHashMap<>();
+
+	// Cachés en memoria para catálogos de petitorio
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cachePetitorios = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cachePretensionesPrincipales = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheConceptos = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cachePretensionesAccesorias = new java.util.concurrent.ConcurrentHashMap<>();
+
 	// Colores corporativos según diseño oficial
 	private static final DeviceRgb COLOR_HEADER = WebColors.getRGBColor("#d70007"); // Rojo corporativo oficial #d70007
 	private static final DeviceRgb COLOR_ACCENT = WebColors.getRGBColor("#d70007"); // new DeviceRgb(220, 53, 69); //
@@ -81,9 +134,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		log.info("{} Iniciando generación de reporte PDF para demanda ID: {}", cuo, idDemanda);
 
 		try {
-            // Obtener datos de la demanda (usar clave correcta del dominio)
-            Map<String, Object> filters = Map.of(Demanda.P_ID, idDemanda);
-            List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
+			// Obtener datos de la demanda (usar clave correcta del dominio)
+			Map<String, Object> filters = Map.of(Demanda.P_ID, idDemanda);
+			List<Demanda> demandas = gestionDemandaPersistencePort.buscarDemandas(cuo, filters);
 
 			if (demandas.isEmpty()) {
 				throw new ErrorException(Errors.DATOS_NO_ENCONTRADOS.getCodigo(), String
@@ -106,20 +159,26 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			Document document = new Document(pdfDoc);
 			document.setMargins(30, 30, 60, 30); // top, right, bottom, left
 
-			// Generar contenido del PDF
-			generarEncabezado(document, demanda);
-			generarDatosGenerales(document, demanda);
-			generarDemandantes(document, demanda);
-			generarDemandados(document, demanda);
-			generarPetitorios(document, demanda);
-			generarRelacionLaboral(document, demanda);
-			generarJustificacionPetitorios(document, demanda);
-			generarFundamentaciones(document, demanda);
-			generarViaProcedimental(document, demanda);
-			generarMediosProbatorios(document, demanda);
-			generarAnexos(document, demanda);
-			generarFirmas(document, demanda, cuo);
-			generarInformacionGeneracion(document);
+			// Precargar cachés de ubigeo (catálogos estables)
+			precargarUbigeoSiNecesario(cuo);
+
+			// Precargar catálogos de petitorio (catálogos estables)
+			precargarCatalogosPetitorioSiNecesario(cuo);
+
+            // Generar contenido del PDF
+            generarEncabezado(document, demanda);
+            generarDatosGenerales(document, demanda);
+            generarDemandantes(document, demanda, cuo);
+            generarDemandados(document, demanda, cuo);
+            generarPetitorios(document, demanda, cuo);
+            generarRelacionLaboral(document, demanda);
+            generarJustificacionPetitorios(document, demanda);
+            generarFundamentaciones(document, demanda);
+            generarViaProcedimental(document, demanda);
+            generarMediosProbatorios(document, demanda, cuo);
+            generarAnexos(document, demanda);
+            generarFirmas(document, demanda, cuo);
+            generarInformacionGeneracion(document);
 
 			document.close();
 
@@ -151,9 +210,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	/**
 	 * Genera el encabezado del reporte con logos y títulos institucionales
 	 */
-    private void generarEncabezado(Document document, Demanda demanda) throws IOException {
-        PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-        PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+	private void generarEncabezado(Document document, Demanda demanda) throws IOException {
+		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
 		// Tabla principal del encabezado con 3 columnas: logo izq, título central, logo
 		// der
@@ -224,7 +283,6 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		bandaRojaTable.addCell(bandaRojaCell);
 		document.add(bandaRojaTable);
 
-
 	}
 
 	/**
@@ -233,83 +291,73 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	private void generarDatosGenerales(Document document, Demanda demanda) throws IOException {
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-	
-    Table codigoTable = new Table(UnitValue.createPercentArray(new float[] { 60, 10, 30 }))
-            .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
+
+		Table codigoTable = new Table(UnitValue.createPercentArray(new float[] { 60, 10, 30 }))
+				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
 		// Sumilla
-    Paragraph sumillaLabel = new Paragraph("SUMILLA:").setFont(fontBold).setFontSize(9)
-            .setTextAlignment(TextAlignment.LEFT).setMarginBottom(2).setMultipliedLeading(1.0f);
+		Paragraph sumillaLabel = new Paragraph("SUMILLA:").setFont(fontBold).setFontSize(9)
+				.setTextAlignment(TextAlignment.LEFT).setMarginBottom(2).setMultipliedLeading(1.0f);
 
-    Paragraph sumillaValor = new Paragraph(String.valueOf(demanda.getSumilla())).setFont(fontRegular).setFontSize(11)
-            .setTextAlignment(TextAlignment.LEFT).setFontColor(COLOR_TEXT).setMarginTop(0).setMarginBottom(0)
-            .setMultipliedLeading(1.05f);
+		Paragraph sumillaValor = new Paragraph(String.valueOf(demanda.getSumilla())).setFont(fontRegular)
+				.setFontSize(11).setTextAlignment(TextAlignment.LEFT).setFontColor(COLOR_TEXT).setMarginTop(0)
+				.setMarginBottom(0).setMultipliedLeading(1.05f);
 
-    Cell cajaSumilla = new Cell().add(sumillaLabel).add(sumillaValor)
-            .setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f))
-            .setTextAlignment(TextAlignment.LEFT).setPadding(6)
-            .setVerticalAlignment(VerticalAlignment.MIDDLE);
+		Cell cajaSumilla = new Cell().add(sumillaLabel).add(sumillaValor)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f))
+				.setTextAlignment(TextAlignment.LEFT).setPadding(6).setVerticalAlignment(VerticalAlignment.MIDDLE);
 		codigoTable.addCell(cajaSumilla);
-		
+
 		// Celda central vacía
 		Cell celdaIzq = new Cell().setBorder(Border.NO_BORDER);
 		codigoTable.addCell(celdaIzq);
-		
+
 		// Código de barras del ID de demanda
-        try {
-            String codigoUnico = demanda.getId() == null ? "" : String.valueOf(demanda.getId());
-            String codeText = codigoUnico;
-            // Pad a longitud fija (10) para tamaño uniforme si es numérico
-            if (codeText.matches("\\d+") && codeText.length() < 10) {
-                codeText = String.format("%010d", Integer.parseInt(codeText));
-            }
+		try {
+			String codigoUnico = demanda.getId() == null ? "" : String.valueOf(demanda.getId());
+			String codeText = codigoUnico;
+			// Pad a longitud fija (10) para tamaño uniforme si es numérico
+			if (codeText.matches("\\d+") && codeText.length() < 10) {
+				codeText = String.format("%010d", Integer.parseInt(codeText));
+			}
 
-            PdfDocument pdfDoc = document.getPdfDocument(); 
-            Barcode128 barcode = new Barcode128(pdfDoc);
-            barcode.setCode(codeText);
-            // Ajustes profesionales de legibilidad: ancho de módulo y altura
-            barcode.setX(1.0f); // ~0.35 mm por módulo
-            // Reducir altura para un símbolo más compacto manteniendo legibilidad
-            barcode.setBarHeight(26f); // ~9.1 mm
-            barcode.setFont(null);
+			PdfDocument pdfDoc = document.getPdfDocument();
+			Barcode128 barcode = new Barcode128(pdfDoc);
+			barcode.setCode(codeText);
+			// Ajustes profesionales de legibilidad: ancho de módulo y altura
+			barcode.setX(1.0f); // ~0.35 mm por módulo
+			// Reducir altura para un símbolo más compacto manteniendo legibilidad
+			barcode.setBarHeight(26f); // ~9.1 mm
+			barcode.setFont(null);
 
-            Image barcodeImg = new Image(
-                    barcode.createFormXObject(ColorConstants.BLACK, ColorConstants.WHITE, pdfDoc));
-            // Fijar un ancho razonable y centrar; iText mantiene proporciones
-            barcodeImg.setWidth(180);
-            barcodeImg.setAutoScaleHeight(true);
-            barcodeImg.setMarginBottom(0);
+			Image barcodeImg = new Image(barcode.createFormXObject(ColorConstants.BLACK, ColorConstants.WHITE, pdfDoc));
+			// Fijar un ancho razonable y centrar; iText mantiene proporciones
+			barcodeImg.setWidth(180);
+			barcodeImg.setAutoScaleHeight(true);
+			barcodeImg.setMarginBottom(0);
 
-            Paragraph barcodeLabel = new Paragraph("CÓDIGO ÚNICO: " + codeText)
-                .setFont(fontBold)
-                .setFontSize(9)
-                .setFontColor(COLOR_TEXT)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(1)
-                .setMarginBottom(0);
+			Paragraph barcodeLabel = new Paragraph("CÓDIGO ÚNICO: " + codeText).setFont(fontBold).setFontSize(9)
+					.setFontColor(COLOR_TEXT).setTextAlignment(TextAlignment.CENTER).setMarginTop(1).setMarginBottom(0);
 
-            Cell celdaDer = new Cell().setBorder(Border.NO_BORDER)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .add(barcodeImg)
-                    .add(barcodeLabel);
-            codigoTable.addCell(celdaDer);
-        } catch (Exception e) {
-            Cell celdaDer = new Cell().setBorder(Border.NO_BORDER);
-            codigoTable.addCell(celdaDer);
-            log.warn("No se pudo generar el código de barras del Código Único: {}", e.getMessage());
-        }
+			Cell celdaDer = new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER)
+					.add(barcodeImg).add(barcodeLabel);
+			codigoTable.addCell(celdaDer);
+		} catch (Exception e) {
+			Cell celdaDer = new Cell().setBorder(Border.NO_BORDER);
+			codigoTable.addCell(celdaDer);
+			log.warn("No se pudo generar el código de barras del Código Único: {}", e.getMessage());
+		}
 		document.add(codigoTable);
-		
+
 		// texto introductorio
-    Paragraph textoSeccion = new Paragraph("AL JUZGADO DE PAZ LETRADO LABORAL DE LA PROVINCIA DE HUANCAYO")
-            .setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)
-            .setMarginTop(4).setMarginBottom(6);
+		Paragraph textoSeccion = new Paragraph("AL JUZGADO DE PAZ LETRADO LABORAL DE LA PROVINCIA DE HUANCAYO")
+				.setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT).setMarginTop(4).setMarginBottom(6);
 		document.add(textoSeccion);
 	}
 
 	/**
 	 * Genera la sección de demandantes con layout compacto
 	 */
-	private void generarDemandantes(Document document, Demanda demanda) throws IOException {
+	private void generarDemandantes(Document document, Demanda demanda, String cuo) throws IOException {
 		if (demanda.getDemandantes() == null || demanda.getDemandantes().isEmpty()) {
 			return;
 		}
@@ -333,7 +381,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			}
 
 			// Layout compacto con múltiples columnas
-			generarLayoutCompactoDemandante(document, demandante, fontBold, fontRegular);
+			generarLayoutCompactoDemandante(document, demandante, fontBold, fontRegular, cuo);
 			document.add(new Paragraph().setMarginBottom(5));
 		}
 	}
@@ -342,16 +390,17 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	 * Genera un layout compacto para los datos del demandante
 	 */
 	private void generarLayoutCompactoDemandante(Document document, Demandante demandante, PdfFont fontBold,
-			PdfFont fontRegular) {
+			PdfFont fontRegular, String cuo) {
 		// Fila 1: Datos de identificación (5 columnas)
 		Table fila1 = new Table(UnitValue.createPercentArray(new float[] { 20, 20, 20, 20, 20 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
 
-		agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", demandante.getTipoDocumento(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "NÚMERO DE DOCUMENTO", demandante.getNumeroDocumento(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "GÉNERO", demandante.getGenero(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "FECHA DE NACIMIENTO", demandante.getFechaNacimiento(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "NÚMERO DE CELULAR", demandante.getCelular(), fontBold, fontRegular);
+        agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", demandante.getTipoDocumento(), fontBold, fontRegular);
+        agregarCeldaFormulario(fila1, "NÚMERO DE DOCUMENTO", demandante.getNumeroDocumento(), fontBold, fontRegular);
+        String generoNombre = obtenerNombreGenero(demandante.getGenero());
+        agregarCeldaFormulario(fila1, "GÉNERO", generoNombre, fontBold, fontRegular);
+        agregarCeldaFormulario(fila1, "FECHA DE NACIMIENTO", demandante.getFechaNacimiento(), fontBold, fontRegular);
+        agregarCeldaFormulario(fila1, "NÚMERO DE CELULAR", demandante.getCelular(), fontBold, fontRegular);
 
 		document.add(fila1);
 
@@ -368,9 +417,13 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Table fila3 = new Table(UnitValue.createPercentArray(new float[] { 33, 33, 34 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
 
-		agregarCeldaFormulario(fila3, "DEPARTAMENTO", demandante.getDepartamento(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila3, "PROVINCIA", demandante.getProvincia(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila3, "DISTRITO", demandante.getDistrito(), fontBold, fontRegular);
+		String nombreDepartamento = obtenerNombreDepartamento(cuo, demandante.getDepartamento());
+		String nombreProvincia = obtenerNombreProvincia(cuo, demandante.getProvincia(), demandante.getDepartamento());
+		String nombreDistrito = obtenerNombreDistrito(cuo, demandante.getDistrito(), demandante.getProvincia());
+
+		agregarCeldaFormulario(fila3, "DEPARTAMENTO", nombreDepartamento, fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "PROVINCIA", nombreProvincia, fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "DISTRITO", nombreDistrito, fontBold, fontRegular);
 
 		document.add(fila3);
 
@@ -390,8 +443,21 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		agregarCeldaFormulario(fila5, "REFERENCIA", demandante.getReferencia(), fontBold, fontRegular);
 		agregarCeldaFormulario(fila5, "CASILLA ELECTRÓNICA", demandante.getCasillaElectronica(), fontBold, fontRegular);
 
-		document.add(fila5);
-	}
+        document.add(fila5);
+    }
+
+    /**
+     * Devuelve el nombre de género a partir del código: M->MASCULINO, F->FEMENINO.
+     * Si el valor es nulo o vacío, retorna vacío; en otros casos retorna el original.
+     */
+    private String obtenerNombreGenero(String genero) {
+        if (genero == null) return "";
+        String code = genero.trim().toUpperCase();
+        if (code.isEmpty()) return "";
+        if ("M".equals(code)) return "MASCULINO";
+        if ("F".equals(code)) return "FEMENINO";
+        return genero;
+    }
 
 	/**
 	 * Agrega una celda con formato de formulario (etiqueta arriba, valor abajo)
@@ -408,10 +474,10 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				.setFontColor(COLOR_TEXT).setMarginBottom(1);
 
 		// Valor en la parte inferior con borde
-        Paragraph valorParagraph = new Paragraph(valor != null ? valor : "").setFont(fontRegular).setFontSize(9)
-                .setFontColor(COLOR_TEXT)
-                .setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f)).setPadding(3)
-                .setMinHeight("SUMILLA".equalsIgnoreCase(etiqueta) ? 46 : 15);
+		Paragraph valorParagraph = new Paragraph(valor != null ? valor : "").setFont(fontRegular).setFontSize(9)
+				.setFontColor(COLOR_TEXT)
+				.setBorder(new com.itextpdf.layout.borders.SolidBorder(ColorConstants.GRAY, 0.5f)).setPadding(3)
+				.setMinHeight("SUMILLA".equalsIgnoreCase(etiqueta) ? 46 : 15);
 
 		celda.add(labelParagraph);
 		celda.add(valorParagraph);
@@ -422,7 +488,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	/**
 	 * Genera la sección de demandados
 	 */
-	private void generarDemandados(Document document, Demanda demanda) throws IOException {
+	private void generarDemandados(Document document, Demanda demanda, String cuo) throws IOException {
 		if (demanda.getDemandados() == null || demanda.getDemandados().isEmpty()) {
 			return;
 		}
@@ -446,13 +512,13 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			}
 
 			// Layout compacto con múltiples columnas
-			generarLayoutCompactoDemandado(document, demandado, fontBold, fontRegular);
+			generarLayoutCompactoDemandado(document, demandado, fontBold, fontRegular, cuo);
 			document.add(new Paragraph().setMarginBottom(10));
 		}
 	}
 
 	private void generarLayoutCompactoDemandado(Document document, Demandado demandado, PdfFont fontBold,
-			PdfFont fontRegular) {
+			PdfFont fontRegular, String cuo) {
 		// Fila 1: Datos de identificación (2 columnas)
 		Table fila1 = new Table(UnitValue.createPercentArray(new float[] { 50, 50 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
@@ -474,9 +540,13 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Table fila3 = new Table(UnitValue.createPercentArray(new float[] { 33, 33, 34 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
 
-		agregarCeldaFormulario(fila3, "DEPARTAMENTO", demandado.getDepartamento(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila3, "PROVINCIA", demandado.getProvincia(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila3, "DISTRITO", demandado.getDistrito(), fontBold, fontRegular);
+		String nombreDepartamento = obtenerNombreDepartamento(cuo, demandado.getDepartamento());
+		String nombreProvincia = obtenerNombreProvincia(cuo, demandado.getProvincia(), demandado.getDepartamento());
+		String nombreDistrito = obtenerNombreDistrito(cuo, demandado.getDistrito(), demandado.getProvincia());
+
+		agregarCeldaFormulario(fila3, "DEPARTAMENTO", nombreDepartamento, fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "PROVINCIA", nombreProvincia, fontBold, fontRegular);
+		agregarCeldaFormulario(fila3, "DISTRITO", nombreDistrito, fontBold, fontRegular);
 
 		document.add(fila3);
 
@@ -499,9 +569,88 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	}
 
 	/**
+	 * Resuelve el nombre de Departamento por ID con fallback al ID si no se
+	 * encuentra.
+	 */
+	private String obtenerNombreDepartamento(String cuo, String departamentoId) {
+		if (departamentoId == null || departamentoId.isBlank())
+			return "";
+		// Intento por caché primero
+		String nombre = cacheDepartamentos.get(departamentoId);
+		if (nombre != null)
+			return nombre;
+		try {
+			Map<String, Object> filters = Map.of(Departamento.P_DEPARTAMENTO_ID, departamentoId);
+			List<Departamento> lista = gestionDepartamentoUseCasePort.buscarDepartamento(cuo, filters);
+			if (!lista.isEmpty() && lista.get(0).getNombre() != null) {
+				nombre = lista.get(0).getNombre();
+				cacheDepartamentos.put(departamentoId, nombre);
+				return nombre;
+			}
+		} catch (Exception e) {
+			log.warn("No se pudo resolver nombre de Departamento {}: {}", departamentoId, e.getMessage());
+		}
+		return departamentoId; // fallback seguro
+	}
+
+	/**
+	 * Resuelve el nombre de Provincia por ID (opcionalmente valida contra
+	 * departamento) con fallback.
+	 */
+	private String obtenerNombreProvincia(String cuo, String provinciaId, String departamentoId) {
+		if (provinciaId == null || provinciaId.isBlank())
+			return "";
+		// Caché primero
+		String nombre = cacheProvincias.get(provinciaId);
+		if (nombre != null)
+			return nombre;
+		try {
+			Map<String, Object> filters = departamentoId == null || departamentoId.isBlank()
+					? Map.of(Provincia.P_PROVINCIA_ID, provinciaId)
+					: Map.of(Provincia.P_PROVINCIA_ID, provinciaId, Provincia.P_DEPARTAMENTO_ID, departamentoId);
+			List<Provincia> lista = gestionProvinciaUseCasePort.buscarProvincia(cuo, filters);
+			if (!lista.isEmpty() && lista.get(0).getNombre() != null) {
+				nombre = lista.get(0).getNombre();
+				cacheProvincias.put(provinciaId, nombre);
+				return nombre;
+			}
+		} catch (Exception e) {
+			log.warn("No se pudo resolver nombre de Provincia {}: {}", provinciaId, e.getMessage());
+		}
+		return provinciaId; // fallback
+	}
+
+	/**
+	 * Resuelve el nombre de Distrito por ID (opcionalmente valida contra provincia)
+	 * con fallback.
+	 */
+	private String obtenerNombreDistrito(String cuo, String distritoId, String provinciaId) {
+		if (distritoId == null || distritoId.isBlank())
+			return "";
+		// Caché primero
+		String nombre = cacheDistritos.get(distritoId);
+		if (nombre != null)
+			return nombre;
+		try {
+			Map<String, Object> filters = provinciaId == null || provinciaId.isBlank()
+					? Map.of(Distrito.P_DISTRITO_ID, distritoId)
+					: Map.of(Distrito.P_DISTRITO_ID, distritoId, Distrito.P_PROVINCIA_ID, provinciaId);
+			List<Distrito> lista = gestionDistritoUseCasePort.buscarDistrito(cuo, filters);
+			if (!lista.isEmpty() && lista.get(0).getNombre() != null) {
+				nombre = lista.get(0).getNombre();
+				cacheDistritos.put(distritoId, nombre);
+				return nombre;
+			}
+		} catch (Exception e) {
+			log.warn("No se pudo resolver nombre de Distrito {}: {}", distritoId, e.getMessage());
+		}
+		return distritoId; // fallback
+	}
+
+	/**
 	 * Genera la sección de petitorios con layout compacto por cada ítem
 	 */
-	private void generarPetitorios(Document document, Demanda demanda) throws IOException {
+    private void generarPetitorios(Document document, Demanda demanda, String cuo) throws IOException {
 		if (demanda.getPetitorios() == null || demanda.getPetitorios().isEmpty()) {
 			return;
 		}
@@ -526,10 +675,10 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			}
 
 			// Generar layout compacto en DOS filas por cada petitorio
-			String etiquetaLetra = cantidad > 1 ? String.valueOf(letra) : null;
-			generarLayoutCompactoPetitorio(document, petitorio, montoTexto, fontBold, fontRegular, etiquetaLetra);
-			letra++;
-		}
+            String etiquetaLetra = cantidad > 1 ? String.valueOf(letra) : null;
+            generarLayoutCompactoPetitorio(document, petitorio, montoTexto, fontBold, fontRegular, etiquetaLetra, cuo);
+            letra++;
+        }
 
 		// Total de beneficios reclamados (fila independiente)
 		Table totalTabla = new Table(UnitValue.createPercentArray(new float[] { 35, 50, 15 }))
@@ -548,8 +697,8 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		document.add(totalTabla);
 	}
 
-	private void generarLayoutCompactoPetitorio(Document document, Petitorio petitorio, String montoTexto,
-			PdfFont fontBold, PdfFont fontRegular, String letraEtiqueta) {
+    private void generarLayoutCompactoPetitorio(Document document, Petitorio petitorio, String montoTexto,
+            PdfFont fontBold, PdfFont fontRegular, String letraEtiqueta, String cuo) {
 
 		// Fila 1: 5 columnas
 		Table fila1 = new Table(UnitValue.createPercentArray(new float[] { 4, 20, 25, 36, 15 }))
@@ -562,11 +711,15 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		celdaLetra.add(letraParrafo);
 		fila1.addCell(celdaLetra);
 
-		agregarCeldaFormulario(fila1, "PETITORIO", petitorio.getTipo(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "PRETENSIÓN PRINCIPAL", petitorio.getPretensionPrincipal(), fontBold,
-				fontRegular);
-		agregarCeldaFormulario(fila1, "CONCEPTO", petitorio.getConcepto(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila1, "MONTO", montoTexto, fontBold, fontRegular);
+        String nombrePetitorio = obtenerNombrePetitorio(cuo, petitorio.getTipo());
+        String nombrePretensionPrincipal = obtenerNombrePretensionPrincipal(cuo, petitorio.getPretensionPrincipal());
+        String nombreConcepto = obtenerNombreConcepto(cuo, petitorio.getConcepto());
+
+        agregarCeldaFormulario(fila1, "PETITORIO", nombrePetitorio, fontBold, fontRegular);
+        agregarCeldaFormulario(fila1, "PRETENSIÓN PRINCIPAL", nombrePretensionPrincipal, fontBold,
+                fontRegular);
+        agregarCeldaFormulario(fila1, "CONCEPTO", nombreConcepto, fontBold, fontRegular);
+        agregarCeldaFormulario(fila1, "MONTO", montoTexto, fontBold, fontRegular);
 
 		document.add(fila1);
 
@@ -574,14 +727,150 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Table fila2 = new Table(UnitValue.createPercentArray(new float[] { 4, 31, 25, 25, 15 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(6);
 		fila2.addCell(new Cell().setBorder(Border.NO_BORDER));
-		agregarCeldaFormulario(fila2, "PRETENSIÓN ACCESORIA", petitorio.getPretensionAccesoria(), fontBold,
-				fontRegular);
-		agregarCeldaFormulario(fila2, "FECHA DE INICIO", petitorio.getFechaInicio(), fontBold, fontRegular);
-		agregarCeldaFormulario(fila2, "FECHA DE FIN", petitorio.getFechaFin(), fontBold, fontRegular);
-		fila2.addCell(new Cell().setBorder(Border.NO_BORDER));
+        String nombrePretensionAccesoria = obtenerNombrePretensionAccesoria(cuo, petitorio.getPretensionAccesoria());
+        agregarCeldaFormulario(fila2, "PRETENSIÓN ACCESORIA", nombrePretensionAccesoria, fontBold,
+                fontRegular);
+        agregarCeldaFormulario(fila2, "FECHA DE INICIO", petitorio.getFechaInicio(), fontBold, fontRegular);
+        agregarCeldaFormulario(fila2, "FECHA DE FIN", petitorio.getFechaFin(), fontBold, fontRegular);
+        fila2.addCell(new Cell().setBorder(Border.NO_BORDER));
 
-		document.add(fila2);
-	}
+        document.add(fila2);
+    }
+
+    /**
+     * Precarga los catálogos de petitorio en caché si están vacíos
+     */
+    private void precargarCatalogosPetitorioSiNecesario(String cuo) {
+        try {
+            if (cachePetitorios.isEmpty()) {
+                List<CatalogoPetitorio> petitorios = gestionPetitorioUseCasePort.buscarPetitorio(cuo);
+                for (CatalogoPetitorio p : petitorios) {
+                    if (p.getId() != null && p.getNombre() != null) {
+                        cachePetitorios.putIfAbsent(String.valueOf(p.getId()), p.getNombre());
+                    }
+                }
+                log.info("Precargados petitorios: {}", cachePetitorios.size());
+            }
+
+            if (cachePretensionesPrincipales.isEmpty()) {
+                List<CatalogoPretensionPrincipal> principales = gestionPretensionPrincipalUseCasePort
+                        .buscarPretensionPrincipal(cuo, java.util.Collections.emptyMap());
+                for (CatalogoPretensionPrincipal pp : principales) {
+                    if (pp.getId() != null && pp.getNombre() != null) {
+                        cachePretensionesPrincipales.putIfAbsent(String.valueOf(pp.getId()), pp.getNombre());
+                    }
+                }
+                log.info("Precargadas pretensiones principales: {}", cachePretensionesPrincipales.size());
+            }
+
+            if (cacheConceptos.isEmpty()) {
+                List<CatalogoConcepto> conceptos = gestionConceptoUseCasePort
+                        .buscarConcepto(cuo, java.util.Collections.emptyMap());
+                for (CatalogoConcepto c : conceptos) {
+                    if (c.getId() != null && c.getNombre() != null) {
+                        cacheConceptos.putIfAbsent(String.valueOf(c.getId()), c.getNombre());
+                    }
+                }
+                log.info("Precargados conceptos: {}", cacheConceptos.size());
+            }
+
+            if (cachePretensionesAccesorias.isEmpty()) {
+                List<CatalogoPretensionAccesoria> accesorias = gestionPretensionAccesoriaUseCasePort
+                        .buscarPretensionAccesoria(cuo, java.util.Collections.emptyMap());
+                for (CatalogoPretensionAccesoria pa : accesorias) {
+                    if (pa.getId() != null && pa.getNombre() != null) {
+                        cachePretensionesAccesorias.putIfAbsent(String.valueOf(pa.getId()), pa.getNombre());
+                    }
+                }
+                log.info("Precargadas pretensiones accesorias: {}", cachePretensionesAccesorias.size());
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo precargar catálogos de petitorio: {}", e.getMessage());
+        }
+    }
+
+    private String obtenerNombrePetitorio(String cuo, String petitorioId) {
+        if (petitorioId == null || petitorioId.isBlank()) return "";
+        String nombre = cachePetitorios.get(petitorioId);
+        if (nombre != null) return nombre;
+        try {
+            // Intento refrescar cache global
+            List<CatalogoPetitorio> petitorios = gestionPetitorioUseCasePort.buscarPetitorio(cuo);
+            for (CatalogoPetitorio p : petitorios) {
+                if (p.getId() != null && p.getNombre() != null) {
+                    cachePetitorios.putIfAbsent(String.valueOf(p.getId()), p.getNombre());
+                }
+            }
+            nombre = cachePetitorios.get(petitorioId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Petitorio {}: {}", petitorioId, e.getMessage());
+        }
+        return petitorioId;
+    }
+
+    private String obtenerNombrePretensionPrincipal(String cuo, String pretensionPrincipalId) {
+        if (pretensionPrincipalId == null || pretensionPrincipalId.isBlank()) return "";
+        String nombre = cachePretensionesPrincipales.get(pretensionPrincipalId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoPretensionPrincipal> principales = gestionPretensionPrincipalUseCasePort
+                    .buscarPretensionPrincipal(cuo, java.util.Collections.emptyMap());
+            for (CatalogoPretensionPrincipal pp : principales) {
+                if (pp.getId() != null && pp.getNombre() != null) {
+                    cachePretensionesPrincipales.putIfAbsent(String.valueOf(pp.getId()), pp.getNombre());
+                }
+            }
+            nombre = cachePretensionesPrincipales.get(pretensionPrincipalId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Pretensión Principal {}: {}", pretensionPrincipalId, e.getMessage());
+        }
+        return pretensionPrincipalId;
+    }
+
+    private String obtenerNombreConcepto(String cuo, String conceptoId) {
+        if (concepcionIdVacio(conceptoId)) return "";
+        String nombre = cacheConceptos.get(conceptoId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoConcepto> conceptos = gestionConceptoUseCasePort.buscarConcepto(cuo, java.util.Collections.emptyMap());
+            for (CatalogoConcepto c : conceptos) {
+                if (c.getId() != null && c.getNombre() != null) {
+                    cacheConceptos.putIfAbsent(String.valueOf(c.getId()), c.getNombre());
+                }
+            }
+            nombre = cacheConceptos.get(conceptoId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Concepto {}: {}", conceptoId, e.getMessage());
+        }
+        return conceptoId;
+    }
+
+    private boolean concepcionIdVacio(String conceptoId) {
+        return (conceptoId == null || conceptoId.isBlank());
+    }
+
+    private String obtenerNombrePretensionAccesoria(String cuo, String pretensionAccesoriaId) {
+        if (pretensionAccesoriaId == null || pretensionAccesoriaId.isBlank()) return "";
+        String nombre = cachePretensionesAccesorias.get(pretensionAccesoriaId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoPretensionAccesoria> accesorias = gestionPretensionAccesoriaUseCasePort
+                    .buscarPretensionAccesoria(cuo, java.util.Collections.emptyMap());
+            for (CatalogoPretensionAccesoria pa : accesorias) {
+                if (pa.getId() != null && pa.getNombre() != null) {
+                    cachePretensionesAccesorias.putIfAbsent(String.valueOf(pa.getId()), pa.getNombre());
+                }
+            }
+            nombre = cachePretensionesAccesorias.get(pretensionAccesoriaId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Pretensión Accesoria {}: {}", pretensionAccesoriaId, e.getMessage());
+        }
+        return pretensionAccesoriaId;
+    }
 
 	/**
 	 * Genera la sección de relación laboral con formato compacto
@@ -743,7 +1032,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	 * Genera la sección de medios probatorios concatenando justificaciones de
 	 * petitorios
 	 */
-	private void generarMediosProbatorios(Document document, Demanda demanda) throws IOException {
+    private void generarMediosProbatorios(Document document, Demanda demanda, String cuo) throws IOException {
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
@@ -755,26 +1044,27 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Table mediosProbatorios = new Table(UnitValue.createPercentArray(new float[] { 4, 96 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(15);
 
-		if (demanda.getPetitorios() != null && !demanda.getPetitorios().isEmpty()) {
-			int i = 1;
-			for (Petitorio petitorio : demanda.getPetitorios()) {
-				String tipo = petitorio.getTipo() != null ? petitorio.getTipo().trim() : "";
-				String justificacion = petitorio.getJustificacion() != null ? petitorio.getJustificacion().trim() : "";
+        if (demanda.getPetitorios() != null && !demanda.getPetitorios().isEmpty()) {
+            int i = 1;
+            for (Petitorio petitorio : demanda.getPetitorios()) {
+                String nombrePetitorio = obtenerNombrePetitorio(cuo, petitorio.getTipo());
+                nombrePetitorio = nombrePetitorio != null ? nombrePetitorio.trim() : "";
+                String justificacion = petitorio.getJustificacion() != null ? petitorio.getJustificacion().trim() : "";
 
-				if (!tipo.isEmpty() || !justificacion.isEmpty()) {
-					Cell celdaNumero = new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT)
-							.setVerticalAlignment(VerticalAlignment.MIDDLE)
-							.add(new Paragraph(i + ".").setFont(fontBold).setFontSize(9).setFontColor(COLOR_TEXT));
-					mediosProbatorios.addCell(celdaNumero);
+                if (!nombrePetitorio.isEmpty() || !justificacion.isEmpty()) {
+                    Cell celdaNumero = new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT)
+                            .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                            .add(new Paragraph(i + ".").setFont(fontBold).setFontSize(9).setFontColor(COLOR_TEXT));
+                    mediosProbatorios.addCell(celdaNumero);
 
-					String combinado = !tipo.isEmpty() && !justificacion.isEmpty() ? tipo + " por " + justificacion
-							: (!tipo.isEmpty() ? tipo : justificacion);
+                    String combinado = !nombrePetitorio.isEmpty() && !justificacion.isEmpty() ? nombrePetitorio + " por " + justificacion
+                            : (!nombrePetitorio.isEmpty() ? nombrePetitorio : justificacion);
 
-					agregarCeldaFormulario(mediosProbatorios, "", combinado, fontBold, fontRegular);
-					i++;
-				}
-			}
-		}
+                    agregarCeldaFormulario(mediosProbatorios, "", combinado, fontBold, fontRegular);
+                    i++;
+                }
+            }
+        }
 		document.add(mediosProbatorios);
 	}
 
@@ -853,9 +1143,8 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 					.map(Firma::getArchivoUrl).filter(u -> u != null && !u.trim().isEmpty()).toList() : List.of();
 
 			List<Demandante> demandantesOrdenados = (demanda.getDemandantes() != null)
-					? demanda.getDemandantes().stream()
-							.sorted((d1, d2) -> Boolean.compare(!"1".equals(d1.getApoderadoComun()), !"1".equals(d2.getApoderadoComun())))
-							.toList()
+					? demanda.getDemandantes().stream().sorted((d1, d2) -> Boolean
+							.compare(!"1".equals(d1.getApoderadoComun()), !"1".equals(d2.getApoderadoComun()))).toList()
 					: List.of();
 
 			int filas = Math.max(firmasAbogado.size(), demandantesOrdenados.size());
@@ -925,9 +1214,8 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 						leyendaDerecha = rs.trim();
 					}
 				}
-				tablaLeyendas.addCell(new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER)
-						.add(new Paragraph(leyendaDerecha).setFont(fontRegular).setFontSize(10)
-								.setFontColor(COLOR_TEXT)));
+				tablaLeyendas.addCell(new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.CENTER).add(
+						new Paragraph(leyendaDerecha).setFont(fontRegular).setFontSize(10).setFontColor(COLOR_TEXT)));
 				document.add(tablaLeyendas);
 			}
 
@@ -1034,5 +1322,44 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Paragraph fechaGeneracion = new Paragraph("HUANCAYO, " + sdf.format(new Date())).setFont(fontRegular)
 				.setFontSize(10).setTextAlignment(TextAlignment.RIGHT).setMarginTop(10);
 		document.add(fechaGeneracion);
+	}
+	
+	/**
+	 * Precarga los catálogos de ubigeo en caché si están vacíos
+	 */
+	private void precargarUbigeoSiNecesario(String cuo) {
+        try {
+            if (cacheDepartamentos.isEmpty()) {
+                List<Departamento> departamentos = gestionDepartamentoUseCasePort.buscarDepartamento(cuo, java.util.Collections.emptyMap());
+                for (Departamento d : departamentos) {
+                    if (d.getId() != null && d.getNombre() != null) {
+                        cacheDepartamentos.putIfAbsent(d.getId(), d.getNombre());
+                    }
+                }
+                log.info("Precargados departamentos: {}", cacheDepartamentos.size());
+            }
+
+            if (cacheProvincias.isEmpty()) {
+                List<Provincia> provincias = gestionProvinciaUseCasePort.buscarProvincia(cuo, java.util.Collections.emptyMap());
+                for (Provincia p : provincias) {
+                    if (p.getId() != null && p.getNombre() != null) {
+                        cacheProvincias.putIfAbsent(p.getId(), p.getNombre());
+                    }
+                }
+                log.info("Precargadas provincias: {}", cacheProvincias.size());
+            }
+
+            if (cacheDistritos.isEmpty()) {
+                List<Distrito> distritos = gestionDistritoUseCasePort.buscarDistrito(cuo, java.util.Collections.emptyMap());
+                for (Distrito di : distritos) {
+                    if (di.getId() != null && di.getNombre() != null) {
+                        cacheDistritos.putIfAbsent(di.getId(), di.getNombre());
+                    }
+                }
+                log.info("Precargados distritos: {}", cacheDistritos.size());
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo precargar catálogos de ubigeo: {}", e.getMessage());
+        }
 	}
 }
