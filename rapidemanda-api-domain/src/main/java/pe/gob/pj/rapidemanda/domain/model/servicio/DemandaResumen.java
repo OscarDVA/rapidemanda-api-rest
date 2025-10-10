@@ -11,5 +11,5 @@ public class DemandaResumen implements Serializable {
     private Integer id;
     private String estado;
     private String tipoPresentacion;
-    private String fechaRecepcion; // ISO string
+    private String fechaRegistro; 
 }

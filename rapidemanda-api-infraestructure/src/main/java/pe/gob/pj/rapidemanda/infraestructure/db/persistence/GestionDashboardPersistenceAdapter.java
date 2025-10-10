@@ -67,7 +67,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
         List<DemandaResumen> lista = new ArrayList<>();
         try {
             TypedQuery<MovDemanda> q = sf.getCurrentSession().createQuery(
-                    "SELECT md FROM MovDemanda md JOIN md.estadoDemanda ed JOIN md.tipoPresentacion tp ORDER BY md.fechaRecepcion DESC",
+                    "SELECT md FROM MovDemanda md JOIN md.estadoDemanda ed JOIN md.tipoPresentacion tp ORDER BY md.fechaRegistro DESC",
                     MovDemanda.class);
             q.setMaxResults(limite);
 
@@ -75,9 +75,9 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                 DemandaResumen d = new DemandaResumen();
                 d.setId(md.getId());
                 try {
-                    d.setFechaRecepcion(ProjectUtils.convertDateToString(md.getFechaRecepcion(), ProjectConstants.Formato.FECHA_DD_MM_YYYY_HH_MM_SS));
+                    d.setFechaRegistro(ProjectUtils.convertDateToString(md.getFechaRegistro(), ProjectConstants.Formato.FECHA_DD_MM_YYYY_HH_MM_SS));
                 } catch (Exception ex) {
-                    d.setFechaRecepcion("");
+                    d.setFechaRegistro("");
                 }
                 try {
                     d.setEstado(md.getEstadoDemanda() != null ? md.getEstadoDemanda().getBEstadoDemanda() : null);
