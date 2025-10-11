@@ -10,5 +10,5 @@ public class DemandanteConteos implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private List<ConteoItem> porSexo;
-    private List<ConteoItem> porEdadRango;
+    private List<ConteoEdadSexoItem> porEdadRango;
 }

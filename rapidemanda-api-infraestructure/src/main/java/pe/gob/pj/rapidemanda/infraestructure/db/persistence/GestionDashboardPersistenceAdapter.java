@@ -153,8 +153,8 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     }
 
     @Override
-    public PetitorioConteos contarPetitorios(String cuo) throws Exception {
-        PetitorioConteos res = new PetitorioConteos();
+    public List<ConteoPetitorioSimilitudItem> contarPetitorios(String cuo) throws Exception {
+        List<ConteoPetitorioSimilitudItem> lista = new ArrayList<>();
         try {
             // Lista única de conteo de similitudes por combinación de cuatro campos
             List<Object[]> rows = sf.getCurrentSession()
@@ -164,8 +164,6 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                                     "GROUP BY p.tipo, p.pretensionPrincipal, p.concepto, p.pretensionAccesoria " +
                                     "ORDER BY COUNT(p) DESC", Object[].class)
                     .getResultList();
-
-            List<ConteoPetitorioSimilitudItem> similitudes = new ArrayList<>();
             for (Object[] r : rows) {
                 ConteoPetitorioSimilitudItem item = new ConteoPetitorioSimilitudItem();
                 item.setTipo((String) r[0]);
@@ -173,14 +171,13 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                 item.setConcepto((String) r[2]);
                 item.setPretensionAccesoria((String) r[3]);
                 item.setTotal(r[4] != null ? (Long) r[4] : 0L);
-                similitudes.add(item);
+                lista.add(item);
             }
-            res.setSimilitudes(similitudes);
         } catch (Exception e) {
             log.error("{} Error contando petitorios: {}", cuo, e.getMessage());
             throw e;
         }
-        return res;
+        return lista;
     }
 
     @Override
@@ -193,30 +190,48 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                     .getResultList();
             res.setPorSexo(mapConteos(sexo));
 
-            // Por edad rango (cálculo en memoria)
-            TypedQuery<Date> qFechas = sf.getCurrentSession()
-                    .createQuery("SELECT d.fechaNacimiento FROM MovDemandante d", Date.class);
-            List<Date> data = qFechas.getResultList();
+            // Por edad rango con desglose por sexo (cálculo en memoria)
+            List<Object[]> generoFechas = sf.getCurrentSession()
+                    .createQuery("SELECT d.genero, d.fechaNacimiento FROM MovDemandante d", Object[].class)
+                    .getResultList();
 
-            Map<String, Long> buckets = new HashMap<>();
-            buckets.put("18-65", 0L);
-            buckets.put("65+", 0L);
+            Map<String, Long> totalPorRango = new HashMap<>();
+            Map<String, Long> varonPorRango = new HashMap<>();
+            Map<String, Long> mujerPorRango = new HashMap<>();
+            totalPorRango.put("18-65", 0L);
+            totalPorRango.put("65+", 0L);
+            varonPorRango.put("18-65", 0L);
+            varonPorRango.put("65+", 0L);
+            mujerPorRango.put("18-65", 0L);
+            mujerPorRango.put("65+", 0L);
 
             Date now = new Date();
-            for (Date fn : data) {
+            for (Object[] row : generoFechas) {
+                String genero = (String) row[0];
+                Date fn = (Date) row[1];
                 if (fn == null) continue;
                 int edad = calcularEdad(fn, now);
                 String rango = obtenerRangoEdad(edad);
-                buckets.put(rango, buckets.get(rango) + 1);
+                totalPorRango.put(rango, totalPorRango.get(rango) + 1);
+                if ("M".equalsIgnoreCase(genero)) {
+                    varonPorRango.put(rango, varonPorRango.get(rango) + 1);
+                } else if ("F".equalsIgnoreCase(genero)) {
+                    mujerPorRango.put(rango, mujerPorRango.get(rango) + 1);
+                }
             }
 
-            List<ConteoItem> rangos = new ArrayList<>();
-            buckets.forEach((k, v) -> {
-                ConteoItem c = new ConteoItem();
-                c.setValor(k);
-                c.setTotal(v);
-                rangos.add(c);
-            });
+            List<ConteoEdadSexoItem> rangos = new ArrayList<>();
+            for (String rango : totalPorRango.keySet()) {
+                ConteoEdadSexoItem item = new ConteoEdadSexoItem();
+                item.setEdad(rango);
+                Long v = varonPorRango.get(rango);
+                Long m = mujerPorRango.get(rango);
+                Long t = totalPorRango.get(rango);
+                item.setVaron(v != null ? v : 0L);
+                item.setMujer(m != null ? m : 0L);
+                item.setTotal(t != null ? t : 0L);
+                rangos.add(item);
+            }
             res.setPorEdadRango(rangos);
         } catch (Exception e) {
             log.error("{} Error contando demandantes (sexo/edad): {}", cuo, e.getMessage());

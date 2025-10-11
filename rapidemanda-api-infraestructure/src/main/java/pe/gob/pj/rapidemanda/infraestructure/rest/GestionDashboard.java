@@ -29,11 +29,26 @@ public interface GestionDashboard extends Base {
             @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
             @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta);
 
+
     /**
-     * GET /dashboard/listas : Obtener listas y conteos para el dashboard
+     * GET /dashboard/graficos : Obtener datos de gráficos para el dashboard
      */
-    @GetMapping("/listas")
-    ResponseEntity<GlobalResponse> consultarListas(
+    @GetMapping("/graficos")
+    ResponseEntity<GlobalResponse> consultarGraficos(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta);
+
+    /**
+     * GET /dashboard/demandas-recientes : Obtener solo la lista de demandas recientes
+     */
+    @GetMapping("/demandas-recientes")
+    ResponseEntity<GlobalResponse> consultarDemandasRecientes(
             @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
             @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
             @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
@@ -45,10 +60,24 @@ public interface GestionDashboard extends Base {
             @RequestParam(name = "limite", defaultValue = "5", required = false) Integer limite);
 
     /**
-     * GET /dashboard/graficos : Obtener datos de gráficos para el dashboard
+     * GET /dashboard/petitorio-conteos : Obtener solo los conteos de petitorio (similitudes)
      */
-    @GetMapping("/graficos")
-    ResponseEntity<GlobalResponse> consultarGraficos(
+    @GetMapping("/petitorio-conteos")
+    ResponseEntity<GlobalResponse> consultarPetitorioConteos(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta);
+
+    /**
+     * GET /dashboard/demandante-conteos : Obtener solo los conteos de demandantes (sexo/edad)
+     */
+    @GetMapping("/demandante-conteos")
+    ResponseEntity<GlobalResponse> consultarDemandanteConteos(
             @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
             @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
             @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,

@@ -10,7 +10,7 @@ public interface GestionDashboardPersistencePort {
 
     List<DemandaResumen> listarDemandasRecientes(String cuo, int limite) throws Exception;
 
-    PetitorioConteos contarPetitorios(String cuo) throws Exception;
+    List<ConteoPetitorioSimilitudItem> contarPetitorios(String cuo) throws Exception;
 
     DemandanteConteos contarDemandantesSexoEdad(String cuo) throws Exception;
 
