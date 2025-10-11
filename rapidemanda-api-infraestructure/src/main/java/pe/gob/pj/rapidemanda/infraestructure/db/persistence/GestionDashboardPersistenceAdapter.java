@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,10 @@ import org.springframework.stereotype.Component;
 
 import pe.gob.pj.rapidemanda.domain.model.servicio.*;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDashboardPersistencePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionConceptoUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPetitorioUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionAccesoriaUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionPrincipalUseCasePort;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemanda;
@@ -23,6 +28,10 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandado;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandante;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandadoEntityMapper;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandanteEntityMapper;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoConcepto;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPetitorio;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionAccesoria;
+import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionPrincipal;
 
 @Slf4j
 @Component("gestionDashboardPersistencePort")
@@ -37,6 +46,27 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
 
     @Autowired
     private DemandadoEntityMapper demandadoEntityMapper;
+
+    @Autowired
+    @Qualifier("gestionPetitorioUseCasePort")
+    private GestionPetitorioUseCasePort gestionPetitorioUseCasePort;
+
+    @Autowired
+    @Qualifier("gestionPretensionPrincipalUseCasePort")
+    private GestionPretensionPrincipalUseCasePort gestionPretensionPrincipalUseCasePort;
+
+    @Autowired
+    @Qualifier("gestionConceptoUseCasePort")
+    private GestionConceptoUseCasePort gestionConceptoUseCasePort;
+
+    @Autowired
+    @Qualifier("gestionPretensionAccesoriaUseCasePort")
+    private GestionPretensionAccesoriaUseCasePort gestionPretensionAccesoriaUseCasePort;
+
+    private final Map<String, String> cachePetitorios = new ConcurrentHashMap<>();
+    private final Map<String, String> cachePretensionesPrincipales = new ConcurrentHashMap<>();
+    private final Map<String, String> cacheConceptos = new ConcurrentHashMap<>();
+    private final Map<String, String> cachePretensionesAccesorias = new ConcurrentHashMap<>();
 
     @Override
     public DashboardResumen obtenerResumen(String cuo) throws Exception {
@@ -166,10 +196,10 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                     .getResultList();
             for (Object[] r : rows) {
                 ConteoPetitorioSimilitudItem item = new ConteoPetitorioSimilitudItem();
-                item.setTipo((String) r[0]);
-                item.setPretensionPrincipal((String) r[1]);
-                item.setConcepto((String) r[2]);
-                item.setPretensionAccesoria((String) r[3]);
+                item.setTipo(obtenerNombrePetitorio(cuo, (String) r[0]));
+                item.setPretensionPrincipal(obtenerNombrePretensionPrincipal(cuo, (String) r[1]));
+                item.setConcepto(obtenerNombreConcepto(cuo, (String) r[2]));
+                item.setPretensionAccesoria(obtenerNombrePretensionAccesoria(cuo, (String) r[3]));
                 item.setTotal(r[4] != null ? (Long) r[4] : 0L);
                 lista.add(item);
             }
@@ -178,6 +208,89 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
             throw e;
         }
         return lista;
+    }
+
+    private String obtenerNombrePetitorio(String cuo, String tipoId) {
+        if (isBlank(tipoId)) return "";
+        String nombre = cachePetitorios.get(tipoId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoPetitorio> petitorios = gestionPetitorioUseCasePort.buscarPetitorio(cuo);
+            for (CatalogoPetitorio p : petitorios) {
+                if (p.getId() != null && p.getNombre() != null) {
+                    cachePetitorios.putIfAbsent(String.valueOf(p.getId()), p.getNombre());
+                }
+            }
+            nombre = cachePetitorios.get(tipoId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Petitorio {}: {}", tipoId, e.getMessage());
+        }
+        return tipoId;
+    }
+
+    private String obtenerNombrePretensionPrincipal(String cuo, String pretensionPrincipalId) {
+        if (isBlank(pretensionPrincipalId)) return "";
+        String nombre = cachePretensionesPrincipales.get(pretensionPrincipalId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoPretensionPrincipal> principales = gestionPretensionPrincipalUseCasePort
+                    .buscarPretensionPrincipal(cuo, java.util.Collections.emptyMap());
+            for (CatalogoPretensionPrincipal pp : principales) {
+                if (pp.getId() != null && pp.getNombre() != null) {
+                    cachePretensionesPrincipales.putIfAbsent(String.valueOf(pp.getId()), pp.getNombre());
+                }
+            }
+            nombre = cachePretensionesPrincipales.get(pretensionPrincipalId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Pretensión Principal {}: {}", pretensionPrincipalId, e.getMessage());
+        }
+        return pretensionPrincipalId;
+    }
+
+    private String obtenerNombreConcepto(String cuo, String conceptoId) {
+        if (isBlank(conceptoId)) return "";
+        String nombre = cacheConceptos.get(conceptoId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoConcepto> conceptos = gestionConceptoUseCasePort
+                    .buscarConcepto(cuo, java.util.Collections.emptyMap());
+            for (CatalogoConcepto c : conceptos) {
+                if (c.getId() != null && c.getNombre() != null) {
+                    cacheConceptos.putIfAbsent(String.valueOf(c.getId()), c.getNombre());
+                }
+            }
+            nombre = cacheConceptos.get(conceptoId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Concepto {}: {}", conceptoId, e.getMessage());
+        }
+        return conceptoId;
+    }
+
+    private String obtenerNombrePretensionAccesoria(String cuo, String pretensionAccesoriaId) {
+        if (isBlank(pretensionAccesoriaId)) return "";
+        String nombre = cachePretensionesAccesorias.get(pretensionAccesoriaId);
+        if (nombre != null) return nombre;
+        try {
+            List<CatalogoPretensionAccesoria> accesorias = gestionPretensionAccesoriaUseCasePort
+                    .buscarPretensionAccesoria(cuo, java.util.Collections.emptyMap());
+            for (CatalogoPretensionAccesoria pa : accesorias) {
+                if (pa.getId() != null && pa.getNombre() != null) {
+                    cachePretensionesAccesorias.putIfAbsent(String.valueOf(pa.getId()), pa.getNombre());
+                }
+            }
+            nombre = cachePretensionesAccesorias.get(pretensionAccesoriaId);
+            if (nombre != null) return nombre;
+        } catch (Exception e) {
+            log.warn("No se pudo resolver nombre de Pretensión Accesoria {}: {}", pretensionAccesoriaId, e.getMessage());
+        }
+        return pretensionAccesoriaId;
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     @Override
