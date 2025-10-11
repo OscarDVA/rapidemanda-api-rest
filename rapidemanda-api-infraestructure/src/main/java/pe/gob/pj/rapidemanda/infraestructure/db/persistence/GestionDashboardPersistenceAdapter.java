@@ -42,22 +42,22 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     public DashboardResumen obtenerResumen(String cuo) throws Exception {
         DashboardResumen res = new DashboardResumen();
         try {
-            Long total = (Long) sf.getCurrentSession()
-                    .createQuery("SELECT COUNT(md) FROM MovDemanda md")
+            Long total = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md", Long.class)
                     .getSingleResult();
 
-            Long registrados = (Long) sf.getCurrentSession()
-                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.estadoDemanda.bEstadoDemanda = :estado")
+            Long registrados = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.estadoDemanda.bEstadoDemanda = :estado", Long.class)
                     .setParameter("estado", "P")
                     .getSingleResult();
 
-            Long tipoM = (Long) sf.getCurrentSession()
-                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoPresentacion.bTipoPresentacion = :tipo")
+            Long tipoM = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoPresentacion.bTipoPresentacion = :tipo", Long.class)
                     .setParameter("tipo", "M")
                     .getSingleResult();
 
-            Long tipoF = (Long) sf.getCurrentSession()
-                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoPresentacion.bTipoPresentacion = :tipo")
+            Long tipoF = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoPresentacion.bTipoPresentacion = :tipo", Long.class)
                     .setParameter("tipo", "F")
                     .getSingleResult();
 
@@ -162,7 +162,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                             "SELECT p.tipo, p.pretensionPrincipal, p.concepto, p.pretensionAccesoria, COUNT(p) " +
                                     "FROM MovPetitorio p " +
                                     "GROUP BY p.tipo, p.pretensionPrincipal, p.concepto, p.pretensionAccesoria " +
-                                    "ORDER BY COUNT(p) DESC")
+                                    "ORDER BY COUNT(p) DESC", Object[].class)
                     .getResultList();
 
             List<ConteoPetitorioSimilitudItem> similitudes = new ArrayList<>();
@@ -189,7 +189,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
         try {
             // Por sexo
             List<Object[]> sexo = sf.getCurrentSession()
-                    .createQuery("SELECT d.genero, COUNT(d) FROM MovDemandante d GROUP BY d.genero")
+                    .createQuery("SELECT d.genero, COUNT(d) FROM MovDemandante d GROUP BY d.genero", Object[].class)
                     .getResultList();
             res.setPorSexo(mapConteos(sexo));
 
@@ -231,7 +231,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
         try {
             // Conteos por estado (X) y tipo de presentación (series)
             List<Object[]> rows = sf.getCurrentSession()
-                    .createQuery("SELECT md.estadoDemanda.bEstadoDemanda, md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.estadoDemanda.bEstadoDemanda, md.tipoPresentacion.bTipoPresentacion")
+                    .createQuery("SELECT md.estadoDemanda.bEstadoDemanda, md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.estadoDemanda.bEstadoDemanda, md.tipoPresentacion.bTipoPresentacion", Object[].class)
                     .getResultList();
             rows.forEach(r -> {
                 ConteoParItem item = new ConteoParItem();
@@ -243,7 +243,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
 
             // Agregar categoría "Total" (X) por tipo de presentación (series)
             List<Object[]> totals = sf.getCurrentSession()
-                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion")
+                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion", Object[].class)
                     .getResultList();
             totals.forEach(r -> {
                 ConteoParItem item = new ConteoParItem();
@@ -264,7 +264,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
         List<ConteoItem> lista = new ArrayList<>();
         try {
             List<Object[]> rows = sf.getCurrentSession()
-                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion")
+                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion", Object[].class)
                     .getResultList();
             lista = mapConteos(rows);
         } catch (Exception e) {
