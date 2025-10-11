@@ -9,6 +9,6 @@ import lombok.Data;
 public class DashboardGraficos implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<ConteoParItem> barrasTipoPresentacionEstado;
+    private List<ConteoParItem> barrasDemandaPorEstadoYTipo;
     private List<ConteoItem> tortaTipoPresentacion;
 }

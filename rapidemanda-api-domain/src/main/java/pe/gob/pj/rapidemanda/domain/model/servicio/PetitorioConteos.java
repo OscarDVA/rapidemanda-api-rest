@@ -9,8 +9,5 @@ import lombok.Data;
 public class PetitorioConteos implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<ConteoItem> porTipo;
-    private List<ConteoItem> porPretensionPrincipal;
-    private List<ConteoItem> porConcepto;
-    private List<ConteoItem> porPretensionAccesoria;
+    private List<ConteoPetitorioSimilitudItem> similitudes;
 }

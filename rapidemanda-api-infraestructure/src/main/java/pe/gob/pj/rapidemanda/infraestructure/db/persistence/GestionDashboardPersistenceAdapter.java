@@ -19,6 +19,10 @@ import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDashboardPersistence
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemanda;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandado;
+import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandante;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandadoEntityMapper;
+import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandanteEntityMapper;
 
 @Slf4j
 @Component("gestionDashboardPersistencePort")
@@ -27,6 +31,12 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     @Autowired
     @Qualifier("sessionNegocio")
     private SessionFactory sf;
+
+    @Autowired
+    private DemandanteEntityMapper demandanteEntityMapper;
+
+    @Autowired
+    private DemandadoEntityMapper demandadoEntityMapper;
 
     @Override
     public DashboardResumen obtenerResumen(String cuo) throws Exception {
@@ -67,17 +77,25 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
         List<DemandaResumen> lista = new ArrayList<>();
         try {
             TypedQuery<MovDemanda> q = sf.getCurrentSession().createQuery(
-                    "SELECT md FROM MovDemanda md JOIN md.estadoDemanda ed JOIN md.tipoPresentacion tp ORDER BY md.fechaRegistro DESC",
+                    "SELECT md FROM MovDemanda md JOIN md.estadoDemanda ed JOIN md.tipoPresentacion tp WHERE md.estadoDemanda.bEstadoDemanda IN (:estados) ORDER BY md.fechaRegistro DESC",
                     MovDemanda.class);
+            q.setParameter("estados", List.of("C", "P"));
             q.setMaxResults(limite);
 
             q.getResultStream().forEach(md -> {
                 DemandaResumen d = new DemandaResumen();
                 d.setId(md.getId());
+                d.setSumilla(md.getSumilla());
+                d.setTipoRecepcion(md.getTipoRecepcion());
                 try {
                     d.setFechaRegistro(ProjectUtils.convertDateToString(md.getFechaRegistro(), ProjectConstants.Formato.FECHA_DD_MM_YYYY_HH_MM_SS));
                 } catch (Exception ex) {
                     d.setFechaRegistro("");
+                }
+                try {
+                    d.setFechaRecepcion(ProjectUtils.convertDateToString(md.getFechaRecepcion(), ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+                } catch (Exception ex) {
+                    d.setFechaRecepcion("");
                 }
                 try {
                     d.setEstado(md.getEstadoDemanda() != null ? md.getEstadoDemanda().getBEstadoDemanda() : null);
@@ -88,6 +106,42 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
                     d.setTipoPresentacion(md.getTipoPresentacion() != null ? md.getTipoPresentacion().getBTipoPresentacion() : null);
                 } catch (Exception ex) {
                     d.setTipoPresentacion(null);
+                }
+
+                // demandantes: si existen varios listar el demandante con apoderadoComun = '1'
+                try {
+                    List<Demandante> demandantes = new ArrayList<>();
+                    List<MovDemandante> mdDemandantes = md.getDemandantes();
+                    if (mdDemandantes != null && !mdDemandantes.isEmpty()) {
+                        demandantes = mdDemandantes.stream()
+                                .filter(x -> {
+                                    try {
+                                        return x.getApoderadoComun() != null && "1".equals(x.getApoderadoComun());
+                                    } catch (Exception e) {
+                                        return false;
+                                    }
+                                })
+                                .map(demandanteEntityMapper::toModel)
+                                .toList();
+                    }
+                    d.setDemandantes(demandantes);
+                } catch (Exception ex) {
+                    d.setDemandantes(new ArrayList<>());
+                }
+
+                // demandados: si existen varios elegir el primero
+                try {
+                    List<Demandado> demandados = new ArrayList<>();
+                    List<MovDemandado> mdDemandados = md.getDemandados();
+                    if (mdDemandados != null && !mdDemandados.isEmpty()) {
+                        Demandado primero = demandadoEntityMapper.toModel(mdDemandados.get(0));
+                        if (primero != null) {
+                            demandados.add(primero);
+                        }
+                    }
+                    d.setDemandados(demandados);
+                } catch (Exception ex) {
+                    d.setDemandados(new ArrayList<>());
                 }
                 lista.add(d);
             });
@@ -102,29 +156,26 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     public PetitorioConteos contarPetitorios(String cuo) throws Exception {
         PetitorioConteos res = new PetitorioConteos();
         try {
-            // tipo
-            List<Object[]> tipo = sf.getCurrentSession()
-                    .createQuery("SELECT p.tipo, COUNT(p) FROM MovPetitorio p GROUP BY p.tipo")
+            // Lista única de conteo de similitudes por combinación de cuatro campos
+            List<Object[]> rows = sf.getCurrentSession()
+                    .createQuery(
+                            "SELECT p.tipo, p.pretensionPrincipal, p.concepto, p.pretensionAccesoria, COUNT(p) " +
+                                    "FROM MovPetitorio p " +
+                                    "GROUP BY p.tipo, p.pretensionPrincipal, p.concepto, p.pretensionAccesoria " +
+                                    "ORDER BY COUNT(p) DESC")
                     .getResultList();
-            res.setPorTipo(mapConteos(tipo));
 
-            // pretensionPrincipal
-            List<Object[]> pretension = sf.getCurrentSession()
-                    .createQuery("SELECT p.pretensionPrincipal, COUNT(p) FROM MovPetitorio p GROUP BY p.pretensionPrincipal")
-                    .getResultList();
-            res.setPorPretensionPrincipal(mapConteos(pretension));
-
-            // concepto
-            List<Object[]> concepto = sf.getCurrentSession()
-                    .createQuery("SELECT p.concepto, COUNT(p) FROM MovPetitorio p GROUP BY p.concepto")
-                    .getResultList();
-            res.setPorConcepto(mapConteos(concepto));
-
-            // pretensionAccesoria
-            List<Object[]> accesoria = sf.getCurrentSession()
-                    .createQuery("SELECT p.pretensionAccesoria, COUNT(p) FROM MovPetitorio p GROUP BY p.pretensionAccesoria")
-                    .getResultList();
-            res.setPorPretensionAccesoria(mapConteos(accesoria));
+            List<ConteoPetitorioSimilitudItem> similitudes = new ArrayList<>();
+            for (Object[] r : rows) {
+                ConteoPetitorioSimilitudItem item = new ConteoPetitorioSimilitudItem();
+                item.setTipo((String) r[0]);
+                item.setPretensionPrincipal((String) r[1]);
+                item.setConcepto((String) r[2]);
+                item.setPretensionAccesoria((String) r[3]);
+                item.setTotal(r[4] != null ? (Long) r[4] : 0L);
+                similitudes.add(item);
+            }
+            res.setSimilitudes(similitudes);
         } catch (Exception e) {
             log.error("{} Error contando petitorios: {}", cuo, e.getMessage());
             throw e;
@@ -148,12 +199,8 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
             List<Date> data = qFechas.getResultList();
 
             Map<String, Long> buckets = new HashMap<>();
-            buckets.put("0-17", 0L);
-            buckets.put("18-25", 0L);
-            buckets.put("26-35", 0L);
-            buckets.put("36-45", 0L);
-            buckets.put("46-60", 0L);
-            buckets.put("60+", 0L);
+            buckets.put("18-65", 0L);
+            buckets.put("65+", 0L);
 
             Date now = new Date();
             for (Date fn : data) {
@@ -182,18 +229,31 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     public List<ConteoParItem> contarDemandaPorTipoPresentacionYEstado(String cuo) throws Exception {
         List<ConteoParItem> lista = new ArrayList<>();
         try {
+            // Conteos por estado (X) y tipo de presentación (series)
             List<Object[]> rows = sf.getCurrentSession()
-                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, md.estadoDemanda.bEstadoDemanda, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion, md.estadoDemanda.bEstadoDemanda")
+                    .createQuery("SELECT md.estadoDemanda.bEstadoDemanda, md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.estadoDemanda.bEstadoDemanda, md.tipoPresentacion.bTipoPresentacion")
                     .getResultList();
             rows.forEach(r -> {
                 ConteoParItem item = new ConteoParItem();
-                item.setClave1((String) r[0]);
-                item.setClave2((String) r[1]);
+                item.setClave1((String) r[0]); // estado: B, C, P
+                item.setClave2((String) r[1]); // tipo: F, M
                 item.setTotal((Long) r[2]);
                 lista.add(item);
             });
+
+            // Agregar categoría "Total" (X) por tipo de presentación (series)
+            List<Object[]> totals = sf.getCurrentSession()
+                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion")
+                    .getResultList();
+            totals.forEach(r -> {
+                ConteoParItem item = new ConteoParItem();
+                item.setClave1("Total");
+                item.setClave2((String) r[0]); // tipo: F, M
+                item.setTotal((Long) r[1]);
+                lista.add(item);
+            });
         } catch (Exception e) {
-            log.error("{} Error contando demanda por tipoPresentacion y estado: {}", cuo, e.getMessage());
+            log.error("{} Error contando demanda por estado y tipoPresentacion: {}", cuo, e.getMessage());
             throw e;
         }
         return lista;
@@ -238,11 +298,7 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     }
 
     private String obtenerRangoEdad(int edad) {
-        if (edad <= 17) return "0-17";
-        if (edad <= 25) return "18-25";
-        if (edad <= 35) return "26-35";
-        if (edad <= 45) return "36-45";
-        if (edad <= 60) return "46-60";
-        return "60+";
+        if (edad <= 65) return "18-65";
+        return "65+";
     }
 }

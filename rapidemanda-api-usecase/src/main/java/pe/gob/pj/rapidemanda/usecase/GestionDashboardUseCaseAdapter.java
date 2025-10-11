@@ -46,7 +46,7 @@ public class GestionDashboardUseCaseAdapter implements GestionDashboardUseCasePo
             Exception.class, SQLException.class })
     public DashboardGraficos obtenerGraficos(String cuo) throws Exception {
         DashboardGraficos graficos = new DashboardGraficos();
-        graficos.setBarrasTipoPresentacionEstado(gestionDashboardPersistencePort.contarDemandaPorTipoPresentacionYEstado(cuo));
+        graficos.setBarrasDemandaPorEstadoYTipo(gestionDashboardPersistencePort.contarDemandaPorTipoPresentacionYEstado(cuo));
         graficos.setTortaTipoPresentacion(gestionDashboardPersistencePort.contarDemandaPorTipoPresentacion(cuo));
         return graficos;
     }
