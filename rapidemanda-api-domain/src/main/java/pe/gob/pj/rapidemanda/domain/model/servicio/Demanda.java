@@ -15,10 +15,13 @@ public class Demanda implements Serializable {
 	public static final String P_ID = "idDemanda";
 	public static final String P_ESTADO_ID = "idEstadoDemanda";
 	public static final String P_USUARIO = "usuarioDemanda";
-	//Nuevos Filtros
     public static final String P_TIPO_PRESENTACION = "idTipoPresentacion";
     public static final String P_TIPO_RECEPCION = "tipoRecepcion";
     public static final String P_USUARIO_RECEPCION = "idUsuarioRecepcion";
+	//rango fechas
+    public static final String P_FECHA_COMPLETADO_INICIO = "fechaCompletadoInicio";
+    public static final String P_FECHA_COMPLETADO_FIN = "fechaCompletadoFin";
+    public static final String P_ESTADO_IDS = "estadoDemandaIds";
 	
 
 	Integer id;

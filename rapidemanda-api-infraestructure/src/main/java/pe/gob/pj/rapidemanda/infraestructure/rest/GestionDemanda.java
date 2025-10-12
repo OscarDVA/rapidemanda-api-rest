@@ -52,7 +52,9 @@ public interface GestionDemanda extends Base {
             @RequestParam(name = "idUsuario", required = false) Integer idUsuario,
             @RequestParam(name = "idTipoPresentacion", required = false) String idTipoPresentacion,
             @RequestParam(name = "tipoRecepcion", required = false) String tipoRecepcion,
-            @RequestParam(name = "idUsuarioRecepcion", required = false) Integer idUsuarioRecepcion);
+            @RequestParam(name = "idUsuarioRecepcion", required = false) Integer idUsuarioRecepcion,
+            @RequestParam(name = "fechaCompletadoInicio", required = false) String fechaCompletadoInicio,
+            @RequestParam(name = "fechaCompletadoFin", required = false) String fechaCompletadoFin);
 
 	/***
 	 * 

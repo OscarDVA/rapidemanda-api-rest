@@ -80,10 +80,16 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 					filters.get(Demanda.P_ID));
 		}
 
-		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_ID))) {
-			sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA).setParameter(MovDemanda.P_ESTADO_DEMANDA,
-					filters.get(Demanda.P_ESTADO_ID));
-		}
+        // Filtro de estado: soporta único o múltiples (IN)
+        if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_IDS))) {
+            @SuppressWarnings("unchecked")
+            List<String> estados = (List<String>) filters.get(Demanda.P_ESTADO_IDS);
+            sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA_MULTI)
+                    .setParameterList(MovDemanda.P_ESTADO_DEMANDA_LIST, estados);
+        } else if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_ID))) {
+            sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA).setParameter(MovDemanda.P_ESTADO_DEMANDA,
+                    filters.get(Demanda.P_ESTADO_ID));
+        }
 
 		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_USUARIO))) {
 			sf.getCurrentSession().enableFilter(MovDemanda.F_USUARIO).setParameter(MovDemanda.P_USUARIO,
@@ -103,6 +109,14 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_USUARIO_RECEPCION))) {
 			sf.getCurrentSession().enableFilter(MovDemanda.F_USUARIO_RECEPCION)
 					.setParameter(MovDemanda.P_USUARIO_RECEPCION, filters.get(Demanda.P_USUARIO_RECEPCION));
+		}
+
+		// Filtro por rango de fechaCompletado
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_FECHA_COMPLETADO_INICIO))
+				&& !ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_FECHA_COMPLETADO_FIN))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_FECHA_COMPLETADO_RANGO)
+					.setParameter(MovDemanda.P_FECHA_COMPLETADO_INICIO, filters.get(Demanda.P_FECHA_COMPLETADO_INICIO))
+					.setParameter(MovDemanda.P_FECHA_COMPLETADO_FIN, filters.get(Demanda.P_FECHA_COMPLETADO_FIN));
 		}
 
 		TypedQuery<MovDemanda> query = this.sf.getCurrentSession().createNamedQuery(MovDemanda.Q_ALL, MovDemanda.class);

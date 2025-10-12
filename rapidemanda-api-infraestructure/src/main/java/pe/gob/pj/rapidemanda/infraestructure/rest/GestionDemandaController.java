@@ -2,7 +2,9 @@ package pe.gob.pj.rapidemanda.infraestructure.rest;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -48,7 +50,8 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 	@Override
 	public ResponseEntity<GlobalResponse> consultarDemandas(String cuo, String ips, String usuauth, String uri,
 			String params, String herramienta, String ip, String formatoRespuesta, Integer id, String bEstadoId,
-			Integer idUsuario, String idTipoPresentacion, String tipoRecepcion, Integer idUsuarioRecepcion) {
+			Integer idUsuario, String idTipoPresentacion, String tipoRecepcion, Integer idUsuarioRecepcion,
+			String fechaCompletadoInicio, String fechaCompletadoFin) {
 		GlobalResponse res = new GlobalResponse();
 		res.setCodigoOperacion(cuo);
 
@@ -59,9 +62,15 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 			if (id != null) {
 				filters.put(Demanda.P_ID, id);
 			}
-			if (bEstadoId != null && !bEstadoId.trim().isEmpty()) {
-				filters.put(Demanda.P_ESTADO_ID, bEstadoId);
-			}
+            // Parseo y manejo de estados (acepta múltiples: "C,P")
+            List<String> estadosFiltro = null;
+            if (bEstadoId != null && !bEstadoId.trim().isEmpty()) {
+                estadosFiltro = Arrays.stream(bEstadoId.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .distinct()
+                        .toList();
+            }
 			if (idUsuario != null) {
 				filters.put(Demanda.P_USUARIO, idUsuario);
 			}
@@ -75,6 +84,57 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 			if (idUsuarioRecepcion != null) {
 				filters.put(Demanda.P_USUARIO_RECEPCION, idUsuarioRecepcion);
 			}
+
+            // Filtros por rango de fechaCompletado (dd/MM/yyyy)
+            try {
+                if (fechaCompletadoInicio != null && ProjectUtils.esFechaValida(fechaCompletadoInicio,
+                        ProjectConstants.Formato.FECHA_DD_MM_YYYY)) {
+                    Date inicio = ProjectUtils.parseStringToDate(fechaCompletadoInicio,
+                            ProjectConstants.Formato.FECHA_DD_MM_YYYY);
+                    filters.put(Demanda.P_FECHA_COMPLETADO_INICIO, inicio);
+                }
+                if (fechaCompletadoFin != null && ProjectUtils.esFechaValida(fechaCompletadoFin,
+                        ProjectConstants.Formato.FECHA_DD_MM_YYYY)) {
+                    Date fin = ProjectUtils.parseStringToDate(fechaCompletadoFin,
+                            ProjectConstants.Formato.FECHA_DD_MM_YYYY);
+                    // Incluir todo el día (23:59:59)
+                    fin = ProjectUtils.sumarRestarSegundos(fin, 86399);
+                    filters.put(Demanda.P_FECHA_COMPLETADO_FIN, fin);
+                }
+            } catch (Exception ex) {
+                // Ignorar errores de parseo y no aplicar filtros de fecha
+            }
+
+            // Considerar estados C y P para filtro por fechas; excluir B
+            boolean tieneRangoFechas = filters.containsKey(Demanda.P_FECHA_COMPLETADO_INICIO)
+                    && filters.containsKey(Demanda.P_FECHA_COMPLETADO_FIN);
+
+            if (tieneRangoFechas) {
+                if (estadosFiltro == null || estadosFiltro.isEmpty()) {
+                    // Si no se envían estados, por defecto aplicar C y P
+                    filters.put(Demanda.P_ESTADO_IDS, List.of("C", "P"));
+                } else {
+                    // Excluir B si viene mezclado con otros estados
+                    List<String> estadosSinB = estadosFiltro.stream()
+                            .filter(e -> !"B".equalsIgnoreCase(e))
+                            .toList();
+                    if (estadosSinB.size() > 1) {
+                        filters.put(Demanda.P_ESTADO_IDS, estadosSinB);
+                    } else if (estadosSinB.size() == 1) {
+                        filters.put(Demanda.P_ESTADO_ID, estadosSinB.get(0));
+                    }
+                    // Si todo eran B, no colocar filtro de estado; el rango por fecha excluye B naturalmente
+                }
+            } else {
+                // Sin rango de fechas, mantener comportamiento original
+                if (estadosFiltro != null && !estadosFiltro.isEmpty()) {
+                    if (estadosFiltro.size() > 1) {
+                        filters.put(Demanda.P_ESTADO_IDS, estadosFiltro);
+                    } else {
+                        filters.put(Demanda.P_ESTADO_ID, estadosFiltro.get(0));
+                    }
+                }
+            }
 
 			res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
 			res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
