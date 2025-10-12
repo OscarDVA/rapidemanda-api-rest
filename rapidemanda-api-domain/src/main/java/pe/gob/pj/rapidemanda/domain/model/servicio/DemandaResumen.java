@@ -14,7 +14,7 @@ public class DemandaResumen implements Serializable {
     private String tipoRecepcion;
     private String estado;
     private String tipoPresentacion;
-    private String fechaRegistro;
+    private String fechaCompletado;
     private String fechaRecepcion;
     private List<Demandante> demandantes;
     private List<Demandado> demandados;
