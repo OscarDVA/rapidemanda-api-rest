@@ -141,6 +141,39 @@ public class GestionReportesController  implements GestionReportes,  Serializabl
         return new ResponseEntity<>(res, headers, HttpStatus.OK);
     }
 
+    @Override
+    public ResponseEntity<GlobalResponse> consultarDemandanteConteosPorFechasEstados(String cuo, String ips, String usuauth, String uri, String params, String herramienta, String ip,
+            String formatoRespuesta, String fechaCompletadoInicio, String fechaCompletadoFin, String estados) {
+        GlobalResponse res = new GlobalResponse();
+        res.setCodigoOperacion(cuo);
+        try {
+            Date inicio = parseFecha(fechaCompletadoInicio);
+            Date fin = parseFechaFin(fechaCompletadoFin);
+            if (inicio == null || fin == null) {
+                throw new ErrorException(Errors.PARAMETROS_INCOMPLETOS.getCodigo(),
+                        String.format(Errors.PARAMETROS_INCOMPLETOS.getNombre(), Proceso.DASHBOARD_CONSULTAR.getNombre()));
+            }
+
+            List<String> estadosList = parseEstadosParaFechas(estados);
+
+            res.setData(gestionReportesUseCasePort.obtenerDemandanteConteosPorFechasEstados(cuo, inicio, fin, estadosList));
+            res.setCodigo(Errors.OPERACION_EXITOSA.getCodigo());
+            res.setDescripcion(Errors.OPERACION_EXITOSA.getNombre());
+        } catch (ErrorException e) {
+            handleException(cuo, e, res);
+        } catch (Exception e) {
+            handleException(cuo, new ErrorException(Errors.ERROR_INESPERADO.getCodigo(),
+                    String.format(Errors.ERROR_INESPERADO.getNombre(), Proceso.DASHBOARD_CONSULTAR.getNombre()),
+                    e.getMessage(), e.getCause()), res);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                FormatoRespuesta.XML.getNombre().equalsIgnoreCase(formatoRespuesta) ? MediaType.APPLICATION_XML_VALUE
+                        : MediaType.APPLICATION_JSON_VALUE));
+        return new ResponseEntity<>(res, headers, HttpStatus.OK);
+    }
+
     private Date parseFecha(String fecha) {
         try {
             if (fecha != null && ProjectUtils.esFechaValida(fecha, ProjectConstants.Formato.FECHA_DD_MM_YYYY)) {

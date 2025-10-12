@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import pe.gob.pj.rapidemanda.domain.model.servicio.ConteoPetitorioTipoItem;
 import pe.gob.pj.rapidemanda.domain.model.servicio.ConteoPetitorioTipoPretensionItem;
+import pe.gob.pj.rapidemanda.domain.model.servicio.DemandanteConteos;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionReportesPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionReportesUseCasePort;
 
@@ -34,5 +35,11 @@ public class GestionReportesUseCaseAdapter implements GestionReportesUseCasePort
     @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = { Exception.class, SQLException.class })
     public List<ConteoPetitorioTipoPretensionItem> obtenerConteosPetitorioPorTipoYPrincipal(String cuo, Date fechaInicio, Date fechaFin, List<String> estados) throws Exception {
         return gestionReportesPersistencePort.contarPetitoriosPorTipoYPrincipal(cuo, fechaInicio, fechaFin, estados);
+    }
+
+    @Override
+    @Transactional(transactionManager = "txManagerNegocio", propagation = Propagation.REQUIRES_NEW, readOnly = true, rollbackFor = { Exception.class, SQLException.class })
+    public DemandanteConteos obtenerDemandanteConteosPorFechasEstados(String cuo, Date fechaInicio, Date fechaFin, List<String> estados) throws Exception {
+        return gestionReportesPersistencePort.contarDemandantesSexoEdadPorFechasEstados(cuo, fechaInicio, fechaFin, estados);
     }
 }
