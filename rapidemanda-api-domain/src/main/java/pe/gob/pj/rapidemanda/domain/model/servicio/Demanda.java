@@ -30,6 +30,7 @@ public class Demanda implements Serializable {
 	Integer idUsuario;
 	String tipoRecepcion; // 'VIRTUAL', 'PRESENCIAL'
 	String fechaRecepcion;
+	String fechaCompletado;
 	Integer idUsuarioRecepcion;
 	String usuarioDemanda;
 	String usuarioRecepcion;

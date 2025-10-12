@@ -86,6 +86,9 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 	@Column(name = "F_RECEPCION")
 	private Date fechaRecepcion;
 
+	@Column(name = "F_COMPLETADO")
+	private Date fechaCompletado;
+
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "F_REGISTRO", nullable = false, insertable = false, updatable = false)
 	private Date fechaRegistro;

@@ -228,6 +228,9 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		demanda.setTipoRecepcion(entity.getTipoRecepcion());
 		demanda.setFechaRecepcion(ProjectUtils.convertDateToString(entity.getFechaRecepcion(),
 				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
+		// Fecha de completado (si existe)
+		demanda.setFechaCompletado(ProjectUtils.convertDateToString(entity.getFechaCompletado(),
+				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
 		//demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
 		demanda.setActivo(entity.getActivo());
 
@@ -478,6 +481,11 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			MaeEstadoDemanda estadoDemanda = new MaeEstadoDemanda();
 			estadoDemanda.setBEstadoDemanda(demanda.getIdEstadoDemanda());
 			movDemanda.setEstadoDemanda(estadoDemanda);
+
+			// Si el nuevo estado es 'C' y no tiene fecha de completado, registrarla ahora
+			if ("C".equalsIgnoreCase(demanda.getIdEstadoDemanda()) && movDemanda.getFechaCompletado() == null) {
+				movDemanda.setFechaCompletado(new Date());
+			}
 		}
 
 		// Actualizar tipo presentación solo si es diferente
