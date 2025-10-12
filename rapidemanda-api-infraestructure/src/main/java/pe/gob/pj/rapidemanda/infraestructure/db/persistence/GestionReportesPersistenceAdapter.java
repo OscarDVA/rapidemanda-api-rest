@@ -20,6 +20,7 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.ConteoPetitorioTipoPretension
 import pe.gob.pj.rapidemanda.domain.model.servicio.ConteoEdadSexoItem;
 import pe.gob.pj.rapidemanda.domain.model.servicio.ConteoItem;
 import pe.gob.pj.rapidemanda.domain.model.servicio.DemandanteConteos;
+import pe.gob.pj.rapidemanda.domain.model.servicio.DemandantePetitorioItem;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionReportesPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPetitorioUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionPrincipalUseCasePort;
@@ -185,6 +186,34 @@ public class GestionReportesPersistenceAdapter implements GestionReportesPersist
             }
         } catch (Exception e) {
             log.error("{} Error contando petitorios por tipo y pretensión principal: {}", cuo, e.getMessage());
+            throw e;
+        }
+        return lista;
+    }
+
+    @Override
+    public List<DemandantePetitorioItem> listarDemandantesPetitorioPorFechasEstados(String cuo, Date fechaInicio, Date fechaFin, List<String> estados) throws Exception {
+        List<DemandantePetitorioItem> lista = new ArrayList<>();
+        try {
+            String jpql = "SELECT d.razonSocial, p.tipo, p.pretensionPrincipal " +
+                    "FROM MovPetitorio p JOIN p.demanda md JOIN md.demandantes d " +
+                    "WHERE md.fechaCompletado BETWEEN :inicio AND :fin " +
+                    "AND md.estadoDemanda.bEstadoDemanda IN (:estados) " +
+                    "ORDER BY d.razonSocial ASC";
+            TypedQuery<Object[]> query = sf.getCurrentSession().createQuery(jpql, Object[].class);
+            query.setParameter("inicio", fechaInicio);
+            query.setParameter("fin", fechaFin);
+            query.setParameter("estados", estados);
+
+            for (Object[] r : query.getResultList()) {
+                DemandantePetitorioItem item = new DemandantePetitorioItem();
+                item.setDemandante((String) r[0]);
+                item.setTipo(obtenerNombrePetitorio(cuo, (String) r[1]));
+                item.setPretensionPrincipal(obtenerNombrePretensionPrincipal(cuo, (String) r[2]));
+                lista.add(item);
+            }
+        } catch (Exception e) {
+            log.error("{} Error listando demandantes vs petitorio y pretensión: {}", cuo, e.getMessage());
             throw e;
         }
         return lista;
