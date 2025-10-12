@@ -39,7 +39,8 @@ public enum Errors {
 	NEGOCIO_USUARIO_YA_REGISTRADO("N006"," Error al %s - El usuario ingresado ya esta registrado."),
 	NEGOCIO_ESTADO_INVALIDO("N010"," Error al %s - El estado es no es válido."),
 	NEGOCIO_PARAMETRO_REQUERIDO("N011"," Error al %s - El parámetro %s es requerido."),
-	DATOS_ENTRADA_INCORRECTOS("D001"," Error al %s - Los datos de entrada son incorrectos o incompletos.");
+	DATOS_ENTRADA_INCORRECTOS("D001"," Error al %s - Los datos de entrada son incorrectos o incompletos."),
+	PARAMETROS_INCOMPLETOS("D002"," Error al %s - Los parámetros de entrada son incompletos.");
 	
 	String codigo;
 	String nombre;
