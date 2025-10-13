@@ -81,7 +81,7 @@
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.11.0</version>
+			<version>2.14.0</version>
 		</dependency>
 		<!-- Fin ftpClient -->
 		<!-- Inicio Alfresco -->
@@ -152,6 +152,18 @@
 		    <version>8.0.2</version>
 		</dependency>
  		<!-- Fin diseño de documentos PDF -->
+		<!-- inicio apache poi (excel) -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>5.2.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.2.5</version>
+		</dependency>
+		<!-- fin apache poi (excel) -->
 		<dependency>
 		  <groupId>org.springframework.boot</groupId>
 		  <artifactId>spring-boot-starter-mail</artifactId>

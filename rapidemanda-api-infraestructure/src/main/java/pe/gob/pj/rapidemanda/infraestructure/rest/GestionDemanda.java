@@ -130,15 +130,78 @@ public interface GestionDemanda extends Base {
 			@PathVariable(name = "id") Integer id,
 			@RequestBody DemandaRecepcionRequest request);
 	
-	 @DeleteMapping("/{id}")
-	    ResponseEntity<GlobalResponse> eliminarDemanda(
-	            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
-	            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
-	            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
-	            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
-	            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
-	            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
-	            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
-	            @PathVariable("id") Integer id,
-	            @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta);
+    @DeleteMapping("/{id}")
+        ResponseEntity<GlobalResponse> eliminarDemanda(
+                @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+                @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+                @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+                @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+                @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+                @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+                @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+                @PathVariable("id") Integer id,
+                @RequestParam(name = "formatoRespuesta", defaultValue = "json", required = false) String formatoRespuesta);
+
+    /**
+     * GET /demandas/export : Exportar demandas y sus relaciones a Excel (XLSX)
+     */
+    @GetMapping(value = "/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ResponseEntity<byte[]> exportarDemandasExcel(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestParam(name = "id", required = false) Integer id,
+            @RequestParam(name = "idEstadoDemanda", required = false) String bEstadoId,
+            @RequestParam(name = "idUsuario", required = false) Integer idUsuario,
+            @RequestParam(name = "idTipoPresentacion", required = false) String idTipoPresentacion,
+            @RequestParam(name = "tipoRecepcion", required = false) String tipoRecepcion,
+            @RequestParam(name = "idUsuarioRecepcion", required = false) Integer idUsuarioRecepcion,
+            @RequestParam(name = "fechaCompletadoInicio", required = false) String fechaCompletadoInicio,
+            @RequestParam(name = "fechaCompletadoFin", required = false) String fechaCompletadoFin);
+
+    /**
+     * GET /demandas/export/multisheet : Exportar Excel con múltiples hojas normalizadas
+     */
+    @GetMapping(value = "/export/multisheet", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ResponseEntity<byte[]> exportarDemandasExcelMultiHoja(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestParam(name = "id", required = false) Integer id,
+            @RequestParam(name = "idEstadoDemanda", required = false) String bEstadoId,
+            @RequestParam(name = "idUsuario", required = false) Integer idUsuario,
+            @RequestParam(name = "idTipoPresentacion", required = false) String idTipoPresentacion,
+            @RequestParam(name = "tipoRecepcion", required = false) String tipoRecepcion,
+            @RequestParam(name = "idUsuarioRecepcion", required = false) Integer idUsuarioRecepcion,
+            @RequestParam(name = "fechaCompletadoInicio", required = false) String fechaCompletadoInicio,
+            @RequestParam(name = "fechaCompletadoFin", required = false) String fechaCompletadoFin);
+
+    /**
+     * GET /demandas/export/flat : Exportar Excel en una sola hoja aplanada
+     */
+    @GetMapping(value = "/export/flat", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ResponseEntity<byte[]> exportarDemandasExcelAplanado(
+            @RequestAttribute(name = ProjectConstants.AUD_CUO) String cuo,
+            @RequestAttribute(name = ProjectConstants.AUD_IPS) String ips,
+            @RequestAttribute(name = ProjectConstants.AUD_USUARIO) String usuauth,
+            @RequestAttribute(name = ProjectConstants.AUD_URI) String uri,
+            @RequestAttribute(name = ProjectConstants.AUD_PARAMS) String params,
+            @RequestAttribute(name = ProjectConstants.AUD_HERRAMIENTA) String herramienta,
+            @RequestAttribute(name = ProjectConstants.AUD_IP) String ip,
+            @RequestParam(name = "id", required = false) Integer id,
+            @RequestParam(name = "idEstadoDemanda", required = false) String bEstadoId,
+            @RequestParam(name = "idUsuario", required = false) Integer idUsuario,
+            @RequestParam(name = "idTipoPresentacion", required = false) String idTipoPresentacion,
+            @RequestParam(name = "tipoRecepcion", required = false) String tipoRecepcion,
+            @RequestParam(name = "idUsuarioRecepcion", required = false) Integer idUsuarioRecepcion,
+            @RequestParam(name = "fechaCompletadoInicio", required = false) String fechaCompletadoInicio,
+            @RequestParam(name = "fechaCompletadoFin", required = false) String fechaCompletadoFin);
 }

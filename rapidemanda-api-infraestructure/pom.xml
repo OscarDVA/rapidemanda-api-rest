@@ -84,6 +84,7 @@
 	        <artifactId>jackson-dataformat-xml</artifactId>
 	    </dependency>
 		<!-- fin format xml -->
+		<!-- Dependencias de Excel heredadas desde pom principal -->
 	</dependencies>
 
 	<build>
