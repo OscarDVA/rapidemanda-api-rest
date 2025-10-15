@@ -50,7 +50,7 @@ public class PersonaRequest {
 	@JsonProperty("fechaNacimiento")
 	String fechaNacimiento;
 	
-	@Pattern(regexp = ProjectConstants.Pattern.NUMBER, message = "El parámetro numeroDocumento tiene un formato no válido.")
+	
 	@Length(min = 8, max = 20, message = "El parámetro numeroDocumento tiene un tamaño no válido (min=8,max=20).")
 	@NotBlank(message = "El parámetro numeroDocumento no puede ser vacío.")
 	@NotNull(message = "El parámetro numeroDocumento no puede ser nulo.")

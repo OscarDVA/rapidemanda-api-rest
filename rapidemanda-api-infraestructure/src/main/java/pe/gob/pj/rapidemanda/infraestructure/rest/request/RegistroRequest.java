@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -46,10 +47,9 @@ public class RegistroRequest {
 	@JsonProperty("segundoApellido")
 	String segundoApellido;
 
-	@Length(min = 8, max = 15, message = "El parámetro numeroDocumento tiene un tamaño no válido (min=8,max=15).")
+	@Length(min = 8, max = 20, message = "El parámetro numeroDocumento tiene un tamaño no válido (min=8,max=20).")
 	@NotBlank(message = "El parámetro numeroDocumento no puede ser vacío.")
 	@NotNull(message = "El parámetro numeroDocumento no puede ser nulo.")
-	@Pattern(regexp = "^[0-9]+$", message = "El parámetro numeroDocumento debe contener solo números.")
 	@JsonProperty("numeroDocumento")
 	String numeroDocumento;
 
