@@ -60,6 +60,7 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPetitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionPrincipal;
 import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoConcepto;
 import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionAccesoria;
+import pe.gob.pj.rapidemanda.domain.model.servicio.TipoDocumentoPersona;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDemandaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionReportePdfPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDocumentoUseCasePort;
@@ -70,6 +71,7 @@ import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPetitorioUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionPrincipalUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionConceptoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionAccesoriaUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionTipoDocumentoPersonaUseCasePort;
 
 @Slf4j
 @Component("gestionReportePdfPersistencePort")
@@ -111,6 +113,10 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	@Qualifier("gestionPretensionAccesoriaUseCasePort")
 	private GestionPretensionAccesoriaUseCasePort gestionPretensionAccesoriaUseCasePort;
 
+	@Autowired
+	@Qualifier("gestionTipoDocumentoPersonaUseCasePort")
+	private GestionTipoDocumentoPersonaUseCasePort gestionTipoDocumentoPersonaUseCasePort;
+
 	// Cachés en memoria para ubigeo (catálogos estables)
 	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheDepartamentos = new java.util.concurrent.ConcurrentHashMap<>();
 	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheProvincias = new java.util.concurrent.ConcurrentHashMap<>();
@@ -121,6 +127,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	private final java.util.concurrent.ConcurrentHashMap<String, String> cachePretensionesPrincipales = new java.util.concurrent.ConcurrentHashMap<>();
 	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheConceptos = new java.util.concurrent.ConcurrentHashMap<>();
 	private final java.util.concurrent.ConcurrentHashMap<String, String> cachePretensionesAccesorias = new java.util.concurrent.ConcurrentHashMap<>();
+
+	// Caché en memoria para TipoDocumentoPersona (código -> abreviatura)
+	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheTiposDocumentoPersona = new java.util.concurrent.ConcurrentHashMap<>();
 
 	// Colores corporativos según diseño oficial
 	private static final DeviceRgb COLOR_HEADER = WebColors.getRGBColor("#d70007"); // Rojo corporativo oficial #d70007
@@ -159,11 +168,14 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 			Document document = new Document(pdfDoc);
 			document.setMargins(30, 30, 60, 30); // top, right, bottom, left
 
-			// Precargar cachés de ubigeo (catálogos estables)
-			precargarUbigeoSiNecesario(cuo);
+		// Precargar cachés de ubigeo (catálogos estables)
+		precargarUbigeoSiNecesario(cuo);
 
-			// Precargar catálogos de petitorio (catálogos estables)
-			precargarCatalogosPetitorioSiNecesario(cuo);
+		// Precargar catálogos de petitorio (catálogos estables)
+		precargarCatalogosPetitorioSiNecesario(cuo);
+
+		// Precargar tipos de documento de persona (código -> abreviatura)
+		precargarTiposDocumentoPersonaSiNecesario(cuo);
 
             // Generar contenido del PDF
             generarEncabezado(document, demanda);
@@ -395,7 +407,8 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Table fila1 = new Table(UnitValue.createPercentArray(new float[] { 20, 20, 20, 20, 20 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
 
-        agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", demandante.getTipoDocumento(), fontBold, fontRegular);
+		String tipoDocDemandante = obtenerAbreviaturaTipoDocumento(cuo, demandante.getTipoDocumento());
+		agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", tipoDocDemandante, fontBold, fontRegular);
         agregarCeldaFormulario(fila1, "NÚMERO DE DOCUMENTO", demandante.getNumeroDocumento(), fontBold, fontRegular);
         String generoNombre = obtenerNombreGenero(demandante.getGenero());
         agregarCeldaFormulario(fila1, "GÉNERO", generoNombre, fontBold, fontRegular);
@@ -523,7 +536,8 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 		Table fila1 = new Table(UnitValue.createPercentArray(new float[] { 50, 50 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(2);
 
-		agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", demandado.getTipoDocumento(), fontBold, fontRegular);
+		String tipoDocDemandado = obtenerAbreviaturaTipoDocumento(cuo, demandado.getTipoDocumento());
+		agregarCeldaFormulario(fila1, "TIPO DE DOCUMENTO", tipoDocDemandado, fontBold, fontRegular);
 		agregarCeldaFormulario(fila1, "NÚMERO DE DOCUMENTO", demandado.getNumeroDocumento(), fontBold, fontRegular);
 
 		document.add(fila1);
@@ -789,6 +803,36 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
         }
     }
 
+	/**
+	 * Precarga los Tipos de Documento de Persona en caché (código -> abreviatura)
+	 * para evitar llamadas repetidas durante la generación del PDF.
+	 */
+	private void precargarTiposDocumentoPersonaSiNecesario(String cuo) {
+		try {
+			if (cacheTiposDocumentoPersona.isEmpty()) {
+				List<TipoDocumentoPersona> tipos = gestionTipoDocumentoPersonaUseCasePort
+						.buscarTiposDocumentoPersona(cuo, java.util.Collections.emptyMap());
+				for (TipoDocumentoPersona t : tipos) {
+					if (t.getCodigo() != null && t.getAbreviatura() != null) {
+						cacheTiposDocumentoPersona.putIfAbsent(t.getCodigo(), t.getAbreviatura());
+					}
+				}
+			}
+		} catch (Exception e) {
+			log.warn("No se pudo precargar Tipos de Documento de Persona: {}", e.getMessage());
+		}
+	}
+
+	/**
+	 * Obtiene la abreviatura del Tipo de Documento a partir del código.
+	 * Si no se encuentra, retorna el código original como fallback.
+	 */
+	private String obtenerAbreviaturaTipoDocumento(String cuo, String codigo) {
+		if (codigo == null || codigo.isBlank()) return "";
+		String abrev = cacheTiposDocumentoPersona.get(codigo);
+		return abrev != null ? abrev : codigo;
+	}
+
     private String obtenerNombrePetitorio(String cuo, String petitorioId) {
         if (petitorioId == null || petitorioId.isBlank()) return "";
         String nombre = cachePetitorios.get(petitorioId);
@@ -831,6 +875,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 
     private String obtenerNombreConcepto(String cuo, String conceptoId) {
         if (concepcionIdVacio(conceptoId)) return "";
+        if (conceptoId != null && "-1".equals(conceptoId.trim())) return "-";
         String nombre = cacheConceptos.get(conceptoId);
         if (nombre != null) return nombre;
         try {
@@ -1041,6 +1086,22 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				.setFontSize(12).setFontColor(COLOR_HEADER).setMarginBottom(10);
 		document.add(tituloSeccion);
 
+
+        // Nota aclaratoria pequeña en negrita (alineada al cuadro de Documentos que sustentan)
+        Table notaTabla = new Table(UnitValue.createPercentArray(new float[] { 4, 96 }))
+                .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(8);
+        Cell notaVacio = new Cell().setBorder(Border.NO_BORDER);
+        notaTabla.addCell(notaVacio);
+        Cell notaContenido = new Cell().setBorder(Border.NO_BORDER);
+        Paragraph notaParrafo = new Paragraph(
+                "Los archivos de los medios probatorios que se adjunten en la Mesa de partes Virtual Administrativa (MPA) deben llevar el nombre y la numeración asignada a cada pretensión según se indica a continuación:")
+                .setFont(fontBold)
+                .setFontSize(8)
+                .setFontColor(COLOR_TEXT);
+        notaContenido.add(notaParrafo);
+        notaTabla.addCell(notaContenido);
+        document.add(notaTabla);
+
 		Table mediosProbatorios = new Table(UnitValue.createPercentArray(new float[] { 4, 96 }))
 				.setWidth(UnitValue.createPercentValue(100)).setMarginBottom(15);
 
@@ -1049,24 +1110,40 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
             for (Petitorio petitorio : demanda.getPetitorios()) {
                 String nombrePetitorio = obtenerNombrePetitorio(cuo, petitorio.getTipo());
                 nombrePetitorio = nombrePetitorio != null ? nombrePetitorio.trim() : "";
-                String justificacion = petitorio.getJustificacion() != null ? petitorio.getJustificacion().trim() : "";
 
-                if (!nombrePetitorio.isEmpty() || !justificacion.isEmpty()) {
+                String nombrePretensionPrincipal = obtenerNombrePretensionPrincipal(cuo, petitorio.getPretensionPrincipal());
+                nombrePretensionPrincipal = nombrePretensionPrincipal != null ? nombrePretensionPrincipal.trim() : "";
+
+                String conceptoId = petitorio.getConcepto();
+                String nombreConcepto = "-1".equals(conceptoId) ? "-" : obtenerNombreConcepto(cuo, conceptoId);
+                nombreConcepto = nombreConcepto != null ? nombreConcepto.trim() : "";
+
+                String nombrePretensionAccesoria = obtenerNombrePretensionAccesoria(cuo, petitorio.getPretensionAccesoria());
+                nombrePretensionAccesoria = nombrePretensionAccesoria != null ? nombrePretensionAccesoria.trim() : "";
+
+                boolean hayContenido = !nombrePetitorio.isEmpty() || !nombrePretensionPrincipal.isEmpty()
+                        || !nombreConcepto.isEmpty() || !nombrePretensionAccesoria.isEmpty();
+
+                if (hayContenido) {
                     Cell celdaNumero = new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT)
                             .setVerticalAlignment(VerticalAlignment.MIDDLE)
                             .add(new Paragraph(i + ".").setFont(fontBold).setFontSize(9).setFontColor(COLOR_TEXT));
                     mediosProbatorios.addCell(celdaNumero);
 
-                    String combinado = !nombrePetitorio.isEmpty() && !justificacion.isEmpty() ? nombrePetitorio + " por " + justificacion
-                            : (!nombrePetitorio.isEmpty() ? nombrePetitorio : justificacion);
+                    java.util.List<String> partes = new java.util.ArrayList<>();
+                    if (!nombrePetitorio.isEmpty()) partes.add(nombrePetitorio);
+                    if (!nombrePretensionPrincipal.isEmpty()) partes.add(nombrePretensionPrincipal);
+                    if (!nombreConcepto.isEmpty()) partes.add(nombreConcepto);
+                    if (!nombrePretensionAccesoria.isEmpty()) partes.add(nombrePretensionAccesoria);
 
+                    String combinado = "DOCUMENTOS QUE SUSTENTAN: " + String.join("/", partes);
                     agregarCeldaFormulario(mediosProbatorios, "", combinado, fontBold, fontRegular);
                     i++;
                 }
             }
         }
-		document.add(mediosProbatorios);
-	}
+        document.add(mediosProbatorios);
+    }
 
 	/**
 	 * Genera la sección de anexos
