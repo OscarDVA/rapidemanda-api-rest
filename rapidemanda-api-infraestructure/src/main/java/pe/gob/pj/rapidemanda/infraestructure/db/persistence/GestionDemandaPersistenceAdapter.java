@@ -80,16 +80,16 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 					filters.get(Demanda.P_ID));
 		}
 
-        // Filtro de estado: soporta único o múltiples (IN)
-        if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_IDS))) {
-            @SuppressWarnings("unchecked")
-            List<String> estados = (List<String>) filters.get(Demanda.P_ESTADO_IDS);
-            sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA_MULTI)
-                    .setParameterList(MovDemanda.P_ESTADO_DEMANDA_LIST, estados);
-        } else if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_ID))) {
-            sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA).setParameter(MovDemanda.P_ESTADO_DEMANDA,
-                    filters.get(Demanda.P_ESTADO_ID));
-        }
+		// Filtro de estado: soporta único o múltiples (IN)
+		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_IDS))) {
+			@SuppressWarnings("unchecked")
+			List<String> estados = (List<String>) filters.get(Demanda.P_ESTADO_IDS);
+			sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA_MULTI)
+					.setParameterList(MovDemanda.P_ESTADO_DEMANDA_LIST, estados);
+		} else if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_ESTADO_ID))) {
+			sf.getCurrentSession().enableFilter(MovDemanda.F_ESTADO_DEMANDA).setParameter(MovDemanda.P_ESTADO_DEMANDA,
+					filters.get(Demanda.P_ESTADO_ID));
+		}
 
 		if (!ProjectUtils.isNullOrEmpty(filters.get(Demanda.P_USUARIO))) {
 			sf.getCurrentSession().enableFilter(MovDemanda.F_USUARIO).setParameter(MovDemanda.P_USUARIO,
@@ -142,6 +142,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			// Crear y configurar la entidad principal de demanda
 			MovDemanda movDemanda = new MovDemanda();
 			movDemanda.setSumilla(demanda.getSumilla());
+			movDemanda.setTieneRepresentante(demanda.getTieneRepresentante());
 			movDemanda.setEstadoDemanda(estadoDemanda);
 			movDemanda.setTipoPresentacion(tipoPresentacion);
 			movDemanda.setUsuarioDemanda(usuario);
@@ -216,7 +217,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		// Actualizar campos de recepción
 		movDemanda.setTipoRecepcion(TipoRecepcion);
 		movDemanda.setFechaRecepcion(fechaRecepcion);
-		
+
 		MovUsuario usuarioRecepcion = new MovUsuario();
 		usuarioRecepcion.setId(idUsuarioRecepcion);
 		movDemanda.setUsuarioRecepcion(usuarioRecepcion);
@@ -245,8 +246,9 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		// Fecha de completado (si existe)
 		demanda.setFechaCompletado(ProjectUtils.convertDateToString(entity.getFechaCompletado(),
 				ProjectConstants.Formato.FECHA_DD_MM_YYYY));
-		//demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
+		// demanda.setIdUsuarioRecepcion(entity.getIdUsuarioRecepcion());
 		demanda.setActivo(entity.getActivo());
+		demanda.setTieneRepresentante(entity.getTieneRepresentante());
 
 		// Mapear referencias con validación de nulos
 		mapearReferenciasBasicas(entity, demanda);
@@ -272,7 +274,7 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			demanda.setIdUsuario(entity.getUsuarioDemanda().getId());
 			demanda.setUsuarioDemanda(entity.getUsuarioDemanda().getUsuario());
 		}
-		
+
 		if (entity.getUsuarioRecepcion() != null) {
 			demanda.setIdUsuarioRecepcion(entity.getUsuarioRecepcion().getId());
 			demanda.setUsuarioRecepcion(entity.getUsuarioRecepcion().getUsuario());
@@ -485,6 +487,9 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 	private void actualizarDatosBasicos(MovDemanda movDemanda, Demanda demanda) {
 		// Actualizar campos básicos
 		movDemanda.setSumilla(demanda.getSumilla());
+
+		// Nuevo mapeo: tieneRepresentante
+		movDemanda.setTieneRepresentante(demanda.getTieneRepresentante());
 		movDemanda.setPdfUrl(demanda.getPdfUrl());
 		movDemanda.setActivo(
 				!Estado.INACTIVO_NUMERICO.getNombre().equals(demanda.getActivo()) ? Estado.ACTIVO_NUMERICO.getNombre()

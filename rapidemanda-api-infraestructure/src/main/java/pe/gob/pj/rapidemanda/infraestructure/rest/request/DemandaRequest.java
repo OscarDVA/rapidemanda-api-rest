@@ -37,6 +37,14 @@ public class DemandaRequest {
 	@JsonProperty("idTipoPresentacion")
 	String idTipoPresentacion;
 
+	// Nuevo campo básico: indica si la demanda tiene representante
+	@Length(min = 2, max = 2, message = "El parámetro tieneRepresentante tiene un tamaño no válido (min=2,max=2).")
+	@NotBlank(message = "El parámetro tieneRepresentante no puede ser vacío.")
+	@NotNull(message = "El parámetro tieneRepresentante no puede ser nulo.")
+	@Pattern(regexp = "(SI|NO)", message = "El parámetro tieneRepresentante solo permite valores SI o NO.")
+	@JsonProperty("tieneRepresentante")
+	String tieneRepresentante;
+
 	@NotNull(message = "El ID de usuario no puede ser nulo")
 	@JsonProperty("idUsuario")
 	private Integer idUsuario;

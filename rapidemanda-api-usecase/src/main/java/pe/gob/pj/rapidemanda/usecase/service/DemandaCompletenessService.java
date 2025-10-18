@@ -31,6 +31,16 @@ public class DemandaCompletenessService {
         if (demanda.getIdTipoPresentacion() == null) {
             faltantes.add("tipoPresentacion");
         }
+        // Validación requerida para tieneRepresentante
+        String tieneRepresentante = demanda.getTieneRepresentante();
+        if (ProjectUtils.isNullOrEmpty(tieneRepresentante)) {
+            faltantes.add("tieneRepresentante");
+        } else {
+            boolean trValido = "SI".equalsIgnoreCase(tieneRepresentante) || "NO".equalsIgnoreCase(tieneRepresentante);
+            if (!trValido) {
+                faltantes.add("tieneRepresentanteInvalido");
+            }
+        }
         String tipo = demanda.getIdTipoPresentacion();
         boolean esFisica = "F".equalsIgnoreCase(tipo);
         boolean esMesaVirtual = "M".equalsIgnoreCase(tipo);
@@ -73,13 +83,16 @@ public class DemandaCompletenessService {
             }
         }
         if (esMesaVirtual) {
-            if (demanda.getFirmas() == null || demanda.getFirmas().isEmpty()) {
-                faltantes.add("firmas");
-            } else {
-                boolean firmaValida = demanda.getFirmas().stream()
-                        .anyMatch(f -> ProjectUtils.tieneTamanioValido(f.getArchivoUrl(), MAX_URL));
-                if (!firmaValida) {
-                    faltantes.add("firmasIncompletas");
+            // Solo validar firmas si tieneRepresentante es "SI"
+            if ("SI".equalsIgnoreCase(demanda.getTieneRepresentante())) {
+                if (demanda.getFirmas() == null || demanda.getFirmas().isEmpty()) {
+                    faltantes.add("firmas");
+                } else {
+                    boolean firmaValida = demanda.getFirmas().stream()
+                            .anyMatch(f -> ProjectUtils.tieneTamanioValido(f.getArchivoUrl(), MAX_URL));
+                    if (!firmaValida) {
+                        faltantes.add("firmasIncompletas");
+                    }
                 }
             }
         }
