@@ -188,7 +188,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
             generarFundamentaciones(document, demanda);
             generarViaProcedimental(document, demanda);
             generarMediosProbatorios(document, demanda, cuo);
-            generarAnexos(document, demanda);
+//            generarAnexos(document, demanda);
             generarFirmas(document, demanda, cuo);
             generarInformacionGeneracion(document);
 
@@ -1149,9 +1149,9 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	 * Genera la sección de anexos
 	 */
 	private void generarAnexos(Document document, Demanda demanda) throws IOException {
-		if (demanda.getAnexos() == null || demanda.getAnexos().isEmpty()) {
-			return;
-		}
+//		if (demanda.getAnexos() == null || demanda.getAnexos().isEmpty()) {
+//			return;
+//		}
 
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
@@ -1179,20 +1179,20 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 						.setBackgroundColor(COLOR_HEADER).setTextAlignment(TextAlignment.CENTER))
 				.setFontSize(9).setMinHeight(15);
 
-		int contador = 1;
-		for (Anexo anexo : demanda.getAnexos()) {
-
-			String numeroFormateado = String.format("Anexo %02d", contador);
-
-			tabla.addCell(new Cell().add(new Paragraph(numeroFormateado).setFont(fontRegular).setMinHeight(15)))
-					.setTextAlignment(TextAlignment.CENTER).setFontSize(9);
-			tabla.addCell(new Cell().add(new Paragraph(anexo.getTipo()).setFont(fontRegular))).setFontSize(9);
-			tabla.addCell(
-					new Cell().add(new Paragraph("1".equals(anexo.getIncluido()) ? "Sí" : "No").setFont(fontRegular))
-							.setTextAlignment(TextAlignment.CENTER))
-					.setFontSize(9);
-			contador++;
-		}
+//		int contador = 1;
+//		for (Anexo anexo : demanda.getAnexos()) {
+//
+//			String numeroFormateado = String.format("Anexo %02d", contador);
+//
+//			tabla.addCell(new Cell().add(new Paragraph(numeroFormateado).setFont(fontRegular).setMinHeight(15)))
+//					.setTextAlignment(TextAlignment.CENTER).setFontSize(9);
+//			tabla.addCell(new Cell().add(new Paragraph(anexo.getTipo()).setFont(fontRegular))).setFontSize(9);
+//			tabla.addCell(
+//					new Cell().add(new Paragraph("1".equals(anexo.getIncluido()) ? "Sí" : "No").setFont(fontRegular))
+//							.setTextAlignment(TextAlignment.CENTER))
+//					.setFontSize(9);
+//			contador++;
+//		}
 
 		document.add(tabla);
 		document.add(new Paragraph().setMarginBottom(15));

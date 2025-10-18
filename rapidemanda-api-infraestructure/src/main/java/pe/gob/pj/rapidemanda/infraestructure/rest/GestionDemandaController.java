@@ -424,18 +424,18 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
                         crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getActivo())); crr.setCellStyle(dataStyle);
                     }
                 }
-                if (d.getAnexos() != null) {
-                    for (var an : d.getAnexos()) {
-                        Row rr = shAnex.createRow(rAnex++);
-                        int cc = 0;
-                        Cell crr;
-                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(an.getId() != null ? an.getId() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getTipo())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getIncluido())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getActivo())); crr.setCellStyle(dataStyle);
-                    }
-                }
+//                if (d.getAnexos() != null) {
+//                    for (var an : d.getAnexos()) {
+//                        Row rr = shAnex.createRow(rAnex++);
+//                        int cc = 0;
+//                        Cell crr;
+//                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
+//                        crr = rr.createCell(cc++); crr.setCellValue(an.getId() != null ? an.getId() : 0); crr.setCellStyle(dataStyle);
+//                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getTipo())); crr.setCellStyle(dataStyle);
+//                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getIncluido())); crr.setCellStyle(dataStyle);
+//                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getActivo())); crr.setCellStyle(dataStyle);
+//                    }
+//                }
             }
 
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();

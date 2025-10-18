@@ -61,8 +61,8 @@ public class DemandaRequest {
 	@JsonProperty("firmas")
 	List<FirmaRequest> firmas;
 
-	@JsonProperty("anexos")
-	List<AnexoRequest> anexos;
+//	@JsonProperty("anexos")
+//	List<AnexoRequest> anexos;
 
 	@JsonProperty("pdfUrl")
 	String pdfUrl;

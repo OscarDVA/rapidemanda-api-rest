@@ -30,6 +30,7 @@ public class Demanda implements Serializable {
 	String estadoDemanda; // 'BORRADOR', 'COMPLETADO', 'PRESENTADO'
 	String idTipoPresentacion; // 'M', 'F'
 	String tipoPresentacion; // 'MPE', 'FISICA'
+	String tieneRepresentante; // 'SI' o 'NO'
 	Integer idUsuario;
 	String tipoRecepcion; // 'VIRTUAL', 'PRESENCIAL'
 	String fechaRecepcion;
@@ -45,6 +46,6 @@ public class Demanda implements Serializable {
 	List<Petitorio> petitorios;
 	RelacionLaboral relacionLaboral;
 	List<Fundamentacion> fundamentaciones;
-	List<Anexo> anexos;
+//	List<Anexo> anexos;
 	List<Firma> firmas;
 }

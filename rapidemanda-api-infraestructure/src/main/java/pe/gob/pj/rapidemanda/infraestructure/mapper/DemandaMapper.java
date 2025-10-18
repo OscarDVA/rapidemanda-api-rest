@@ -35,7 +35,7 @@ public interface DemandaMapper {
 	
 	List<Firma> toFirmas(List<FirmaRequest> firmas);
 	
-	List<Anexo> toAnexos(List<AnexoRequest> anexos);
+//	List<Anexo> toAnexos(List<AnexoRequest> anexos);
 	
 	@Mapping(target = "NDemanda", ignore = true)
 	@Mapping(target = "id", ignore = true)
@@ -67,10 +67,10 @@ public interface DemandaMapper {
 	@Mapping(target = "activo", ignore = true)
 	Firma toFirma(FirmaRequest firmaRequest);
 	
-	@Mapping(target = "NDemanda", ignore = true)
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "activo", ignore = true)
-	Anexo toAnexo(AnexoRequest anexoRequest);
+//	@Mapping(target = "NDemanda", ignore = true)
+//	@Mapping(target = "id", ignore = true)
+//	@Mapping(target = "activo", ignore = true)
+//	Anexo toAnexo(AnexoRequest anexoRequest);
 	
 	// Método principal para convertir DemandaRequest a Demanda
 	@Mapping(target = "id", ignore = true)
@@ -85,6 +85,6 @@ public interface DemandaMapper {
 	@Mapping(target = "relacionLaboral", source = "relacionLaboral")
 	@Mapping(target = "fundamentaciones", source = "fundamentaciones")
 	@Mapping(target = "firmas", source = "firmas")
-	@Mapping(target = "anexos", source = "anexos")
+//	@Mapping(target = "anexos", source = "anexos")
 	Demanda toDemanda(DemandaRequest request);
 }
