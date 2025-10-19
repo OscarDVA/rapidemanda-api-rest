@@ -55,6 +55,7 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.Firma;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Fundamentacion;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Petitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.RelacionLaboral;
+import pe.gob.pj.rapidemanda.domain.model.servicio.TipoAnexo;
 import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPetitorio;
 import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoPretensionPrincipal;
 import pe.gob.pj.rapidemanda.domain.model.servicio.CatalogoConcepto;
@@ -65,6 +66,7 @@ import pe.gob.pj.rapidemanda.domain.port.persistence.GestionReportePdfPersistenc
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDocumentoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDepartamentoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionProvinciaUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionTipoAnexoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionDistritoUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPetitorioUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionPrincipalUseCasePort;
@@ -115,6 +117,10 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	@Autowired
 	@Qualifier("gestionTipoDocumentoPersonaUseCasePort")
 	private GestionTipoDocumentoPersonaUseCasePort gestionTipoDocumentoPersonaUseCasePort;
+	
+	@Autowired
+	@Qualifier("gestionTipoAnexoUseCasePort")
+	private GestionTipoAnexoUseCasePort gestionTipoAnexoUseCasePort;
 
 	// Cachés en memoria para ubigeo (catálogos estables)
 	private final java.util.concurrent.ConcurrentHashMap<String, String> cacheDepartamentos = new java.util.concurrent.ConcurrentHashMap<>();
@@ -187,6 +193,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
             generarFundamentaciones(document, demanda);
             generarViaProcedimental(document, demanda);
             generarMediosProbatorios(document, demanda, cuo);
+            generarAnexos(document, demanda, cuo);
             generarFirmas(document, demanda, cuo);
             generarInformacionGeneracion(document);
 
@@ -1146,7 +1153,7 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 	/**
 	 * Genera la sección de anexos
 	 */
-	private void generarAnexos(Document document, Demanda demanda) throws IOException {
+	private void generarAnexos(Document document, Demanda demanda, String cuo) throws Exception {
 
 		PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 		PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
@@ -1173,6 +1180,43 @@ public class GestionReportePdfPersistenceAdapter implements GestionReportePdfPer
 				new Cell().add(new Paragraph("INCLUIDO").setFont(fontRegular).setFontColor(ColorConstants.WHITE))
 						.setBackgroundColor(COLOR_HEADER).setTextAlignment(TextAlignment.CENTER))
 				.setFontSize(9).setMinHeight(15);
+
+		// Obtener los tipos de anexo
+		List<TipoAnexo> tiposAnexo = gestionTipoAnexoUseCasePort.buscarTipoAnexos(cuo);
+		
+		// Crear un mapa para acceder a los tipos de anexo por ID
+		java.util.Map<String, TipoAnexo> tiposAnexoPorId = new java.util.HashMap<>();
+		for (TipoAnexo tipoAnexo : tiposAnexo) {
+			tiposAnexoPorId.put(tipoAnexo.getId(), tipoAnexo);
+		}
+		
+		// Mostrar siempre el Anexo 01
+		tabla.addCell(new Cell().add(new Paragraph("Anexo 01").setFont(fontRegular))
+				.setTextAlignment(TextAlignment.CENTER)).setFontSize(9);
+		tabla.addCell(new Cell().add(new Paragraph(tiposAnexoPorId.get("1").getNombre()).setFont(fontRegular))
+				.setTextAlignment(TextAlignment.LEFT)).setFontSize(9);
+		tabla.addCell(new Cell().add(new Paragraph("SI").setFont(fontRegular))
+				.setTextAlignment(TextAlignment.CENTER)).setFontSize(9);
+		
+		// Mostrar Anexo 02 solo cuando demanda.getTieneRepresentante = "SI"
+		if ("SI".equals(demanda.getTieneRepresentante())) {
+			tabla.addCell(new Cell().add(new Paragraph("Anexo 02").setFont(fontRegular))
+					.setTextAlignment(TextAlignment.CENTER)).setFontSize(9);
+			tabla.addCell(new Cell().add(new Paragraph(tiposAnexoPorId.get("2").getNombre()).setFont(fontRegular))
+					.setTextAlignment(TextAlignment.LEFT)).setFontSize(9);
+			tabla.addCell(new Cell().add(new Paragraph("SI").setFont(fontRegular))
+					.setTextAlignment(TextAlignment.CENTER)).setFontSize(9);
+		}
+		
+		// Mostrar Anexo 03 cuando hay más de 1 demandante
+		if (demanda.getDemandantes() != null && demanda.getDemandantes().size() > 1) {
+			tabla.addCell(new Cell().add(new Paragraph("Anexo 03").setFont(fontRegular))
+					.setTextAlignment(TextAlignment.CENTER)).setFontSize(9);
+			tabla.addCell(new Cell().add(new Paragraph(tiposAnexoPorId.get("3").getNombre()).setFont(fontRegular))
+					.setTextAlignment(TextAlignment.LEFT)).setFontSize(9);
+			tabla.addCell(new Cell().add(new Paragraph("SI").setFont(fontRegular))
+					.setTextAlignment(TextAlignment.CENTER)).setFontSize(9);
+		}
 
 		document.add(tabla);
 		document.add(new Paragraph().setMarginBottom(15));
