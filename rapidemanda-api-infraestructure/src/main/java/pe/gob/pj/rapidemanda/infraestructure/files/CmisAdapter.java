@@ -300,17 +300,68 @@ public class CmisAdapter implements CmisPort {
         ContentStream contentStream;
         try {
             session = openSession();
-            contentStream = session.getObjectFactory().createContentStream(nameFile, -1, mimetype, inputFile);
             folder = (Folder) session.getObjectByPath(path);
+            
+            // Generar un nombre único si el archivo ya existe
+            String uniqueFileName = nameFile;
+            boolean fileExists = true;
+            int counter = 1;
+            
+            while (fileExists) {
+                try {
+                    String filePath = path + "/" + uniqueFileName;
+                    session.getObjectByPath(filePath);
+                    
+                    // Si llegamos aquí, el archivo existe, generamos un nuevo nombre
+                    String baseName = getBaseName(nameFile);
+                    String extension = getExtension(nameFile);
+                    uniqueFileName = baseName + "_" + counter + (extension.isEmpty() ? "" : "." + extension);
+                    counter++;
+                } catch (CmisObjectNotFoundException e) {
+                    // El archivo no existe, salimos del bucle
+                    fileExists = false;
+                }
+            }
+            
+            // Actualizar el nombre del archivo en las propiedades
+            fp.addProp("cmis:name", uniqueFileName);
+            
+            contentStream = session.getObjectFactory().createContentStream(uniqueFileName, -1, mimetype, inputFile);
             doc = folder.createDocument(fp.getProperties(), contentStream, VersioningState.MAJOR);
             return doc.getId();
-        }catch (Exception e){
+        } catch (Exception e) {
             throw e;
-        }finally {
+        } finally {
             if(null != session){session.clear();}
             finalizeSession();
         }
 	}
+	
+	/**
+     * Obtiene el nombre base de un archivo sin la extensión
+     * @param fileName Nombre del archivo
+     * @return Nombre base sin extensión
+     */
+    private String getBaseName(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return fileName;
+        }
+        return fileName.substring(0, lastDotIndex);
+    }
+    
+    /**
+     * Obtiene la extensión de un archivo
+     * @param fileName Nombre del archivo
+     * @return Extensión del archivo sin el punto
+     */
+    private String getExtension(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex == -1 || lastDotIndex == fileName.length() - 1) {
+            return "";
+        }
+        return fileName.substring(lastDotIndex + 1);
+    }
 
     /***
      *
