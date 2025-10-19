@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TipoAnexo implements Serializable {
+	
 	static final long serialVersionUID = 1L;
 	
     String id;
