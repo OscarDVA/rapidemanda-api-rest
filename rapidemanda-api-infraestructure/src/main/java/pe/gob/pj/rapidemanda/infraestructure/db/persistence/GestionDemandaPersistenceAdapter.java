@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import pe.gob.pj.rapidemanda.domain.enums.Errors;
 import pe.gob.pj.rapidemanda.domain.enums.Proceso;
 import pe.gob.pj.rapidemanda.domain.exceptions.ErrorException;
-import pe.gob.pj.rapidemanda.domain.model.servicio.Anexo;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandado;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Demandante;
@@ -26,7 +25,6 @@ import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeEstadoDemanda;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MaeTipoPresentacion;
-import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovAnexo;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemanda;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandado;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovDemandante;
@@ -36,7 +34,6 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovPetitorio;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovRelacionLaboral;
 import pe.gob.pj.rapidemanda.infraestructure.db.entity.servicio.MovUsuario;
 import pe.gob.pj.rapidemanda.infraestructure.enums.Estado;
-import pe.gob.pj.rapidemanda.infraestructure.mapper.AnexoEntityMapper;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandadoEntityMapper;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.DemandanteEntityMapper;
 import pe.gob.pj.rapidemanda.infraestructure.mapper.FirmaEntityMapper;
@@ -68,9 +65,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 
 	@Autowired
 	private FundamentacionEntityMapper fundamentacionEntityMapper;
-
-//	@Autowired
-//	private AnexoEntityMapper anexoEntityMapper;
 
 	@Override
 	public List<Demanda> buscarDemandas(String cuo, Map<String, Object> filters) throws Exception {
@@ -162,7 +156,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			registrarRelacionLaboral(movDemanda, demanda, session);
 			registrarFundamentaciones(movDemanda, demanda, session);
 			registrarFirmas(movDemanda, demanda, session);
-//			registrarAnexos(movDemanda, demanda, session);
 
 			// Confirmar transacción
 			session.getTransaction().commit();
@@ -193,7 +186,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		actualizarRelacionLaboral(movDemanda, demanda, session);
 		actualizarFundamentaciones(movDemanda, demanda, session);
 		actualizarFirmas(movDemanda, demanda, session);
-//		actualizarAnexos(movDemanda, demanda, session);
 
 		// Persistir cambios
 		session.merge(movDemanda);
@@ -313,10 +305,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			demanda.setFirmas(entity.getFirmas().stream().map(this::mapFirmaToModel).toList());
 		}
 
-		// Mapear anexos
-//		if (entity.getAnexos() != null && !entity.getAnexos().isEmpty()) {
-//			demanda.setAnexos(entity.getAnexos().stream().map(this::mapAnexoToModel).toList());
-//		}
 	}
 
 	// ========================================================================
@@ -347,10 +335,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		return firmaEntityMapper.toModel(entity);
 	}
 
-//	private Anexo mapAnexoToModel(MovAnexo entity) {
-//		return anexoEntityMapper.toModel(entity);
-//	}
-
 	// ========================================================================
 	// MÉTODOS PRIVADOS - MAPEO DE MODELOS A ENTIDADES (MODEL TO ENTITY)
 	// ========================================================================
@@ -379,9 +363,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		return firmaEntityMapper.toEntity(model);
 	}
 
-//	private MovAnexo mapAnexoToEntity(Anexo model) {
-//		return anexoEntityMapper.toEntity(model);
-//	}
 
 	// ========================================================================
 	// MÉTODOS PRIVADOS - REGISTRO DE ENTIDADES RELACIONADAS
@@ -466,19 +447,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 			movDemanda.setFirmas(movFirmas);
 		}
 	}
-
-//	private void registrarAnexos(MovDemanda movDemanda, Demanda demanda, Session session) {
-//		if (demanda.getAnexos() != null && !demanda.getAnexos().isEmpty()) {
-//			List<MovAnexo> movAnexos = new ArrayList<>();
-//			for (Anexo a : demanda.getAnexos()) {
-//				MovAnexo anexo = mapAnexoToEntity(a);
-//				anexo.setDemanda(movDemanda);
-//				session.persist(anexo);
-//				movAnexos.add(anexo);
-//			}
-//			movDemanda.setAnexos(movAnexos);
-//		}
-//	}
 
 	// ========================================================================
 	// MÉTODOS PRIVADOS - ACTUALIZACIÓN DE DATOS BÁSICOS
@@ -707,37 +675,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 		}
 	}
 
-//	private void actualizarAnexos(MovDemanda movDemanda, Demanda demanda, Session session) {
-//		// Inicializar lista si es null
-//		if (movDemanda.getAnexos() == null) {
-//			movDemanda.setAnexos(new ArrayList<>());
-//		}
-//
-//		// Si no hay anexos en la demanda, limpiar la lista
-//		if (demanda.getAnexos() == null || demanda.getAnexos().isEmpty()) {
-//			movDemanda.getAnexos().clear();
-//			return;
-//		}
-//
-//		// Eliminar anexos que ya no están en la demanda actualizada
-//		movDemanda.getAnexos().removeIf(
-//				ma -> demanda.getAnexos().stream().noneMatch(a -> a.getId() != null && a.getId().equals(ma.getId())));
-//
-//		// Procesar cada anexo
-//		for (Anexo anexo : demanda.getAnexos()) {
-//			if (anexo.getId() == null) {
-//				// Nuevo anexo
-//				MovAnexo nuevo = mapAnexoToEntity(anexo);
-//				nuevo.setDemanda(movDemanda);
-//				movDemanda.getAnexos().add(nuevo);
-//			} else {
-//				// Anexo existente - actualizar
-//				movDemanda.getAnexos().stream().filter(ma -> ma.getId().equals(anexo.getId())).findFirst()
-//						.ifPresent(ma -> updateAnexoEntity(ma, anexo));
-//			}
-//		}
-//	}
-
 	// ========================================================================
 	// MÉTODOS PRIVADOS - ACTUALIZACIÓN DE ENTIDADES INDIVIDUALES
 	// ========================================================================
@@ -765,10 +702,6 @@ public class GestionDemandaPersistenceAdapter implements GestionDemandaPersisten
 	private void updateFirmaEntity(MovFirma entity, Firma model) {
 		firmaEntityMapper.updateEntity(entity, model);
 	}
-
-//	private void updateAnexoEntity(MovAnexo entity, Anexo model) {
-//		anexoEntityMapper.updateEntity(entity, model);
-//	}
 
 	@Override
 	public void eliminar(String cuo, Integer id) throws Exception {

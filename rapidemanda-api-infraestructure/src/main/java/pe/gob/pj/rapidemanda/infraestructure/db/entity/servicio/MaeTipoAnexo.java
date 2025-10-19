@@ -12,8 +12,8 @@ import pe.gob.pj.rapidemanda.infraestructure.db.entity.AuditoriaEntity;
 @EqualsAndHashCode(callSuper = false, exclude = {"demanda"})
 @Entity
 @Table(name = "MOV_ANEXO", schema = ProjectConstants.Esquema.RAPIDEMANDA)
-@NamedQuery(name = MovAnexo.Q_ALL, query = "SELECT ma FROM MovAnexo ma")
-public class MovAnexo extends AuditoriaEntity implements Serializable {
+@NamedQuery(name = MaeTipoAnexo.Q_ALL, query = "SELECT ma FROM MovAnexo ma")
+public class MaeTipoAnexo extends AuditoriaEntity implements Serializable {
 	
     private static final long serialVersionUID = 1L;
     

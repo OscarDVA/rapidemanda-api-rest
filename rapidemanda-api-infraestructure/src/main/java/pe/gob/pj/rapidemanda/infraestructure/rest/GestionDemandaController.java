@@ -295,12 +295,6 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
             for (int i = 0; i < colsFirm.length; i++) { Cell hc = hdrFirm.createCell(i); hc.setCellValue(colsFirm[i].toUpperCase()); hc.setCellStyle(headerStyle); }
             int rFirm = 1;
 
-            Sheet shAnex = wb.createSheet("Anexos");
-            String[] colsAnex = new String[] { "demandaId","id","tipo","incluido","activo" };
-            Row hdrAnex = shAnex.createRow(0);
-            for (int i = 0; i < colsAnex.length; i++) { Cell hc = hdrAnex.createCell(i); hc.setCellValue(colsAnex[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rAnex = 1;
-
             // Llenado
             for (Demanda d : demandas) {
                 Row r = shDemandas.createRow(rDem++);
@@ -424,18 +418,6 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
                         crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getActivo())); crr.setCellStyle(dataStyle);
                     }
                 }
-//                if (d.getAnexos() != null) {
-//                    for (var an : d.getAnexos()) {
-//                        Row rr = shAnex.createRow(rAnex++);
-//                        int cc = 0;
-//                        Cell crr;
-//                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-//                        crr = rr.createCell(cc++); crr.setCellValue(an.getId() != null ? an.getId() : 0); crr.setCellStyle(dataStyle);
-//                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getTipo())); crr.setCellStyle(dataStyle);
-//                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getIncluido())); crr.setCellStyle(dataStyle);
-//                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(an.getActivo())); crr.setCellStyle(dataStyle);
-//                    }
-//                }
             }
 
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();

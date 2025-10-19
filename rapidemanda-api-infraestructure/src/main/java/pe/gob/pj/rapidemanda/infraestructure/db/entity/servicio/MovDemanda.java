@@ -130,10 +130,6 @@ public class MovDemanda extends AuditoriaEntity implements Serializable {
 	@BatchSize(size = 10)
 	private List<MovFirma> firmas;
 
-//    @OneToMany(mappedBy = "demanda", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @BatchSize(size = 10)
-//    private List<MovAnexo> anexos;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "N_USUARIO", referencedColumnName = "N_USUARIO", insertable = true, updatable = true)
 	private MovUsuario usuarioDemanda;

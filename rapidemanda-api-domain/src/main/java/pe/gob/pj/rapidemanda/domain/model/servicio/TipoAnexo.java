@@ -1,5 +1,4 @@
 package pe.gob.pj.rapidemanda.domain.model.servicio;
-
 import lombok.Data;
 
 import java.io.Serializable;
@@ -10,13 +9,10 @@ import lombok.experimental.FieldDefaults;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Anexo implements Serializable{
-	
+public class TipoAnexo implements Serializable {
 	static final long serialVersionUID = 1L;
 	
-    Integer id;
-    String tipo;
-    String incluido;
-    Integer nDemanda;
+    String id;
+    String nombre;
     String activo;
 }
