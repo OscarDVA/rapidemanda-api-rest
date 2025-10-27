@@ -36,7 +36,8 @@ public enum Proceso {
 	REPORTES_CONSULTAR("Consultar Reportes"),
 	ESTADO_ACTUALIZAR("Actualizar Estado"),
 	USUARIO_RECUPERAR_CLAVE("Recuperar Clave"),
-	TIPO_ANEXO_CONSULTAR("Consultar Tipos de Anexo");
+	TIPO_ANEXO_CONSULTAR("Consultar Tipos de Anexo"),
+	TIPO_PRESENTACION_DEMANDA_CONSULTAR("Consultar Tipos de Estado de Demanda");
 	String nombre;
 	
 	Proceso(String nombre){
