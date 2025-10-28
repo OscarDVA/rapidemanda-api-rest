@@ -166,10 +166,7 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
     return new ResponseEntity<>(res, headers, HttpStatus.OK);
     }
 
-    // Eliminado: exportarDemandasExcel (hoja única); se mantiene solo multi-hoja
-
     private String safeStr(String s) { return s != null ? s : ""; }
-    // Eliminado: método auxiliar seguro JSON (no usado por exportación multi-hoja)
 
     @Override
     public ResponseEntity<byte[]> exportarDemandasExcelMultiHoja(String cuo, String ips, String usuauth, String uri,
