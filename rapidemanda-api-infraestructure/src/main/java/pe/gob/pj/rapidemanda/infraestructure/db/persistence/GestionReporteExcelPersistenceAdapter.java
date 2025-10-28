@@ -28,6 +28,7 @@ import pe.gob.pj.rapidemanda.domain.model.servicio.Demanda;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Departamento;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Distrito;
 import pe.gob.pj.rapidemanda.domain.model.servicio.Provincia;
+import pe.gob.pj.rapidemanda.domain.model.servicio.TipoDocumentoPersona;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionDemandaPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.persistence.GestionReporteExcelPersistencePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionConceptoUseCasePort;
@@ -37,6 +38,7 @@ import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPetitorioUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionAccesoriaUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionPretensionPrincipalUseCasePort;
 import pe.gob.pj.rapidemanda.domain.port.usecase.GestionProvinciaUseCasePort;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionTipoDocumentoPersonaUseCasePort;
 
 @Component("gestionReporteExcelPersistencePort")
 public class GestionReporteExcelPersistenceAdapter implements GestionReporteExcelPersistencePort {
@@ -73,6 +75,10 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
     @Qualifier("gestionPretensionAccesoriaUseCasePort")
     private GestionPretensionAccesoriaUseCasePort gestionPretensionAccesoriaUseCasePort;
 
+    @Autowired
+    @Qualifier("gestionTipoDocumentoPersonaUseCasePort")
+    private GestionTipoDocumentoPersonaUseCasePort gestionTipoDocumentoPersonaUseCasePort;
+
     private final java.util.concurrent.ConcurrentHashMap<String, String> cacheDepartamentos = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> cacheProvincias = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> cacheDistritos = new java.util.concurrent.ConcurrentHashMap<>();
@@ -80,6 +86,7 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
     private final java.util.concurrent.ConcurrentHashMap<String, String> cachePretensionesPrincipales = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> cacheConceptos = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<String, String> cachePretensionesAccesorias = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, String> cacheTiposDocumentoPersona = new java.util.concurrent.ConcurrentHashMap<>();
 
     private String safeStr(String s) { return s != null ? s : ""; }
 
@@ -125,6 +132,12 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                 var accs = gestionPretensionAccesoriaUseCasePort.buscarPretensionAccesoria(cuo, java.util.Collections.emptyMap());
                 for (CatalogoPretensionAccesoria pa : accs) {
                     if (pa.getId() != null && pa.getNombre() != null) { cachePretensionesAccesorias.putIfAbsent(String.valueOf(pa.getId()), pa.getNombre()); }
+                }
+            }
+            if (cacheTiposDocumentoPersona.isEmpty()) {
+                var lista = gestionTipoDocumentoPersonaUseCasePort.buscarTiposDocumentoPersona(cuo, java.util.Collections.emptyMap());
+                for (TipoDocumentoPersona t : lista) {
+                    if (t.getCodigo() != null && t.getAbreviatura() != null) { cacheTiposDocumentoPersona.putIfAbsent(t.getCodigo(), t.getAbreviatura()); }
                 }
             }
         } catch (Exception ignored) {}
@@ -241,6 +254,13 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
         return accesoriaId;
     }
 
+    private String nombreTipoDocumento(String cuo, String tipoDocumentoCodigo) {
+        if (tipoDocumentoCodigo == null || tipoDocumentoCodigo.isBlank()) return "";
+        var nombre = cacheTiposDocumentoPersona.get(tipoDocumentoCodigo);
+        if (nombre != null) return nombre;
+        return tipoDocumentoCodigo;
+    }
+
     @Override
     public byte[] generarReporteDemandasExcelMultiHoja(String cuo, Map<String, Object> filters) throws Exception {
         // Precargar catálogos para normalización
@@ -272,50 +292,49 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
         dataStyle.setBorderLeft(BorderStyle.THIN);
         dataStyle.setBorderRight(BorderStyle.THIN);
 
-        // Hoja Demandas (maestro)
         Sheet shDemandas = wb.createSheet("Demandas");
         String[] colsDemandas = new String[] {
             "id","sumilla","tipoRecepcion","fechaRecepcion","fechaCompletado",
             "idEstadoDemanda","estadoDemanda","idTipoPresentacion","tipoPresentacion",
-            "idUsuario","usuarioDemanda","idUsuarioRecepcion","usuarioRecepcion","activo"
+            "idUsuario","usuarioDemanda","idUsuarioRecepcion","usuarioRecepcion"
         };
         Row hdrDem = shDemandas.createRow(0);
         for (int i = 0; i < colsDemandas.length; i++) { Cell hc = hdrDem.createCell(i); hc.setCellValue(colsDemandas[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rDem = 1;
 
-        // Hojas hijas
+        // Hojas hijas - REMOVED "activo" columns
         Sheet shDemandantes = wb.createSheet("Demandantes");
-        String[] colsDemandantes = new String[] { "demandaId","id","tipoDocumento","numeroDocumento","razonSocial","genero","fechaNacimiento","departamento","provincia","distrito","tipoDomicilio","domicilio","referencia","correo","celular","casillaElectronica","apoderadoComun","archivoUrl","activo" };
+        String[] colsDemandantes = new String[] { "demandaId","id","tipoDocumento","numeroDocumento","razonSocial","genero","fechaNacimiento","departamento","provincia","distrito","tipoDomicilio","domicilio","referencia","correo","celular","casillaElectronica","apoderadoComun","archivoUrl" };
         Row hdrDemtes = shDemandantes.createRow(0);
         for (int i = 0; i < colsDemandantes.length; i++) { Cell hc = hdrDemtes.createCell(i); hc.setCellValue(colsDemandantes[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rDemtes = 1;
 
         Sheet shDemandados = wb.createSheet("Demandados");
-        String[] colsDemandados = new String[] { "demandaId","id","tipoDocumento","numeroDocumento","razonSocial","departamento","provincia","distrito","tipoDomicilio","domicilio","referencia","activo" };
+        String[] colsDemandados = new String[] { "demandaId","id","tipoDocumento","numeroDocumento","razonSocial","departamento","provincia","distrito","tipoDomicilio","domicilio","referencia" };
         Row hdrDems = shDemandados.createRow(0);
         for (int i = 0; i < colsDemandados.length; i++) { Cell hc = hdrDems.createCell(i); hc.setCellValue(colsDemandados[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rDems = 1;
 
         Sheet shPetitorios = wb.createSheet("Petitorios");
-        String[] colsPetitorios = new String[] { "demandaId","id","tipo","pretensionPrincipal","concepto","pretensionAccesoria","monto","justificacion","fechaInicio","fechaFin","activo" };
+        String[] colsPetitorios = new String[] { "demandaId","id","tipo","pretensionPrincipal","concepto","pretensionAccesoria","monto","justificacion","fechaInicio","fechaFin" };
         Row hdrPets = shPetitorios.createRow(0);
         for (int i = 0; i < colsPetitorios.length; i++) { Cell hc = hdrPets.createCell(i); hc.setCellValue(colsPetitorios[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rPets = 1;
 
         Sheet shRelLab = wb.createSheet("RelacionLaboral");
-        String[] colsRelLab = new String[] { "demandaId","id","regimen","fechaInicio","fechaFin","anios","meses","dias","remuneracion","activo" };
+        String[] colsRelLab = new String[] { "demandaId","id","regimen","fechaInicio","fechaFin","anios","meses","dias","remuneracion" };
         Row hdrRel = shRelLab.createRow(0);
         for (int i = 0; i < colsRelLab.length; i++) { Cell hc = hdrRel.createCell(i); hc.setCellValue(colsRelLab[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rRel = 1;
 
         Sheet shFund = wb.createSheet("Fundamentaciones");
-        String[] colsFund = new String[] { "demandaId","id","contenido","activo" };
+        String[] colsFund = new String[] { "demandaId","id","contenido" };
         Row hdrFund = shFund.createRow(0);
         for (int i = 0; i < colsFund.length; i++) { Cell hc = hdrFund.createCell(i); hc.setCellValue(colsFund[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rFund = 1;
 
         Sheet shFirm = wb.createSheet("Firmas");
-        String[] colsFirm = new String[] { "demandaId","id","tipo","archivoUrl","activo" };
+        String[] colsFirm = new String[] { "demandaId","id","tipo","archivoUrl" };
         Row hdrFirm = shFirm.createRow(0);
         for (int i = 0; i < colsFirm.length; i++) { Cell hc = hdrFirm.createCell(i); hc.setCellValue(colsFirm[i].toUpperCase()); hc.setCellStyle(headerStyle); }
         int rFirm = 1;
@@ -337,7 +356,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
             cell = r.createCell(c++); cell.setCellValue(safeStr(d.getUsuarioDemanda())); cell.setCellStyle(dataStyle);
             cell = r.createCell(c++); cell.setCellValue(d.getIdUsuarioRecepcion() != null ? d.getIdUsuarioRecepcion() : 0); cell.setCellStyle(dataStyle);
             cell = r.createCell(c++); cell.setCellValue(safeStr(d.getUsuarioRecepcion())); cell.setCellStyle(dataStyle);
-            cell = r.createCell(c++); cell.setCellValue(safeStr(d.getActivo())); cell.setCellStyle(dataStyle);
 
             Integer demandaId = d.getId() != null ? d.getId() : 0;
             if (d.getDemandantes() != null) {
@@ -346,7 +364,7 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     int cc = 0; Cell crr;
                     crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(demte.getId() != null ? demte.getId() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getTipoDocumento())); crr.setCellStyle(dataStyle);
+                    crr = rr.createCell(cc++); crr.setCellValue(nombreTipoDocumento(cuo, safeStr(demte.getTipoDocumento()))); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getNumeroDocumento())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getRazonSocial())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getGenero())); crr.setCellStyle(dataStyle);
@@ -362,7 +380,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getCasillaElectronica())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getApoderadoComun())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getArchivoUrl())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getActivo())); crr.setCellStyle(dataStyle);
                 }
             }
             if (d.getDemandados() != null) {
@@ -371,7 +388,7 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     int cc = 0; Cell crr;
                     crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(dems.getId() != null ? dems.getId() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getTipoDocumento())); crr.setCellStyle(dataStyle);
+                    crr = rr.createCell(cc++); crr.setCellValue(nombreTipoDocumento(cuo, safeStr(dems.getTipoDocumento()))); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getNumeroDocumento())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getRazonSocial())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(nombreDepartamento(cuo, safeStr(dems.getDepartamento()))); crr.setCellStyle(dataStyle);
@@ -380,7 +397,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getTipoDomicilio())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getDomicilio())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getReferencia())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getActivo())); crr.setCellStyle(dataStyle);
                 }
             }
             if (d.getPetitorios() != null) {
@@ -397,7 +413,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getJustificacion())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getFechaInicio())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getFechaFin())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getActivo())); crr.setCellStyle(dataStyle);
                 }
             }
             if (d.getRelacionLaboral() != null) {
@@ -413,7 +428,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                 crr = rr.createCell(cc++); crr.setCellValue(rl.getMeses() != null ? rl.getMeses() : 0); crr.setCellStyle(dataStyle);
                 crr = rr.createCell(cc++); crr.setCellValue(rl.getDias() != null ? rl.getDias() : 0); crr.setCellStyle(dataStyle);
                 crr = rr.createCell(cc++); crr.setCellValue(rl.getRemuneracion() != null ? rl.getRemuneracion().doubleValue() : 0); crr.setCellStyle(dataStyle);
-                crr = rr.createCell(cc++); crr.setCellValue(safeStr(rl.getActivo())); crr.setCellStyle(dataStyle);
             }
             if (d.getFundamentaciones() != null) {
                 for (var fu : d.getFundamentaciones()) {
@@ -422,7 +436,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(fu.getId() != null ? fu.getId() : 0); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(fu.getContenido())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(fu.getActivo())); crr.setCellStyle(dataStyle);
                 }
             }
             if (d.getFirmas() != null) {
@@ -433,7 +446,6 @@ public class GestionReporteExcelPersistenceAdapter implements GestionReporteExce
                     crr = rr.createCell(cc++); crr.setCellValue(fi.getId() != null ? fi.getId() : 0); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getTipo())); crr.setCellStyle(dataStyle);
                     crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getArchivoUrl())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getActivo())); crr.setCellStyle(dataStyle);
                 }
             }
         }
