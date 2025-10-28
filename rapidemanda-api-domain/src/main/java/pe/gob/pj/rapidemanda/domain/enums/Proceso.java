@@ -40,7 +40,8 @@ public enum Proceso {
 	TIPO_PRESENTACION_DEMANDA_CONSULTAR("Consultar Tipos de Estado de Demanda"),
 	TIPO_SEXO_CONSULTAR("Consultar Tipos de Sexo"),
 	TIPO_REGIMEN_CONSULTAR("Consultar Tipos de Régimen"),
-	TIPO_VIA_CONSULTAR("Consultar Tipos de Vía");
+	TIPO_VIA_CONSULTAR("Consultar Tipos de Vía"),
+	DEMANDA_EXPORTAR_EXCEL("Exportar Excel de Demanda")	;
 	String nombre;
 	
 	Proceso(String nombre){

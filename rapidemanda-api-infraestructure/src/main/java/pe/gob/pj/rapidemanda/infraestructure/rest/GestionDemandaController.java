@@ -16,16 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -44,6 +34,7 @@ import pe.gob.pj.rapidemanda.infraestructure.rest.request.DemandaRecepcionReques
 import pe.gob.pj.rapidemanda.infraestructure.rest.response.GlobalResponse;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectUtils;
 import pe.gob.pj.rapidemanda.domain.utils.ProjectConstants;
+import pe.gob.pj.rapidemanda.domain.port.usecase.GestionReporteExcelUseCasePort;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,7 +46,10 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
 	final GestionDemandaUseCasePort gestionDemandaUseCasePort;
 	final AuditoriaGeneralUseCasePort auditoriaGeneralUseCasePort;
 	final DemandaMapper demandaMapper;
-	final AuditoriaGeneralMapper auditoriaGeneralMapper;
+    final AuditoriaGeneralMapper auditoriaGeneralMapper;
+
+    @Qualifier("gestionReporteExcelUseCasePort")
+    final GestionReporteExcelUseCasePort gestionReporteExcelUseCasePort;
 
 	@Override
 	public ResponseEntity<GlobalResponse> consultarDemandas(String cuo, String ips, String usuauth, String uri,
@@ -166,7 +160,7 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
     return new ResponseEntity<>(res, headers, HttpStatus.OK);
     }
 
-    private String safeStr(String s) { return s != null ? s : ""; }
+    
 
     @Override
     public ResponseEntity<byte[]> exportarDemandasExcelMultiHoja(String cuo, String ips, String usuauth, String uri,
@@ -222,211 +216,13 @@ public class GestionDemandaController implements GestionDemanda, Serializable {
                 }
             }
 
-            List<Demanda> demandas = gestionDemandaUseCasePort.buscarDemandas(cuo, filters);
-
-            SXSSFWorkbook wb = new SXSSFWorkbook(100);
-
-            // Estilos: encabezados con color, negritas y mayúsculas; celdas con bordes
-            CellStyle headerStyle = wb.createCellStyle();
-            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setBorderTop(BorderStyle.THIN);
-            headerStyle.setBorderBottom(BorderStyle.THIN);
-            headerStyle.setBorderLeft(BorderStyle.THIN);
-            headerStyle.setBorderRight(BorderStyle.THIN);
-            Font headerFont = wb.createFont();
-            headerFont.setBold(true);
-            headerStyle.setFont(headerFont);
-
-            CellStyle dataStyle = wb.createCellStyle();
-            dataStyle.setBorderTop(BorderStyle.THIN);
-            dataStyle.setBorderBottom(BorderStyle.THIN);
-            dataStyle.setBorderLeft(BorderStyle.THIN);
-            dataStyle.setBorderRight(BorderStyle.THIN);
-
-            // Hoja Demandas (maestro)
-            Sheet shDemandas = wb.createSheet("Demandas");
-            String[] colsDemandas = new String[] {
-                "id","sumilla","tipoRecepcion","fechaRecepcion","fechaCompletado",
-                "idEstadoDemanda","estadoDemanda","idTipoPresentacion","tipoPresentacion",
-                "idUsuario","usuarioDemanda","idUsuarioRecepcion","usuarioRecepcion","activo"
-            };
-            Row hdrDem = shDemandas.createRow(0);
-            for (int i = 0; i < colsDemandas.length; i++) { Cell hc = hdrDem.createCell(i); hc.setCellValue(colsDemandas[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rDem = 1;
-
-            // Hojas hijas
-            Sheet shDemandantes = wb.createSheet("Demandantes");
-            String[] colsDemandantes = new String[] { "demandaId","id","tipoDocumento","numeroDocumento","razonSocial","genero","fechaNacimiento","departamento","provincia","distrito","tipoDomicilio","domicilio","referencia","correo","celular","casillaElectronica","apoderadoComun","archivoUrl","activo" };
-            Row hdrDemtes = shDemandantes.createRow(0);
-            for (int i = 0; i < colsDemandantes.length; i++) { Cell hc = hdrDemtes.createCell(i); hc.setCellValue(colsDemandantes[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rDemtes = 1;
-
-            Sheet shDemandados = wb.createSheet("Demandados");
-            String[] colsDemandados = new String[] { "demandaId","id","tipoDocumento","numeroDocumento","razonSocial","departamento","provincia","distrito","tipoDomicilio","domicilio","referencia","activo" };
-            Row hdrDems = shDemandados.createRow(0);
-            for (int i = 0; i < colsDemandados.length; i++) { Cell hc = hdrDems.createCell(i); hc.setCellValue(colsDemandados[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rDems = 1;
-
-            Sheet shPetitorios = wb.createSheet("Petitorios");
-            String[] colsPetitorios = new String[] { "demandaId","id","tipo","pretensionPrincipal","concepto","pretensionAccesoria","monto","justificacion","fechaInicio","fechaFin","activo" };
-            Row hdrPets = shPetitorios.createRow(0);
-            for (int i = 0; i < colsPetitorios.length; i++) { Cell hc = hdrPets.createCell(i); hc.setCellValue(colsPetitorios[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rPets = 1;
-
-            Sheet shRelLab = wb.createSheet("RelacionLaboral");
-            String[] colsRelLab = new String[] { "demandaId","id","regimen","fechaInicio","fechaFin","anios","meses","dias","remuneracion","activo" };
-            Row hdrRel = shRelLab.createRow(0);
-            for (int i = 0; i < colsRelLab.length; i++) { Cell hc = hdrRel.createCell(i); hc.setCellValue(colsRelLab[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rRel = 1;
-
-            Sheet shFund = wb.createSheet("Fundamentaciones");
-            String[] colsFund = new String[] { "demandaId","id","contenido","activo" };
-            Row hdrFund = shFund.createRow(0);
-            for (int i = 0; i < colsFund.length; i++) { Cell hc = hdrFund.createCell(i); hc.setCellValue(colsFund[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rFund = 1;
-
-            Sheet shFirm = wb.createSheet("Firmas");
-            String[] colsFirm = new String[] { "demandaId","id","tipo","archivoUrl","activo" };
-            Row hdrFirm = shFirm.createRow(0);
-            for (int i = 0; i < colsFirm.length; i++) { Cell hc = hdrFirm.createCell(i); hc.setCellValue(colsFirm[i].toUpperCase()); hc.setCellStyle(headerStyle); }
-            int rFirm = 1;
-
-            // Llenado
-            for (Demanda d : demandas) {
-                Row r = shDemandas.createRow(rDem++);
-                int c = 0;
-                Cell cell;
-                cell = r.createCell(c++); cell.setCellValue(d.getId() != null ? d.getId() : 0); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getSumilla())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getTipoRecepcion())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getFechaRecepcion())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getFechaCompletado())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getIdEstadoDemanda())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getEstadoDemanda())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getIdTipoPresentacion())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getTipoPresentacion())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(d.getIdUsuario() != null ? d.getIdUsuario() : 0); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getUsuarioDemanda())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(d.getIdUsuarioRecepcion() != null ? d.getIdUsuarioRecepcion() : 0); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getUsuarioRecepcion())); cell.setCellStyle(dataStyle);
-                cell = r.createCell(c++); cell.setCellValue(safeStr(d.getActivo())); cell.setCellStyle(dataStyle);
-
-                Integer demandaId = d.getId() != null ? d.getId() : 0;
-                if (d.getDemandantes() != null) {
-                    for (var demte : d.getDemandantes()) {
-                        Row rr = shDemandantes.createRow(rDemtes++);
-                        int cc = 0;
-                        Cell crr;
-                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(demte.getId() != null ? demte.getId() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getTipoDocumento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getNumeroDocumento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getRazonSocial())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getGenero())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getFechaNacimiento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getDepartamento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getProvincia())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getDistrito())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getTipoDomicilio())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getDomicilio())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getReferencia())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getCorreo())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getCelular())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getCasillaElectronica())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getApoderadoComun())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getArchivoUrl())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(demte.getActivo())); crr.setCellStyle(dataStyle);
-                    }
-                }
-                if (d.getDemandados() != null) {
-                    for (var dems : d.getDemandados()) {
-                        Row rr = shDemandados.createRow(rDems++);
-                        int cc = 0;
-                        Cell crr;
-                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(dems.getId() != null ? dems.getId() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getTipoDocumento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getNumeroDocumento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getRazonSocial())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getDepartamento())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getProvincia())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getDistrito())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getTipoDomicilio())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getDomicilio())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getReferencia())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(dems.getActivo())); crr.setCellStyle(dataStyle);
-                    }
-                }
-                if (d.getPetitorios() != null) {
-                    for (var pet : d.getPetitorios()) {
-                        Row rr = shPetitorios.createRow(rPets++);
-                        int cc = 0;
-                        Cell crr;
-                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(pet.getId() != null ? pet.getId() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getTipo())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getPretensionPrincipal())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getConcepto())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getPretensionAccesoria())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(pet.getMonto() != null ? pet.getMonto().doubleValue() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getJustificacion())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getFechaInicio())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getFechaFin())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(pet.getActivo())); crr.setCellStyle(dataStyle);
-                    }
-                }
-                if (d.getRelacionLaboral() != null) {
-                    var rl = d.getRelacionLaboral();
-                    Row rr = shRelLab.createRow(rRel++);
-                    int cc = 0;
-                    Cell crr;
-                    crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(rl.getId() != null ? rl.getId() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(rl.getRegimen())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(rl.getFechaInicio())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(rl.getFechaFin())); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(rl.getAnios() != null ? rl.getAnios() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(rl.getMeses() != null ? rl.getMeses() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(rl.getDias() != null ? rl.getDias() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(rl.getRemuneracion() != null ? rl.getRemuneracion().doubleValue() : 0); crr.setCellStyle(dataStyle);
-                    crr = rr.createCell(cc++); crr.setCellValue(safeStr(rl.getActivo())); crr.setCellStyle(dataStyle);
-                }
-                if (d.getFundamentaciones() != null) {
-                    for (var fu : d.getFundamentaciones()) {
-                        Row rr = shFund.createRow(rFund++);
-                        int cc = 0;
-                        Cell crr;
-                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(fu.getId() != null ? fu.getId() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(fu.getContenido())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(fu.getActivo())); crr.setCellStyle(dataStyle);
-                    }
-                }
-                if (d.getFirmas() != null) {
-                    for (var fi : d.getFirmas()) {
-                        Row rr = shFirm.createRow(rFirm++);
-                        int cc = 0;
-                        Cell crr;
-                        crr = rr.createCell(cc++); crr.setCellValue(demandaId); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(fi.getId() != null ? fi.getId() : 0); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getTipo())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getArchivoUrl())); crr.setCellStyle(dataStyle);
-                        crr = rr.createCell(cc++); crr.setCellValue(safeStr(fi.getActivo())); crr.setCellStyle(dataStyle);
-                    }
-                }
-            }
-
-            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-            wb.write(baos);
-            wb.dispose();
-            wb.close();
+            byte[] excelBytes = gestionReporteExcelUseCasePort.generarReporteDemandasExcelMultiHoja(cuo, filters);
 
             String filename = "demandas_multisheet_" + new java.text.SimpleDateFormat("yyyyMMdd").format(new Date()) + ".xlsx";
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
             headers.set("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
         } catch (ErrorException e) {
             GlobalResponse res = new GlobalResponse();
             res.setCodigoOperacion(cuo);
