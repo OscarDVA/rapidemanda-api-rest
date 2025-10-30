@@ -72,29 +72,130 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
     public DashboardResumen obtenerResumen(String cuo) throws Exception {
         DashboardResumen res = new DashboardResumen();
         try {
-            Long total = sf.getCurrentSession()
+            // Calcular rangos de fechas: mes actual y mes anterior
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date());
+            cal.set(Calendar.DAY_OF_MONTH, 1);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            Date inicioMesActual = cal.getTime();
+
+            Calendar calFinActual = (Calendar) cal.clone();
+            calFinActual.add(Calendar.MONTH, 1);
+            calFinActual.add(Calendar.MILLISECOND, -1);
+            Date finMesActual = calFinActual.getTime();
+
+            Calendar calInicioAnterior = (Calendar) cal.clone();
+            calInicioAnterior.add(Calendar.MONTH, -1);
+            Date inicioMesAnterior = calInicioAnterior.getTime();
+
+            Calendar calFinAnterior = (Calendar) cal.clone();
+            calFinAnterior.add(Calendar.MILLISECOND, -1);
+            Date finMesAnterior = calFinAnterior.getTime();
+
+            // Totales históricos (sin filtros de fecha)
+            Long totalHistorico = sf.getCurrentSession()
                     .createQuery("SELECT COUNT(md) FROM MovDemanda md", Long.class)
                     .getSingleResult();
 
-            Long registrados = sf.getCurrentSession()
+            Long registradosHistorico = sf.getCurrentSession()
                     .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.estadoDemanda.bEstadoDemanda = :estado", Long.class)
                     .setParameter("estado", "P")
                     .getSingleResult();
 
-            Long tipoM = sf.getCurrentSession()
-                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoPresentacion.bTipoPresentacion = :tipo", Long.class)
-                    .setParameter("tipo", "M")
+            Long tipoMHistorico = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoRecepcion = :tipo", Long.class)
+                    .setParameter("tipo", "VIRTUAL")
                     .getSingleResult();
 
-            Long tipoF = sf.getCurrentSession()
-                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoPresentacion.bTipoPresentacion = :tipo", Long.class)
-                    .setParameter("tipo", "F")
+            Long tipoFHistorico = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoRecepcion = :tipo", Long.class)
+                    .setParameter("tipo", "FISICA")
                     .getSingleResult();
 
-            res.setTotalDemandas(total != null ? total : 0);
-            res.setTotalRegistrados(registrados != null ? registrados : 0);
-            res.setTotalPresentacionM(tipoM != null ? tipoM : 0);
-            res.setTotalPresentacionF(tipoF != null ? tipoF : 0);
+            // Conteos mensuales para delta
+            Long totalActual = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.fechaCompletado BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("ini", inicioMesActual)
+                    .setParameter("fin", finMesActual)
+                    .getSingleResult();
+
+            Long totalAnterior = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.fechaCompletado BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("ini", inicioMesAnterior)
+                    .setParameter("fin", finMesAnterior)
+                    .getSingleResult();
+
+            Long registradosActual = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.estadoDemanda.bEstadoDemanda = :estado AND md.fechaRecepcion BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("estado", "P")
+                    .setParameter("ini", inicioMesActual)
+                    .setParameter("fin", finMesActual)
+                    .getSingleResult();
+
+            Long registradosAnterior = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.estadoDemanda.bEstadoDemanda = :estado AND md.fechaRecepcion BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("estado", "P")
+                    .setParameter("ini", inicioMesAnterior)
+                    .setParameter("fin", finMesAnterior)
+                    .getSingleResult();
+
+            Long tipoMActual = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoRecepcion = :tipo AND md.fechaRecepcion BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("tipo", "VIRTUAL")
+                    .setParameter("ini", inicioMesActual)
+                    .setParameter("fin", finMesActual)
+                    .getSingleResult();
+
+            Long tipoMAnterior = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoRecepcion = :tipo AND md.fechaRecepcion BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("tipo", "VIRTUAL")
+                    .setParameter("ini", inicioMesAnterior)
+                    .setParameter("fin", finMesAnterior)
+                    .getSingleResult();
+
+            Long tipoFActual = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoRecepcion = :tipo AND md.fechaRecepcion BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("tipo", "FISICA")
+                    .setParameter("ini", inicioMesActual)
+                    .setParameter("fin", finMesActual)
+                    .getSingleResult();
+
+            Long tipoFAnterior = sf.getCurrentSession()
+                    .createQuery("SELECT COUNT(md) FROM MovDemanda md WHERE md.tipoRecepcion = :tipo AND md.fechaRecepcion BETWEEN :ini AND :fin", Long.class)
+                    .setParameter("tipo", "FISICA")
+                    .setParameter("ini", inicioMesAnterior)
+                    .setParameter("fin", finMesAnterior)
+                    .getSingleResult();
+
+            long valTotalHistorico = totalHistorico != null ? totalHistorico : 0;
+            long valRegistradosHistorico = registradosHistorico != null ? registradosHistorico : 0;
+            long valMHistorico = tipoMHistorico != null ? tipoMHistorico : 0;
+            long valFHistorico = tipoFHistorico != null ? tipoFHistorico : 0;
+
+            long valTotalActual = totalActual != null ? totalActual : 0;
+            long valTotalAnterior = totalAnterior != null ? totalAnterior : 0;
+            long valRegistradosActual = registradosActual != null ? registradosActual : 0;
+            long valRegistradosAnterior = registradosAnterior != null ? registradosAnterior : 0;
+            long valMActual = tipoMActual != null ? tipoMActual : 0;
+            long valMAnterior = tipoMAnterior != null ? tipoMAnterior : 0;
+            long valFActual = tipoFActual != null ? tipoFActual : 0;
+            long valFAnterior = tipoFAnterior != null ? tipoFAnterior : 0;
+
+            // Asignar totales históricos y deltas mensuales
+            res.setTotalDemandas(valTotalHistorico);
+            res.setTotalDemandasDeltaMensual(valTotalActual - valTotalAnterior);
+
+            res.setTotalRegistrados(valRegistradosHistorico);
+            res.setTotalRegistradosDeltaMensual(valRegistradosActual - valRegistradosAnterior);
+
+            res.setTotalPresentacionM(valMHistorico);
+            res.setTotalPresentacionMDeltaMensual(valMActual - valMAnterior);
+
+            res.setTotalPresentacionF(valFHistorico);
+            res.setTotalPresentacionFDeltaMensual(valFActual - valFAnterior);
         } catch (Exception e) {
             log.error("{} Error obteniendo resumen dashboard: {}", cuo, e.getMessage());
             throw e;
