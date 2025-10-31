@@ -493,11 +493,12 @@ public class GestionDashboardPersistenceAdapter implements GestionDashboardPersi
         List<ConteoItem> lista = new ArrayList<>();
         try {
             List<Object[]> rows = sf.getCurrentSession()
-                    .createQuery("SELECT md.tipoPresentacion.bTipoPresentacion, COUNT(md) FROM MovDemanda md GROUP BY md.tipoPresentacion.bTipoPresentacion", Object[].class)
+                    .createQuery("SELECT md.tipoRecepcion, COUNT(md) FROM MovDemanda md WHERE md.estadoDemanda.bEstadoDemanda = :estado GROUP BY md.tipoRecepcion", Object[].class)
+                    .setParameter("estado", "P")
                     .getResultList();
             lista = mapConteos(rows);
         } catch (Exception e) {
-            log.error("{} Error contando demanda por tipoPresentacion: {}", cuo, e.getMessage());
+            log.error("{} Error contando demanda por tipoRecepcion: {}", cuo, e.getMessage());
             throw e;
         }
         return lista;
